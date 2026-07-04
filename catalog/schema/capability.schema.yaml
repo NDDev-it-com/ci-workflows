@@ -1,0 +1,93 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://github.com/NDDev-it-com/nddev-ci-workflows/catalog/schema/capability.schema.yaml"
+title: nddev-ci-workflows capability catalog
+type: object
+required:
+  - capabilities
+additionalProperties: false
+properties:
+  capabilities:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - cluster
+        - status
+        - public_oss
+        - private_free
+        - private_paid
+        - workflow
+        - example
+        - required_permissions
+        - required_settings
+        - risks
+        - deprecations
+        - last_verified
+        - sources
+      properties:
+        id:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        name:
+          type: string
+          minLength: 1
+        cluster:
+          enum:
+            - actions-core
+            - runners
+            - security-scanning
+            - supply-chain
+            - governance
+            - releases-packages
+            - deployments
+            - observability
+            - community-dx
+            - external-tools
+            - ai-agentic
+        status:
+          enum: [ga, preview, deprecated, retiring, planned]
+        public_oss:
+          enum: [free, paid, unavailable, conditional]
+        private_free:
+          enum: [free, paid, unavailable, conditional]
+        private_paid:
+          enum: [available, unavailable, conditional]
+        workflow:
+          anyOf:
+            - type: string
+              pattern: "^\\.github/workflows/[^/]+\\.ya?ml$"
+            - type: "null"
+        example:
+          anyOf:
+            - type: string
+              pattern: "^examples/.+\\.ya?ml$"
+            - type: "null"
+        required_permissions:
+          type: array
+          items:
+            type: string
+        required_settings:
+          type: array
+          items:
+            type: string
+        risks:
+          type: array
+          items:
+            type: string
+        deprecations:
+          anyOf:
+            - type: string
+            - type: "null"
+        last_verified:
+          type: string
+          pattern: "^20[0-9]{2}-[0-9]{2}-[0-9]{2}$"
+        sources:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: "^https://"
