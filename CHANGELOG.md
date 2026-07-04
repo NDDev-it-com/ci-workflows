@@ -2,6 +2,32 @@
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-07-04
+
+### Added
+
+- Machine-readable catalog schema under `catalog/schema/`.
+- Catalog-derived generated docs under `docs/generated/`, checked by
+  `scripts/generate_docs.py --check` through `scripts/validate_all.py`.
+- Example workflow validator for copy-paste caller snippets, including
+  private-free least privilege and Scorecard trigger constraints.
+- Markdown local-link and merge-queue compatibility validators.
+- First-class July 2026 catalog entries for merge queue, step-level parallel
+  execution, hosted-runner governance controls, RHEL larger-runner images,
+  license-compliance preview, npm trusted publishing, and PyPI trusted
+  publishing.
+- npm/PyPI trusted-publishing examples and `scripts/export_repo_sbom.sh`.
+- Review reconciliation document under `docs/audit/`.
+
+### Changed
+
+- Strengthened catalog validation for workflow/example coverage, source URLs,
+  tool pin shape, duplicate IDs, and stale materialized-workflow risk text.
+- Updated runners, Actions core, rulesets, releases/packages, supply-chain, and
+  watchlist docs for July 2026 platform facts.
+- Fixed SBOM attestation verification docs to verify the released artifact with
+  the SPDX predicate type.
+
 ## [0.2.3] - 2026-07-04
 
 ### Added
