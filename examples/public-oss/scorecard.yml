@@ -1,0 +1,19 @@
+# OSSF Scorecard — push-to-default + weekly schedule ONLY.
+# The Scorecard action supports only `push` and `schedule` on the default
+# branch; `pull_request`/`workflow_dispatch` are experimental. Keep it separate
+# from the pull_request-triggered security suite.
+# Replace @<sha> with a pinned full commit SHA of nddev-ci-workflows.
+name: scorecard
+on:
+  push: { branches: [main] }
+  schedule:
+    - cron: "31 2 * * 1"
+permissions: {}
+jobs:
+  scorecard:
+    permissions:
+      security-events: write
+      id-token: write
+      contents: read
+      actions: read
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-scorecard.yml@<sha>

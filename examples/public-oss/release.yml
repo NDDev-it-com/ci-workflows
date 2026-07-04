@@ -1,0 +1,18 @@
+# Tag-driven immutable release with SBOM + attestations (either tier).
+# Replace @<sha> with a pinned full commit SHA of nddev-ci-workflows.
+name: release
+on:
+  push:
+    tags: ["[0-9]+.[0-9]+.[0-9]+"]
+permissions: {}
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  publish:
+    permissions: { contents: write, id-token: write, attestations: write }
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/release-supply-chain.yml@<sha>
+    with:
+      version: ${{ github.ref_name }}
+      package_name: my-repo
+      archive_paths: "README.md LICENSE VERSION CHANGELOG.md src"
