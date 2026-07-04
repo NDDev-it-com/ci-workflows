@@ -14,10 +14,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  contract:
-    name: reusable-workflow contract
+  validate:
+    name: static validators
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -29,25 +29,20 @@ jobs:
             agent.api.stepsecurity.io:443
             github.com:443
             api.github.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           persist-credentials: false
-      - name: Verify every reusable workflow declares workflow_call
-        run: |
-          set -euo pipefail
-          rc=0
-          for f in .github/workflows/public-*.yml .github/workflows/secret-scan.yml \
-                   .github/workflows/actionlint.yml .github/workflows/zizmor.yml \
-                   .github/workflows/cross-platform-smoke.yml .github/workflows/private-static.yml \
-                   .github/workflows/release-supply-chain.yml; do
-            [ -f "$f" ] || { echo "missing reusable workflow: $f" >&2; rc=1; continue; }
-            if ! grep -qE '^\s*workflow_call:' "$f"; then
-              echo "reusable workflow missing 'on: workflow_call': $f" >&2
-              rc=1
-            fi
-          done
-          exit "$rc"
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        with:
+          python-version: "3.13"
+      - name: Install validator dependencies
+        run: python3 -m pip install --require-hashes=false -r requirements-ci.txt
+      - name: Run static validators
+        run: python3 scripts/validate_all.py
 
   actionlint:
     permissions:
@@ -58,20 +53,25 @@ jobs:
     permissions:
       contents: read
       security-events: write
-    uses: ./.github/workflows/zizmor.yml
+    uses: ./.github/workflows/zizmor-sarif.yml
 
   ci-gate:
     name: ci-gate
-    needs: [contract, actionlint, zizmor]
+    needs: [validate, actionlint, zizmor]
     runs-on: ubuntu-latest
     if: always()
+    timeout-minutes: 5
     permissions:
       contents: read
     steps:
       - name: Aggregate required results
+        env:
+          VALIDATE_RESULT: ${{ needs.validate.result }}
+          ACTIONLINT_RESULT: ${{ needs.actionlint.result }}
+          ZIZMOR_RESULT: ${{ needs.zizmor.result }}
         run: |
           set -euo pipefail
-          for r in "${{ needs.contract.result }}" "${{ needs.actionlint.result }}" "${{ needs.zizmor.result }}"; do
+          for r in "$VALIDATE_RESULT" "$ACTIONLINT_RESULT" "$ZIZMOR_RESULT"; do
             if [ "$r" != "success" ]; then
               echo "required job failed: $r" >&2
               exit 1

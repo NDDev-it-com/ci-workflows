@@ -1,0 +1,9 @@
+# Python bytecode / caches from the validator scripts
+__pycache__/
+*.pyc
+
+# Release build output
+dist/
+
+# Local virtualenvs
+.venv/
