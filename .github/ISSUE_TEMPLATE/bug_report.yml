@@ -18,6 +18,7 @@ body:
       options:
         - public-codeql.yml
         - public-scorecard.yml
+        - public-scorecard-json.yml
         - public-dependency-review.yml
         - secret-scan.yml
         - actionlint.yml

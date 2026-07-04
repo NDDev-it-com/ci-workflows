@@ -108,6 +108,7 @@ tools:
     pin: "ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a"
     used_by:
       - .github/workflows/public-scorecard.yml
+      - .github/workflows/public-scorecard-json.yml
     last_verified: "2026-07-04"
 
   - id: attest

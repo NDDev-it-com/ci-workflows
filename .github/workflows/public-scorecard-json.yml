@@ -1,0 +1,64 @@
+name: public-scorecard-json
+
+# Reusable OSSF Scorecard for PUBLIC repositories in JSON artifact mode.
+# This is the estate default: Scorecard is a project-health signal, not a
+# vulnerability source, so it does not upload SARIF into code scanning and does
+# not request `security-events: write`.
+#
+# Caller should trigger on push to the default branch and on a weekly schedule.
+# `pull_request` remains experimental for scorecard-action and is intentionally
+# not the recommended default.
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        type: string
+        default: 'ubuntu-latest'
+      publish_results:
+        description: 'Publish results to the OpenSSF Scorecard API (public repos).'
+        type: boolean
+        default: true
+      artifact_name:
+        type: string
+        default: 'scorecard-results'
+      retention_days:
+        type: number
+        default: 14
+
+permissions: {}
+
+jobs:
+  scorecard:
+    name: OSSF Scorecard analysis
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 15
+    permissions:
+      id-token: write
+      contents: read
+      actions: read
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411  # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Run analysis
+        uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a  # v2.4.3
+        with:
+          results_file: results.json
+          results_format: json
+          publish_results: ${{ inputs.publish_results }}
+
+      - name: Upload Scorecard JSON
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: results.json
+          retention-days: ${{ inputs.retention_days }}

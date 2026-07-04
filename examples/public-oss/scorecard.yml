@@ -12,8 +12,7 @@ permissions: {}
 jobs:
   scorecard:
     permissions:
-      security-events: write
       id-token: write
       contents: read
       actions: read
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-scorecard.yml@<sha>
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-scorecard-json.yml@<sha>

@@ -19,6 +19,10 @@ on:
       enable_harden_runner:
         type: boolean
         default: true
+      post_command:
+        description: 'Optional extra static check after actionlint, e.g. a repository-local pin validator.'
+        type: string
+        default: ''
 
 permissions: {}
 
@@ -63,3 +67,9 @@ jobs:
 
       - name: Run actionlint
         run: actionlint -color
+
+      - name: Run post-actionlint command
+        if: ${{ inputs.post_command != '' }}
+        env:
+          POST_COMMAND: ${{ inputs.post_command }}
+        run: bash -c "$POST_COMMAND"

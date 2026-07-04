@@ -26,7 +26,8 @@ See [`docs/01-public-oss-free.md`](docs/01-public-oss-free.md),
 | Capability | Workflow | Public | Private-free | Private-paid |
 | --- | --- | :---: | :---: | :---: |
 | CodeQL code scanning | `public-codeql.yml` | ✅ | ❌ paid | ✅ |
-| OSSF Scorecard | `public-scorecard.yml` | ✅ | ❌ | ✅ |
+| OSSF Scorecard (SARIF) | `public-scorecard.yml` | ✅ | ❌ | ✅ |
+| OSSF Scorecard (JSON artifact) | `public-scorecard-json.yml` | ✅ | ❌ | ✅ |
 | Dependency Review | `public-dependency-review.yml` | ✅ | ❌ paid | ✅ |
 | Gitleaks secret scan | `secret-scan.yml` | ✅ | ✅ | ✅ |
 | actionlint | `actionlint.yml` | ✅ | ✅ | ✅ |
@@ -91,7 +92,9 @@ jobs:
 ```
 
 OSSF Scorecard runs **on push-to-default + schedule only** (`pull_request` is
-experimental and unsupported by the action), so keep it in its own file:
+experimental and unsupported by the action), so keep it in its own file. Use
+`public-scorecard-json.yml` when Scorecard should be a check/artifact signal
+instead of a persistent code-scanning alert source:
 
 ```yaml
 # .github/workflows/scorecard.yml
@@ -102,8 +105,8 @@ on:
 permissions: {}
 jobs:
   scorecard:
-    permissions: { security-events: write, id-token: write, contents: read, actions: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-scorecard.yml@<sha>
+    permissions: { id-token: write, contents: read, actions: read }
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-scorecard-json.yml@<sha>
 ```
 
 ### Private repository (free-minimal)

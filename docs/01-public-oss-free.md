@@ -13,7 +13,7 @@ delivers its full value.
 | CodeQL code scanning | ✅ | [`public-codeql.yml`](#codeql) |
 | Native secret scanning + push protection | ✅ | repository setting (not a workflow) |
 | Dependency review (PR diff gate) | ✅ | [`public-dependency-review.yml`](#dependency-review) |
-| OSSF Scorecard + publish to API | ✅ | [`public-scorecard.yml`](#scorecard) |
+| OSSF Scorecard + publish to API | ✅ | [`public-scorecard.yml`](#scorecard) / `public-scorecard-json.yml` |
 | Artifact attestations / SBOM / provenance | ✅ | [`release-supply-chain.yml`](#attestations) |
 | GHCR (public packages) | ✅ | [09 Releases & packages](09-releases-packages.md) |
 | GitHub Pages | ✅ | [10 Deployments & environments](10-deployments-environments.md) |
@@ -56,11 +56,13 @@ Inputs: `languages` (JSON array), `queries` (suite, default
 Copilot Autofix.
 
 <a id="scorecard"></a>
-## OSSF Scorecard — `public-scorecard.yml`
+## OSSF Scorecard — `public-scorecard.yml` / `public-scorecard-json.yml`
 
 Scorecard scores your repository against supply-chain best practices (pinned
-actions, branch protection, token permissions, etc.) and uploads SARIF plus
-optionally publishes to the public OpenSSF API for a README badge.
+actions, branch protection, token permissions, etc.). Use `public-scorecard.yml`
+for SARIF/code-scanning upload, or `public-scorecard-json.yml` when Scorecard
+should remain a JSON artifact/check signal instead of a persistent
+code-scanning alert source.
 
 > **Trigger constraint:** Scorecard officially supports only `push` and
 > `schedule` (default branch). `pull_request` and `workflow_dispatch` are
@@ -77,11 +79,10 @@ permissions: {}
 jobs:
   scorecard:
     permissions:
-      security-events: write
       id-token: write
       contents: read
       actions: read
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-scorecard.yml@<full-sha>
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-scorecard-json.yml@<full-sha>
 ```
 
 <a id="dependency-review"></a>

@@ -16,6 +16,22 @@ on:
       setup_python:
         type: boolean
         default: true
+      checkout_ref:
+        description: 'Optional ref/SHA to checkout (needed by pull_request wrappers).'
+        type: string
+        default: ''
+      fetch_depth:
+        description: 'actions/checkout fetch-depth.'
+        type: number
+        default: 1
+      submodules:
+        description: 'actions/checkout submodules input: false, true, or recursive.'
+        type: string
+        default: 'false'
+      install_command:
+        description: 'Optional setup command to run before validation.'
+        type: string
+        default: ''
       command:
         description: 'Validation command to run (bash shell).'
         type: string
@@ -37,6 +53,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
+          ref: ${{ inputs.checkout_ref }}
+          fetch-depth: ${{ inputs.fetch_depth }}
+          submodules: ${{ inputs.submodules }}
           persist-credentials: false
 
       - name: Set up Python
@@ -44,6 +63,13 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
         with:
           python-version: ${{ inputs.python_version }}
+
+      - name: Run install command
+        if: ${{ inputs.install_command != '' }}
+        shell: bash
+        env:
+          INSTALL_COMMAND: ${{ inputs.install_command }}
+        run: bash -c "$INSTALL_COMMAND"
 
       - name: Run validation
         shell: bash

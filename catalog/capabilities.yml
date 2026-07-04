@@ -35,7 +35,7 @@ capabilities:
       - "https://github.com/github/codeql-action"
 
   - id: ossf-scorecard
-    name: OpenSSF Scorecard
+    name: OpenSSF Scorecard SARIF
     cluster: security-scanning
     status: ga
     public_oss: free
@@ -55,6 +55,31 @@ capabilities:
     risks:
       - "Supported triggers are push and schedule on the default branch only; pull_request and workflow_dispatch are experimental"
       - "Do not place under pull_request in caller workflows"
+    deprecations: null
+    last_verified: "2026-07-04"
+    sources:
+      - "https://github.com/ossf/scorecard"
+      - "https://github.com/ossf/scorecard-action"
+
+  - id: ossf-scorecard-json
+    name: OpenSSF Scorecard JSON artifact
+    cluster: security-scanning
+    status: ga
+    public_oss: free
+    private_free: unavailable
+    private_paid: conditional
+    workflow: .github/workflows/public-scorecard-json.yml
+    example: examples/public-oss/scorecard.yml
+    required_permissions:
+      - "id-token: write"
+      - "contents: read"
+      - "actions: read"
+    required_settings:
+      - "Public repository (Scorecard is public-oriented; forks unsupported)"
+      - "OpenSSF Scorecard API publish opt-in for the score badge"
+    risks:
+      - "Supported triggers are push and schedule on the default branch only; pull_request and workflow_dispatch are experimental"
+      - "JSON artifact mode is a project-health signal, not a code-scanning alert source"
     deprecations: null
     last_verified: "2026-07-04"
     sources:
@@ -160,8 +185,8 @@ capabilities:
     required_settings:
       - "Code scanning enabled to consume SARIF when upload_sarif: true (GHAS on private)"
     risks:
-      - "On-disk file is currently zizmor.yml; canonical split into zizmor-sarif.yml (SARIF upload) and zizmor-no-sarif.yml (no code scanning) is pending"
-      - "ci.yml uses the default regular persona, not pedantic; SECURITY.md prose claiming pedantic is stale"
+      - "Use zizmor-no-sarif.yml for private-free repositories to avoid code-scanning permissions"
+      - "ci.yml uses the default regular persona; run pedantic locally for deeper manual audits"
       - "SARIF upload requires code scanning (GHAS) on private repos; use the no-SARIF variant there"
     deprecations: null
     last_verified: "2026-07-04"

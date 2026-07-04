@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-04
+
+### Added
+
+- `public-scorecard-json.yml` for Scorecard JSON artifact mode without
+  `security-events: write`, matching estate policy where Scorecard is a
+  project-health signal rather than a code-scanning alert source.
+- Checkout controls (`checkout_ref`, `fetch_depth`, `submodules`) and setup hooks
+  for `private-static.yml` and `cross-platform-smoke.yml`, so private/root
+  callers can preserve PR refs and submodule validation.
+- Adapter-migration extension inputs for shared workflows: `actionlint.yml`
+  `post_command`, `secret-scan.yml` report/config/post-command options, and
+  `public-codeql.yml` optional CodeQL config/autobuild/artifact output.
+
+### Changed
+
+- Public examples now default to `public-scorecard-json.yml`; SARIF Scorecard
+  remains available through `public-scorecard.yml` for repositories that
+  intentionally want code-scanning upload.
+
 ## [0.2.0] - 2026-07-04
 
 ### Added

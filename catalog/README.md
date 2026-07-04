@@ -17,19 +17,12 @@ references).
 | `tools.yml` | `tools:` | External actions, CLIs, containers, and services referenced by the workflows, with pins. |
 | `deprecations.yml` | `deprecations:` | Retiring, deprecated, and removed capabilities and the migration path. |
 
-## Naming note (canonical vs. on-disk workflows)
+## Naming note
 
-`workflow:` paths use the **final canonical inventory**. Some canonical
-workflow files are not yet materialized on disk, and are marked
-`status: planned`:
-
-- `zizmor-sarif.yml` / `zizmor-no-sarif.yml` — the on-disk `zizmor.yml` is being
-  split into an explicit SARIF-uploading variant and a no-SARIF variant. The
-  `zizmor` capability keeps `status: ga` (it is live today) but points at the
-  canonical `zizmor-sarif.yml` target name; see `deprecations.yml`.
-- `python-ci.yml`, `node-ci.yml`, `go-ci.yml`, `rust-ci.yml`, `java-ci.yml`,
-  `dotnet-ci.yml`, `container-ci.yml`, `terraform-ci.yml`, `docs-ci.yml`,
-  `monorepo-changed-paths.yml` — reserved language/stack CI paths, `status: planned`.
+`workflow:` paths are the canonical on-disk inventory. `zizmor` is intentionally
+split into `zizmor-sarif.yml` (public/GHAS SARIF upload) and
+`zizmor-no-sarif.yml` (private-free, no `security-events: write`). Language and
+stack packs are materialized workflows, not placeholders.
 
 ## `capabilities.yml` schema
 

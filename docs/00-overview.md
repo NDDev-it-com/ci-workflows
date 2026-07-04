@@ -50,7 +50,8 @@ For end-to-end caller examples per tier, see the tier docs and the repository
 | Workflow | Purpose | Primary tier |
 | --- | --- | --- |
 | `public-codeql.yml` | CodeQL code scanning | Public |
-| `public-scorecard.yml` | OSSF Scorecard | Public |
+| `public-scorecard.yml` | OSSF Scorecard SARIF upload | Public / GHAS |
+| `public-scorecard-json.yml` | OSSF Scorecard JSON artifact | Public / GHAS |
 | `public-dependency-review.yml` | PR dependency review | Public |
 | `secret-scan.yml` | Gitleaks history-aware secret scan | Both |
 | `actionlint.yml` | Workflow YAML linting | Both |
