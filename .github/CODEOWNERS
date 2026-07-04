@@ -3,4 +3,10 @@
 
 # Workflow definitions are the security-critical product surface.
 /.github/workflows/ @rldyourmnd
+/.github/rulesets/ @rldyourmnd
 /.github/branch-protection/ @rldyourmnd
+
+# Validators, capability catalog, and docs must move together with workflows.
+/scripts/ @rldyourmnd
+/catalog/ @rldyourmnd
+/docs/ @rldyourmnd
