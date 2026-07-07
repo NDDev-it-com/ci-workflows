@@ -8,7 +8,6 @@ remain human-authored.
 from __future__ import annotations
 
 import argparse
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -59,7 +58,7 @@ def capability_matrix(caps: list[dict[str, Any]]) -> str:
                 example=example,
             )
         )
-    lines.extend(["", "---", "Last generated: 2026-07-04", ""])
+    lines.extend(["", "---", "Last generated: 2026-07-08", ""])
     return "\n".join(lines)
 
 
@@ -86,7 +85,7 @@ def workflow_inventory(caps: list[dict[str, Any]]) -> str:
             ids = ", ".join(f"`{cap['id']}`" for cap in caps_for_workflow) or "MISSING"
             statuses = ", ".join(sorted({cap["status"] for cap in caps_for_workflow})) or "MISSING"
         lines.append(f"| `{rel}` | {ids} | {statuses} |")
-    lines.extend(["", "---", "Last generated: 2026-07-04", ""])
+    lines.extend(["", "---", "Last generated: 2026-07-08", ""])
     return "\n".join(lines)
 
 

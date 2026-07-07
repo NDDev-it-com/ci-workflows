@@ -47,4 +47,4 @@
 | `.github/workflows/zizmor-sarif.yml` | `zizmor` | ga |
 
 ---
-Last generated: 2026-07-04
+Last generated: 2026-07-08

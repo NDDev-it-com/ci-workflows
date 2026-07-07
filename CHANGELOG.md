@@ -2,6 +2,33 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-08
+
+### Added
+
+- Language packs: Dart/Flutter, C/C++, Qt, Kotlin/Android, Swift, R, HTML/CSS,
+  and SQL reusable workflows (joining Python, Node, Go, Rust, Java, .NET,
+  container, and Terraform).
+- Quality gates: `coverage-gate` (Codecov/Coveralls), `docs-quality`
+  (lychee/typos/markdownlint), and `pr-hygiene`
+  (commitlint/PR-title/labeler/stale).
+- Free SAST/SCA/IaC for every tier including private-free: Semgrep OSS,
+  OSV-Scanner, Grype, hadolint, and Checkov (all gate-only, no security-events).
+- Advanced testing: `mutation-testing`, `fuzzing` (cargo-fuzz), and `benchmark`
+  (github-action-benchmark regression alert).
+- Level-3 opt-in caller examples: AI code review (Claude Code Action) and
+  release automation (release-please).
+- `docs/15-language-and-quality-packs.md` and `examples/` subdirectories
+  (`languages/`, `quality/`, `security/`, `testing/`, `level3/`).
+
+### Changed
+
+- Catalog grows to 67 capabilities and 38 pinned tools; every new third-party
+  action is SHA-pinned with a version comment and verified against its
+  `action.yml` input contract.
+- `terraform-ci` documents `terraform_version` pinning for reproducible CI.
+- Generated docs re-dated to 2026-07-08.
+
 ## [0.2.4] - 2026-07-04
 
 ### Added
