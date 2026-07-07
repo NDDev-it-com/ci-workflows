@@ -1,0 +1,90 @@
+name: r-ci
+
+# Reusable R CI for BOTH tiers: harden-runner, pinned r-lib setup-r (public RSPM
+# binaries), and caller-provided install/lint/test commands passed via env.
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        type: string
+        default: 'ubuntu-latest'
+      r_version:
+        type: string
+        default: 'release'
+      working_directory:
+        type: string
+        default: '.'
+      use_public_rspm:
+        description: 'Use the public RStudio Package Manager for fast binary installs.'
+        type: boolean
+        default: true
+      install_command:
+        description: 'Dependency install command (bash). Empty to skip.'
+        type: string
+        default: "Rscript -e 'install.packages(c(\"lintr\", \"testthat\"))'"
+      lint:
+        description: 'Run lintr::lint_dir().'
+        type: boolean
+        default: false
+      test_command:
+        description: 'Test/check command (bash).'
+        type: string
+        default: "Rscript -e 'testthat::test_local()'"
+      enable_harden_runner:
+        type: boolean
+        default: true
+      timeout_minutes:
+        type: number
+        default: 30
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  r:
+    name: r (${{ inputs.r_version }})
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - name: Harden runner
+        if: ${{ inputs.enable_harden_runner && runner.os == 'Linux' }}
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411  # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@d3c5be51b12e724e68f33216ca3c148b66d5f0b6  # v2
+        with:
+          r-version: ${{ inputs.r_version }}
+          use-public-rspm: ${{ inputs.use_public_rspm }}
+
+      - name: Install dependencies
+        if: ${{ inputs.install_command != '' }}
+        env:
+          INSTALL_COMMAND: ${{ inputs.install_command }}
+        run: bash -c "$INSTALL_COMMAND"
+
+      - name: Lint
+        if: ${{ inputs.lint }}
+        run: Rscript -e 'lintr::lint_dir()'
+
+      - name: Test
+        env:
+          TEST_COMMAND: ${{ inputs.test_command }}
+        run: |
+          bash -c "$TEST_COMMAND"
+          echo "R checks passed." >> "$GITHUB_STEP_SUMMARY"

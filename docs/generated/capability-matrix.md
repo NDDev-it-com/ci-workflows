@@ -11,14 +11,17 @@
 | .NET CI (`dotnet-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/dotnet-ci.yml` | `-` |
 | Go CI (`go-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/go-ci.yml` | `-` |
 | Java CI (`java-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/java-ci.yml` | `-` |
+| Kotlin/Android CI (`kotlin-android-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/kotlin-android-ci.yml` | `examples/languages/kotlin-android.yml` |
 | Monorepo changed-paths filter (`monorepo-changed-paths`) | actions-core | ga | free | conditional | available | `.github/workflows/monorepo-changed-paths.yml` | `-` |
 | Node.js CI (`node-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/node-ci.yml` | `-` |
 | Lightweight static validation (`private-static-validation`) | actions-core | ga | free | free | available | `.github/workflows/private-static.yml` | `-` |
 | Python CI (`python-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/python-ci.yml` | `-` |
 | Qt CI (`qt-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/qt-ci.yml` | `examples/languages/qt.yml` |
+| R CI (`r-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/r-ci.yml` | `examples/languages/r.yml` |
 | Rust CI (`rust-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/rust-ci.yml` | `-` |
 | SQL CI (`sql-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/sql-ci.yml` | `examples/languages/sql.yml` |
 | Actions step-level parallel execution (`step-level-parallel-execution`) | actions-core | preview | free | free | available | `-` | `-` |
+| Swift CI (`swift-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/swift-ci.yml` | `examples/languages/swift.yml` |
 | Terraform CI (`terraform-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/terraform-ci.yml` | `-` |
 | HTML/CSS/web CI (`web-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/web-ci.yml` | `examples/languages/web.yml` |
 | GitHub Agentic Workflows (`agentic-workflows`) | ai-agentic | preview | conditional | conditional | conditional | `-` | `-` |

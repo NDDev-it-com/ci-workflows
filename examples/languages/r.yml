@@ -1,0 +1,17 @@
+# R CI caller (any tier). Replace @<sha> with a pinned full commit SHA.
+# Private-free callers add `with: { enable_harden_runner: false }`.
+name: r
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+permissions: {}
+concurrency:
+  group: r-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  r:
+    permissions: { contents: read }
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/r-ci.yml@<sha>
+    with:
+      lint: true
+      test_command: "Rscript -e 'testthat::test_local()'"

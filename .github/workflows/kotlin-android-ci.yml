@@ -1,0 +1,100 @@
+name: kotlin-android-ci
+
+# Reusable Kotlin/Android CI for BOTH tiers: harden-runner, pinned setup-java +
+# setup-gradle (with Gradle cache), optional Android SDK, and caller-provided
+# lint/build commands passed via env. Works for pure-JVM Kotlin and Android.
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        type: string
+        default: 'ubuntu-latest'
+      java_version:
+        type: string
+        default: '21'
+      java_distribution:
+        type: string
+        default: 'temurin'
+      working_directory:
+        type: string
+        default: '.'
+      setup_android:
+        description: 'Install the Android SDK command-line tools (needed for Android modules).'
+        type: boolean
+        default: false
+      android_packages:
+        description: 'Extra sdkmanager packages (space-separated). Empty installs the defaults.'
+        type: string
+        default: ''
+      lint_command:
+        description: 'Lint command (bash), e.g. "./gradlew ktlintCheck detekt". Empty to skip.'
+        type: string
+        default: ''
+      build_command:
+        description: 'Build/test command (bash).'
+        type: string
+        default: './gradlew build'
+      enable_harden_runner:
+        type: boolean
+        default: true
+      timeout_minutes:
+        type: number
+        default: 30
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  kotlin-android:
+    name: kotlin-android (java ${{ inputs.java_version }})
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - name: Harden runner
+        if: ${{ inputs.enable_harden_runner && runner.os == 'Linux' }}
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411  # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520  # v5.4.0
+        with:
+          java-version: ${{ inputs.java_version }}
+          distribution: ${{ inputs.java_distribution }}
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92  # v6.2.0
+
+      - name: Set up Android SDK
+        if: ${{ inputs.setup_android }}
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699  # v4.0.1
+        with:
+          packages: ${{ inputs.android_packages }}
+
+      - name: Lint
+        if: ${{ inputs.lint_command != '' }}
+        env:
+          LINT_COMMAND: ${{ inputs.lint_command }}
+        run: bash -c "$LINT_COMMAND"
+
+      - name: Build
+        env:
+          BUILD_COMMAND: ${{ inputs.build_command }}
+          JAVA_VER: ${{ inputs.java_version }}
+        run: |
+          bash -c "$BUILD_COMMAND"
+          echo "Kotlin/Android (JDK ${JAVA_VER}) build passed." >> "$GITHUB_STEP_SUMMARY"

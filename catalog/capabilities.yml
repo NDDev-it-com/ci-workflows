@@ -1075,3 +1075,66 @@ capabilities:
     sources:
       - "https://github.com/jurplel/install-qt-action"
       - "https://doc.qt.io/qt-6/cmake-manual.html"
+
+  - id: kotlin-android-ci
+    name: Kotlin/Android CI
+    cluster: actions-core
+    status: ga
+    public_oss: free
+    private_free: conditional
+    private_paid: available
+    workflow: .github/workflows/kotlin-android-ci.yml
+    example: examples/languages/kotlin-android.yml
+    required_permissions:
+      - "contents: read"
+    required_settings: []
+    risks:
+      - "ktlint/detekt run as project-defined Gradle tasks supplied via lint_command"
+      - "Private-repo runner minutes are metered beyond the included free allotment"
+    deprecations: null
+    last_verified: "2026-07-08"
+    sources:
+      - "https://github.com/gradle/actions"
+      - "https://developer.android.com/build"
+
+  - id: swift-ci
+    name: Swift CI
+    cluster: actions-core
+    status: ga
+    public_oss: free
+    private_free: conditional
+    private_paid: available
+    workflow: .github/workflows/swift-ci.yml
+    example: examples/languages/swift.yml
+    required_permissions:
+      - "contents: read"
+    required_settings: []
+    risks:
+      - "Defaults to a macOS runner billed at a 10x minute multiplier; SwiftLint runs on macOS only"
+      - "harden-runner only runs on the Linux leg (it is a Linux/paid feature)"
+    deprecations: null
+    last_verified: "2026-07-08"
+    sources:
+      - "https://www.swift.org/documentation/"
+      - "https://github.com/realm/SwiftLint"
+
+  - id: r-ci
+    name: R CI
+    cluster: actions-core
+    status: ga
+    public_oss: free
+    private_free: conditional
+    private_paid: available
+    workflow: .github/workflows/r-ci.yml
+    example: examples/languages/r.yml
+    required_permissions:
+      - "contents: read"
+    required_settings: []
+    risks:
+      - "Package dependencies install via a caller-provided install_command"
+      - "Private-repo runner minutes are metered beyond the included free allotment"
+    deprecations: null
+    last_verified: "2026-07-08"
+    sources:
+      - "https://github.com/r-lib/actions"
+      - "https://lintr.r-lib.org/"

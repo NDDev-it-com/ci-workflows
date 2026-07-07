@@ -212,3 +212,43 @@ tools:
       - .github/workflows/cpp-ci.yml
       - .github/workflows/qt-ci.yml
     last_verified: "2026-07-08"
+
+  - id: setup-gradle
+    name: gradle/actions/setup-gradle
+    homepage: "https://github.com/gradle/actions"
+    kind: action
+    current_version: "v6.2.0"
+    pin: "gradle/actions@3f131e8634966bd73d06cc69884922b02e6faf92"
+    used_by:
+      - .github/workflows/kotlin-android-ci.yml
+    last_verified: "2026-07-08"
+
+  - id: setup-android
+    name: android-actions/setup-android
+    homepage: "https://github.com/android-actions/setup-android"
+    kind: action
+    current_version: "v4.0.1"
+    pin: "android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699"
+    used_by:
+      - .github/workflows/kotlin-android-ci.yml
+    last_verified: "2026-07-08"
+
+  - id: setup-swift
+    name: swift-actions/setup-swift
+    homepage: "https://github.com/swift-actions/setup-swift"
+    kind: action
+    current_version: "v2.4.0"
+    pin: "swift-actions/setup-swift@7ca6abe6b3b0e8b5421b88be48feee39cbf52c6a"
+    used_by:
+      - .github/workflows/swift-ci.yml
+    last_verified: "2026-07-08"
+
+  - id: setup-r
+    name: r-lib/actions/setup-r
+    homepage: "https://github.com/r-lib/actions"
+    kind: action
+    current_version: "v2"
+    pin: "r-lib/actions@d3c5be51b12e724e68f33216ca3c148b66d5f0b6"
+    used_by:
+      - .github/workflows/r-ci.yml
+    last_verified: "2026-07-08"

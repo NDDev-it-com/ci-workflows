@@ -1,0 +1,17 @@
+# Swift CI caller. Uses a macOS runner (billed at a 10x minute multiplier).
+# Replace @<sha> with a pinned full commit SHA.
+name: swift
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+permissions: {}
+concurrency:
+  group: swift-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  swift:
+    permissions: { contents: read }
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/swift-ci.yml@<sha>
+    with:
+      runner: macos-latest
+      swiftlint: true

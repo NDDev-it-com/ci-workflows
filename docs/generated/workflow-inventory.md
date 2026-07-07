@@ -13,6 +13,7 @@
 | `.github/workflows/dotnet-ci.yml` | `dotnet-ci` | ga |
 | `.github/workflows/go-ci.yml` | `go-ci` | ga |
 | `.github/workflows/java-ci.yml` | `java-ci` | ga |
+| `.github/workflows/kotlin-android-ci.yml` | `kotlin-android-ci` | ga |
 | `.github/workflows/monorepo-changed-paths.yml` | `monorepo-changed-paths` | ga |
 | `.github/workflows/node-ci.yml` | `node-ci` | ga |
 | `.github/workflows/private-static.yml` | `private-static-validation` | ga |
@@ -22,11 +23,13 @@
 | `.github/workflows/public-scorecard.yml` | `ossf-scorecard` | ga |
 | `.github/workflows/python-ci.yml` | `python-ci` | ga |
 | `.github/workflows/qt-ci.yml` | `qt-ci` | ga |
+| `.github/workflows/r-ci.yml` | `r-ci` | ga |
 | `.github/workflows/release-supply-chain.yml` | `artifact-attestations`, `sbom-generation`, `slsa-build-provenance`, `release-supply-chain` | ga |
 | `.github/workflows/release.yml` | internal | internal |
 | `.github/workflows/rust-ci.yml` | `rust-ci` | ga |
 | `.github/workflows/secret-scan.yml` | `gitleaks-secret-scan` | ga |
 | `.github/workflows/sql-ci.yml` | `sql-ci` | ga |
+| `.github/workflows/swift-ci.yml` | `swift-ci` | ga |
 | `.github/workflows/terraform-ci.yml` | `terraform-ci` | ga |
 | `.github/workflows/web-ci.yml` | `web-ci` | ga |
 | `.github/workflows/zizmor-no-sarif.yml` | `zizmor-no-sarif` | ga |

@@ -1,0 +1,100 @@
+name: swift-ci
+
+# Reusable Swift CI. Defaults to a macOS runner (Swift + Xcode preinstalled;
+# iOS/macOS builds bill at a 10x minute multiplier). Optional swift-actions
+# setup for Linux/pinned Swift, optional SwiftLint + swift-format gates, and
+# caller-provided build/test commands passed via env. harden-runner runs only on
+# Linux (it is a Linux/paid feature).
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        type: string
+        default: 'macos-latest'
+      swift_version:
+        description: 'Swift version for swift-actions/setup-swift (Linux/pinned). Empty uses the runner toolchain.'
+        type: string
+        default: ''
+      working_directory:
+        type: string
+        default: '.'
+      swiftlint:
+        description: 'Install (brew) and run SwiftLint. macOS runners only.'
+        type: boolean
+        default: false
+      swift_format:
+        description: 'Run "swift format lint" over the tree.'
+        type: boolean
+        default: false
+      build_command:
+        description: 'Build command (bash). Empty to skip.'
+        type: string
+        default: 'swift build'
+      test_command:
+        description: 'Test command (bash).'
+        type: string
+        default: 'swift test'
+      enable_harden_runner:
+        type: boolean
+        default: true
+      timeout_minutes:
+        type: number
+        default: 30
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  swift:
+    name: swift
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - name: Harden runner
+        if: ${{ inputs.enable_harden_runner && runner.os == 'Linux' }}
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411  # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Swift
+        if: ${{ inputs.swift_version != '' }}
+        uses: swift-actions/setup-swift@7ca6abe6b3b0e8b5421b88be48feee39cbf52c6a  # v2.4.0
+        with:
+          swift-version: ${{ inputs.swift_version }}
+
+      - name: SwiftLint
+        if: ${{ inputs.swiftlint && runner.os == 'macOS' }}
+        run: |
+          brew install swiftlint
+          swiftlint --strict
+
+      - name: swift-format
+        if: ${{ inputs.swift_format }}
+        run: swift format lint --recursive --strict .
+
+      - name: Build
+        if: ${{ inputs.build_command != '' }}
+        env:
+          BUILD_COMMAND: ${{ inputs.build_command }}
+        run: bash -c "$BUILD_COMMAND"
+
+      - name: Test
+        env:
+          TEST_COMMAND: ${{ inputs.test_command }}
+        run: |
+          bash -c "$TEST_COMMAND"
+          echo "Swift build + test passed." >> "$GITHUB_STEP_SUMMARY"

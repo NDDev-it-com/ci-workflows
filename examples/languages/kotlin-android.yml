@@ -1,0 +1,17 @@
+# Kotlin/Android CI caller (any tier). Replace @<sha> with a pinned full commit SHA.
+# Private-free callers add `with: { enable_harden_runner: false }`.
+name: kotlin-android
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+permissions: {}
+concurrency:
+  group: kotlin-android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  kotlin-android:
+    permissions: { contents: read }
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/kotlin-android-ci.yml@<sha>
+    with:
+      lint_command: './gradlew ktlintCheck detekt'
+      build_command: './gradlew build'
