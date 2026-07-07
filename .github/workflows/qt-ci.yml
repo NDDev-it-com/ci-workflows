@@ -1,0 +1,126 @@
+name: qt-ci
+
+# Reusable Qt (C++) CI for BOTH tiers: harden-runner, pinned install-qt-action
+# (aqtinstall) with cache, optional ccache, and caller-provided
+# configure/build/test commands passed via env. Defaults target a CMake project.
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        type: string
+        default: 'ubuntu-latest'
+      qt_version:
+        description: 'Qt version spec for aqtinstall, e.g. 6.8.* or 6.8.3.'
+        type: string
+        default: '6.8.*'
+      qt_host:
+        description: 'aqtinstall host (linux, mac, windows). Empty auto-detects from the runner.'
+        type: string
+        default: ''
+      qt_target:
+        description: 'aqtinstall target: desktop, android, or ios.'
+        type: string
+        default: 'desktop'
+      qt_arch:
+        description: 'aqtinstall arch (empty picks the host default).'
+        type: string
+        default: ''
+      qt_modules:
+        description: 'Space-separated extra Qt modules, e.g. "qtcharts qtmultimedia".'
+        type: string
+        default: ''
+      working_directory:
+        type: string
+        default: '.'
+      enable_ccache:
+        type: boolean
+        default: false
+      ccache_key:
+        type: string
+        default: 'qt-ci'
+      configure_command:
+        description: 'Configure command (bash). Empty to skip.'
+        type: string
+        default: 'cmake -S . -B build -DCMAKE_BUILD_TYPE=Release'
+      build_command:
+        description: 'Build command (bash). Empty to skip.'
+        type: string
+        default: 'cmake --build build --parallel'
+      test_command:
+        description: 'Test command (bash). Empty to skip.'
+        type: string
+        default: 'ctest --test-dir build --output-on-failure'
+      enable_harden_runner:
+        type: boolean
+        default: true
+      timeout_minutes:
+        type: number
+        default: 40
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  qt:
+    name: qt (${{ inputs.qt_version }})
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - name: Harden runner
+        if: ${{ inputs.enable_harden_runner }}
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411  # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@48d3ad6db93f3627c8ee7a0454bc6f3744f7e730  # v4.3.1
+        with:
+          version: ${{ inputs.qt_version }}
+          host: ${{ inputs.qt_host }}
+          target: ${{ inputs.qt_target }}
+          arch: ${{ inputs.qt_arch }}
+          modules: ${{ inputs.qt_modules }}
+          cache: true
+
+      - name: Set up ccache
+        if: ${{ inputs.enable_ccache }}
+        uses: hendrikmuhs/ccache-action@d62db5f07c26379fc4b4e0916f098a92573c3b03  # v1.2.23
+        with:
+          key: ${{ inputs.ccache_key }}
+
+      - name: Configure
+        if: ${{ inputs.configure_command != '' }}
+        env:
+          CONFIGURE_COMMAND: ${{ inputs.configure_command }}
+        run: bash -c "$CONFIGURE_COMMAND"
+
+      - name: Build
+        if: ${{ inputs.build_command != '' }}
+        env:
+          BUILD_COMMAND: ${{ inputs.build_command }}
+        run: bash -c "$BUILD_COMMAND"
+
+      - name: Test
+        if: ${{ inputs.test_command != '' }}
+        env:
+          TEST_COMMAND: ${{ inputs.test_command }}
+        run: bash -c "$TEST_COMMAND"
+
+      - name: Summary
+        env:
+          QT_VERSION: ${{ inputs.qt_version }}
+        run: echo "Qt ${QT_VERSION} configure + build + test passed." >> "$GITHUB_STEP_SUMMARY"

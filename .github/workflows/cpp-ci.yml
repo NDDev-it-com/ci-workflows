@@ -1,0 +1,140 @@
+name: cpp-ci
+
+# Reusable C/C++ CI for BOTH tiers: harden-runner, optional apt packages and
+# ccache, clang-format + cppcheck static gates, and caller-provided
+# configure/build/test commands passed via env. Defaults target a CMake project;
+# override the commands for Make/Meson/Bazel.
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        type: string
+        default: 'ubuntu-latest'
+      working_directory:
+        type: string
+        default: '.'
+      apt_packages:
+        description: 'Extra apt packages (space-separated), e.g. "cppcheck clang-tidy ninja-build".'
+        type: string
+        default: ''
+      enable_ccache:
+        description: 'Restore/save a ccache cache (wire -DCMAKE_CXX_COMPILER_LAUNCHER=ccache to use it).'
+        type: boolean
+        default: false
+      ccache_key:
+        type: string
+        default: 'cpp-ci'
+      configure_command:
+        description: 'Configure command (bash). Empty to skip.'
+        type: string
+        default: 'cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug'
+      build_command:
+        description: 'Build command (bash). Empty to skip.'
+        type: string
+        default: 'cmake --build build --parallel'
+      test_command:
+        description: 'Test command (bash). Empty to skip.'
+        type: string
+        default: 'ctest --test-dir build --output-on-failure'
+      format_check:
+        description: 'Run clang-format --dry-run -Werror over format_paths.'
+        type: boolean
+        default: false
+      format_paths:
+        description: 'Space-separated globs for clang-format when format_check is true.'
+        type: string
+        default: 'src/**/*.cpp src/**/*.hpp'
+      cppcheck:
+        description: 'Run cppcheck (add "cppcheck" to apt_packages).'
+        type: boolean
+        default: false
+      cppcheck_args:
+        type: string
+        default: '--enable=warning,portability --error-exitcode=1 .'
+      enable_harden_runner:
+        type: boolean
+        default: true
+      timeout_minutes:
+        type: number
+        default: 30
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  cpp:
+    name: cpp
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - name: Harden runner
+        if: ${{ inputs.enable_harden_runner }}
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411  # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install apt packages
+        if: ${{ inputs.apt_packages != '' }}
+        env:
+          APT_PACKAGES: ${{ inputs.apt_packages }}
+        run: |
+          sudo apt-get update
+          # shellcheck disable=SC2086
+          sudo apt-get install -y --no-install-recommends $APT_PACKAGES
+
+      - name: Set up ccache
+        if: ${{ inputs.enable_ccache }}
+        uses: hendrikmuhs/ccache-action@d62db5f07c26379fc4b4e0916f098a92573c3b03  # v1.2.23
+        with:
+          key: ${{ inputs.ccache_key }}
+
+      - name: Format check
+        if: ${{ inputs.format_check }}
+        env:
+          FORMAT_PATHS: ${{ inputs.format_paths }}
+        run: |
+          # shellcheck disable=SC2086
+          clang-format --dry-run -Werror $FORMAT_PATHS
+
+      - name: Configure
+        if: ${{ inputs.configure_command != '' }}
+        env:
+          CONFIGURE_COMMAND: ${{ inputs.configure_command }}
+        run: bash -c "$CONFIGURE_COMMAND"
+
+      - name: Build
+        if: ${{ inputs.build_command != '' }}
+        env:
+          BUILD_COMMAND: ${{ inputs.build_command }}
+        run: bash -c "$BUILD_COMMAND"
+
+      - name: cppcheck
+        if: ${{ inputs.cppcheck }}
+        env:
+          CPPCHECK_ARGS: ${{ inputs.cppcheck_args }}
+        run: |
+          # shellcheck disable=SC2086
+          cppcheck $CPPCHECK_ARGS
+
+      - name: Test
+        if: ${{ inputs.test_command != '' }}
+        env:
+          TEST_COMMAND: ${{ inputs.test_command }}
+        run: bash -c "$TEST_COMMAND"
+
+      - name: Summary
+        run: echo "C/C++ CI (configure + build + test) passed." >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,17 @@
+# Qt (C++) CI caller (any tier). Replace @<sha> with a pinned full commit SHA.
+# Private-free callers add `with: { enable_harden_runner: false }`.
+name: qt
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+permissions: {}
+concurrency:
+  group: qt-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  qt:
+    permissions: { contents: read }
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/qt-ci.yml@<sha>
+    with:
+      qt_version: '6.8.*'
+      qt_modules: 'qtcharts'

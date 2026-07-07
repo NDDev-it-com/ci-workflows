@@ -6,6 +6,7 @@
 | `.github/workflows/actionlint.yml` | `actionlint` | ga |
 | `.github/workflows/ci.yml` | internal | internal |
 | `.github/workflows/container-ci.yml` | `container-scan-trivy` | ga |
+| `.github/workflows/cpp-ci.yml` | `cpp-ci` | ga |
 | `.github/workflows/cross-platform-smoke.yml` | `cross-platform-smoke` | ga |
 | `.github/workflows/dart-flutter-ci.yml` | `dart-flutter-ci` | ga |
 | `.github/workflows/docs-ci.yml` | `docs-ci` | ga |
@@ -20,6 +21,7 @@
 | `.github/workflows/public-scorecard-json.yml` | `ossf-scorecard-json` | ga |
 | `.github/workflows/public-scorecard.yml` | `ossf-scorecard` | ga |
 | `.github/workflows/python-ci.yml` | `python-ci` | ga |
+| `.github/workflows/qt-ci.yml` | `qt-ci` | ga |
 | `.github/workflows/release-supply-chain.yml` | `artifact-attestations`, `sbom-generation`, `slsa-build-provenance`, `release-supply-chain` | ga |
 | `.github/workflows/release.yml` | internal | internal |
 | `.github/workflows/rust-ci.yml` | `rust-ci` | ga |

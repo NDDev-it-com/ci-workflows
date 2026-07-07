@@ -1033,3 +1033,45 @@ capabilities:
     sources:
       - "https://docs.sqlfluff.com/"
       - "https://github.com/sqlfluff/sqlfluff"
+
+  - id: cpp-ci
+    name: C/C++ CI
+    cluster: actions-core
+    status: ga
+    public_oss: free
+    private_free: conditional
+    private_paid: available
+    workflow: .github/workflows/cpp-ci.yml
+    example: examples/languages/cpp.yml
+    required_permissions:
+      - "contents: read"
+    required_settings: []
+    risks:
+      - "clang-format/cppcheck are opt-in and require the tools present (add cppcheck to apt_packages)"
+      - "Private-repo runner minutes are metered beyond the included free allotment"
+    deprecations: null
+    last_verified: "2026-07-08"
+    sources:
+      - "https://cmake.org/cmake/help/latest/manual/ctest.1.html"
+      - "https://clang.llvm.org/docs/ClangFormat.html"
+
+  - id: qt-ci
+    name: Qt CI
+    cluster: actions-core
+    status: ga
+    public_oss: free
+    private_free: conditional
+    private_paid: available
+    workflow: .github/workflows/qt-ci.yml
+    example: examples/languages/qt.yml
+    required_permissions:
+      - "contents: read"
+    required_settings: []
+    risks:
+      - "aqtinstall downloads Qt at runtime; pin qt_version for reproducible builds"
+      - "Private-repo runner minutes are metered beyond the included free allotment"
+    deprecations: null
+    last_verified: "2026-07-08"
+    sources:
+      - "https://github.com/jurplel/install-qt-action"
+      - "https://doc.qt.io/qt-6/cmake-manual.html"

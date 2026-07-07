@@ -191,3 +191,24 @@ tools:
     used_by:
       - .github/workflows/dart-flutter-ci.yml
     last_verified: "2026-07-08"
+
+  - id: install-qt-action
+    name: jurplel/install-qt-action
+    homepage: "https://github.com/jurplel/install-qt-action"
+    kind: action
+    current_version: "v4.3.1"
+    pin: "jurplel/install-qt-action@48d3ad6db93f3627c8ee7a0454bc6f3744f7e730"
+    used_by:
+      - .github/workflows/qt-ci.yml
+    last_verified: "2026-07-08"
+
+  - id: ccache-action
+    name: hendrikmuhs/ccache-action
+    homepage: "https://github.com/hendrikmuhs/ccache-action"
+    kind: action
+    current_version: "v1.2.23"
+    pin: "hendrikmuhs/ccache-action@d62db5f07c26379fc4b4e0916f098a92573c3b03"
+    used_by:
+      - .github/workflows/cpp-ci.yml
+      - .github/workflows/qt-ci.yml
+    last_verified: "2026-07-08"

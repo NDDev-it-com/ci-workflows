@@ -4,6 +4,7 @@
 | Capability | Cluster | Status | Public OSS | Private free | Private paid | Workflow | Example |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | actionlint workflow linter (`actionlint`) | actions-core | ga | free | free | available | `.github/workflows/actionlint.yml` | `-` |
+| C/C++ CI (`cpp-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/cpp-ci.yml` | `examples/languages/cpp.yml` |
 | Cross-platform smoke test (`cross-platform-smoke`) | actions-core | ga | free | free | available | `.github/workflows/cross-platform-smoke.yml` | `-` |
 | Dart/Flutter CI (`dart-flutter-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/dart-flutter-ci.yml` | `examples/languages/dart-flutter.yml` |
 | Docs CI (`docs-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/docs-ci.yml` | `-` |
@@ -14,6 +15,7 @@
 | Node.js CI (`node-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/node-ci.yml` | `-` |
 | Lightweight static validation (`private-static-validation`) | actions-core | ga | free | free | available | `.github/workflows/private-static.yml` | `-` |
 | Python CI (`python-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/python-ci.yml` | `-` |
+| Qt CI (`qt-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/qt-ci.yml` | `examples/languages/qt.yml` |
 | Rust CI (`rust-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/rust-ci.yml` | `-` |
 | SQL CI (`sql-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/sql-ci.yml` | `examples/languages/sql.yml` |
 | Actions step-level parallel execution (`step-level-parallel-execution`) | actions-core | preview | free | free | available | `-` | `-` |
