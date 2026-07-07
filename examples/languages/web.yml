@@ -1,0 +1,17 @@
+# HTML/CSS/web CI caller (any tier). Replace @<sha> with a pinned full commit SHA.
+# Private-free callers add `with: { enable_harden_runner: false }`.
+name: web
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+permissions: {}
+concurrency:
+  group: web-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  web:
+    permissions: { contents: read }
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/web-ci.yml@<sha>
+    with:
+      node_version: '22'
+      cache: npm

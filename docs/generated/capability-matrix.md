@@ -5,6 +5,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | actionlint workflow linter (`actionlint`) | actions-core | ga | free | free | available | `.github/workflows/actionlint.yml` | `-` |
 | Cross-platform smoke test (`cross-platform-smoke`) | actions-core | ga | free | free | available | `.github/workflows/cross-platform-smoke.yml` | `-` |
+| Dart/Flutter CI (`dart-flutter-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/dart-flutter-ci.yml` | `examples/languages/dart-flutter.yml` |
 | Docs CI (`docs-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/docs-ci.yml` | `-` |
 | .NET CI (`dotnet-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/dotnet-ci.yml` | `-` |
 | Go CI (`go-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/go-ci.yml` | `-` |
@@ -14,8 +15,10 @@
 | Lightweight static validation (`private-static-validation`) | actions-core | ga | free | free | available | `.github/workflows/private-static.yml` | `-` |
 | Python CI (`python-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/python-ci.yml` | `-` |
 | Rust CI (`rust-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/rust-ci.yml` | `-` |
+| SQL CI (`sql-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/sql-ci.yml` | `examples/languages/sql.yml` |
 | Actions step-level parallel execution (`step-level-parallel-execution`) | actions-core | preview | free | free | available | `-` | `-` |
 | Terraform CI (`terraform-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/terraform-ci.yml` | `-` |
+| HTML/CSS/web CI (`web-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/web-ci.yml` | `examples/languages/web.yml` |
 | GitHub Agentic Workflows (`agentic-workflows`) | ai-agentic | preview | conditional | conditional | conditional | `-` | `-` |
 | GitHub Models (`github-models`) | ai-agentic | retiring | conditional | conditional | conditional | `-` | `-` |
 | OIDC cloud publishing (`oidc-cloud-publishing`) | deployments | ga | free | free | available | `-` | `-` |

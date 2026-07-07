@@ -1,0 +1,101 @@
+name: sql-ci
+
+# Reusable SQL CI for BOTH tiers: harden-runner, pinned setup-python, and
+# sqlfluff lint (dialect-aware) plus an optional caller command passed via env.
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        type: string
+        default: 'ubuntu-latest'
+      python_version:
+        type: string
+        default: '3.13'
+      working_directory:
+        type: string
+        default: '.'
+      dialect:
+        description: 'sqlfluff dialect: ansi, postgres, mysql, sqlite, bigquery, snowflake, tsql, ...'
+        type: string
+        default: 'ansi'
+      paths:
+        description: 'Path or directory to lint.'
+        type: string
+        default: '.'
+      sqlfluff_version:
+        description: 'Exact sqlfluff version to pin (empty installs the latest release).'
+        type: string
+        default: ''
+      lint:
+        description: 'Run sqlfluff lint.'
+        type: boolean
+        default: true
+      extra_command:
+        description: 'Additional command (bash), e.g. "sqlfluff format --diff". Empty to skip.'
+        type: string
+        default: ''
+      enable_harden_runner:
+        type: boolean
+        default: true
+      timeout_minutes:
+        type: number
+        default: 15
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  sql:
+    name: sql (${{ inputs.dialect }})
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - name: Harden runner
+        if: ${{ inputs.enable_harden_runner }}
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411  # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        with:
+          python-version: ${{ inputs.python_version }}
+
+      - name: Install sqlfluff
+        env:
+          SQLFLUFF_VERSION: ${{ inputs.sqlfluff_version }}
+        run: |
+          if [ -n "$SQLFLUFF_VERSION" ]; then
+            python -m pip install --disable-pip-version-check "sqlfluff==${SQLFLUFF_VERSION}"
+          else
+            python -m pip install --disable-pip-version-check sqlfluff
+          fi
+
+      - name: Lint
+        if: ${{ inputs.lint }}
+        env:
+          SQL_DIALECT: ${{ inputs.dialect }}
+          SQL_PATHS: ${{ inputs.paths }}
+        run: |
+          sqlfluff lint --dialect "$SQL_DIALECT" "$SQL_PATHS"
+          echo "sqlfluff lint (${SQL_DIALECT}) passed." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Extra command
+        if: ${{ inputs.extra_command != '' }}
+        env:
+          EXTRA_COMMAND: ${{ inputs.extra_command }}
+        run: bash -c "$EXTRA_COMMAND"

@@ -181,3 +181,13 @@ tools:
     used_by:
       - .github/workflows/release-supply-chain.yml
     last_verified: "2026-07-04"
+
+  - id: flutter-action
+    name: subosito/flutter-action
+    homepage: "https://github.com/subosito/flutter-action"
+    kind: action
+    current_version: "v2.23.0"
+    pin: "subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2"
+    used_by:
+      - .github/workflows/dart-flutter-ci.yml
+    last_verified: "2026-07-08"

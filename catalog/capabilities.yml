@@ -970,3 +970,66 @@ capabilities:
     last_verified: "2026-07-04"
     sources:
       - "https://docs.github.com/en/actions/using-workflows/reusing-workflows"
+
+  - id: dart-flutter-ci
+    name: Dart/Flutter CI
+    cluster: actions-core
+    status: ga
+    public_oss: free
+    private_free: conditional
+    private_paid: available
+    workflow: .github/workflows/dart-flutter-ci.yml
+    example: examples/languages/dart-flutter.yml
+    required_permissions:
+      - "contents: read"
+    required_settings: []
+    risks:
+      - "Private-repo runner minutes are metered beyond the included free allotment"
+      - "iOS/macOS builds require macOS runners billed at a 10x minute multiplier"
+    deprecations: null
+    last_verified: "2026-07-08"
+    sources:
+      - "https://docs.flutter.dev/deployment/cd"
+      - "https://github.com/subosito/flutter-action"
+
+  - id: web-ci
+    name: HTML/CSS/web CI
+    cluster: actions-core
+    status: ga
+    public_oss: free
+    private_free: conditional
+    private_paid: available
+    workflow: .github/workflows/web-ci.yml
+    example: examples/languages/web.yml
+    required_permissions:
+      - "contents: read"
+    required_settings: []
+    risks:
+      - "Default lint uses npx to fetch stylelint/htmlhint at runtime; pin them in package.json for reproducible CI"
+      - "Private-repo runner minutes are metered beyond the included free allotment"
+    deprecations: null
+    last_verified: "2026-07-08"
+    sources:
+      - "https://stylelint.io/"
+      - "https://htmlhint.com/"
+
+  - id: sql-ci
+    name: SQL CI
+    cluster: actions-core
+    status: ga
+    public_oss: free
+    private_free: conditional
+    private_paid: available
+    workflow: .github/workflows/sql-ci.yml
+    example: examples/languages/sql.yml
+    required_permissions:
+      - "contents: read"
+    required_settings: []
+    risks:
+      - "Pin sqlfluff_version for reproducible linting; the default installs the latest release"
+      - "Private-repo runner minutes are metered beyond the included free allotment"
+    deprecations: null
+    last_verified: "2026-07-08"
+    sources:
+      - "https://docs.sqlfluff.com/"
+      - "https://github.com/sqlfluff/sqlfluff"

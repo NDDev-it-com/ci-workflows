@@ -1,0 +1,102 @@
+name: dart-flutter-ci
+
+# Reusable Dart/Flutter CI for BOTH tiers: harden-runner, pinned flutter-action
+# with build cache, format + analyze gates, and a caller-provided test command
+# passed via env (no `${{ inputs.* }}` inline in run:).
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        type: string
+        default: 'ubuntu-latest'
+      flutter_channel:
+        description: 'flutter-action channel: stable, beta, or master.'
+        type: string
+        default: 'stable'
+      flutter_version:
+        description: 'Exact Flutter version (e.g. 3.35.0) or empty for the channel default.'
+        type: string
+        default: ''
+      working_directory:
+        type: string
+        default: '.'
+      pub_get_command:
+        description: 'Dependency resolution command (bash). Empty to skip.'
+        type: string
+        default: 'flutter pub get'
+      format_check:
+        description: 'Run dart format --set-exit-if-changed.'
+        type: boolean
+        default: true
+      analyze:
+        description: 'Run flutter analyze.'
+        type: boolean
+        default: true
+      test_command:
+        description: 'Test/verify command (bash).'
+        type: string
+        default: 'flutter test'
+      enable_harden_runner:
+        type: boolean
+        default: true
+      timeout_minutes:
+        type: number
+        default: 20
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  dart-flutter:
+    name: dart-flutter (${{ inputs.flutter_channel }})
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - name: Harden runner
+        if: ${{ inputs.enable_harden_runner }}
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411  # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2  # v2.23.0
+        with:
+          channel: ${{ inputs.flutter_channel }}
+          flutter-version: ${{ inputs.flutter_version }}
+          cache: true
+
+      - name: Resolve dependencies
+        if: ${{ inputs.pub_get_command != '' }}
+        env:
+          PUB_GET_COMMAND: ${{ inputs.pub_get_command }}
+        run: bash -c "$PUB_GET_COMMAND"
+
+      - name: Format check
+        if: ${{ inputs.format_check }}
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze
+        if: ${{ inputs.analyze }}
+        run: flutter analyze
+
+      - name: Run tests
+        env:
+          TEST_COMMAND: ${{ inputs.test_command }}
+          FLUTTER_CHANNEL: ${{ inputs.flutter_channel }}
+        run: |
+          bash -c "$TEST_COMMAND"
+          echo "Flutter ${FLUTTER_CHANNEL} format + analyze + tests passed." >> "$GITHUB_STEP_SUMMARY"

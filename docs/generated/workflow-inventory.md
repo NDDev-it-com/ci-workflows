@@ -7,6 +7,7 @@
 | `.github/workflows/ci.yml` | internal | internal |
 | `.github/workflows/container-ci.yml` | `container-scan-trivy` | ga |
 | `.github/workflows/cross-platform-smoke.yml` | `cross-platform-smoke` | ga |
+| `.github/workflows/dart-flutter-ci.yml` | `dart-flutter-ci` | ga |
 | `.github/workflows/docs-ci.yml` | `docs-ci` | ga |
 | `.github/workflows/dotnet-ci.yml` | `dotnet-ci` | ga |
 | `.github/workflows/go-ci.yml` | `go-ci` | ga |
@@ -23,7 +24,9 @@
 | `.github/workflows/release.yml` | internal | internal |
 | `.github/workflows/rust-ci.yml` | `rust-ci` | ga |
 | `.github/workflows/secret-scan.yml` | `gitleaks-secret-scan` | ga |
+| `.github/workflows/sql-ci.yml` | `sql-ci` | ga |
 | `.github/workflows/terraform-ci.yml` | `terraform-ci` | ga |
+| `.github/workflows/web-ci.yml` | `web-ci` | ga |
 | `.github/workflows/zizmor-no-sarif.yml` | `zizmor-no-sarif` | ga |
 | `.github/workflows/zizmor-sarif.yml` | `zizmor` | ga |
 
