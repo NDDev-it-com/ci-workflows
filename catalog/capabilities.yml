@@ -371,7 +371,7 @@ capabilities:
     required_settings:
       - "Dependency graph enabled for the dependency-graph SBOM API (GET /repos/{owner}/{repo}/dependency-graph/sbom)"
     risks:
-      - "attest-sbom requires SPDX or CycloneDX JSON; anchore/sbom-action is configured for spdx-json"
+      - "actions/attest (SBOM mode) requires SPDX or CycloneDX JSON; anchore/sbom-action is configured for spdx-json"
     deprecations: null
     last_verified: "2026-07-04"
     sources:

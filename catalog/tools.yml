@@ -119,17 +119,7 @@ tools:
     pin: "actions/attest@a1948c3f048ba23858d222213b7c278aabede763"
     used_by:
       - .github/workflows/release-supply-chain.yml
-    last_verified: "2026-07-04"
-
-  - id: attest-sbom
-    name: actions/attest-sbom
-    homepage: "https://github.com/actions/attest-sbom"
-    kind: action
-    current_version: "v4.1.0"
-    pin: "actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e"
-    used_by:
-      - .github/workflows/release-supply-chain.yml
-    last_verified: "2026-07-04"
+    last_verified: "2026-07-08"
 
   - id: attest-build-provenance
     name: actions/attest-build-provenance

@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Migrate the SBOM attestation from the deprecated `actions/attest-sbom` to
+  `actions/attest` (native SBOM mode via `sbom-path`, an identical interface).
+  The SPDX predicate type and `scripts/verify_attestations.sh` verification are
+  unchanged.
+
 ## [0.3.0] - 2026-07-08
 
 ### Added

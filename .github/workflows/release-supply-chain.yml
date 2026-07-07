@@ -148,7 +148,9 @@ jobs:
           subject-path: dist/${{ inputs.package_name }}-${{ inputs.version }}.tar.gz
 
       - name: Attest SBOM (archive)
-        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e  # v4.1.0
+        # actions/attest native SBOM mode (sbom-path) replaces the deprecated
+        # actions/attest-sbom; the SPDX predicate type is unchanged.
+        uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763  # v4.1.1
         with:
           subject-path: dist/${{ inputs.package_name }}-${{ inputs.version }}.tar.gz
           sbom-path: dist/sbom.spdx.json
