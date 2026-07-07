@@ -1,0 +1,128 @@
+name: benchmark
+
+# Reusable performance benchmark + regression alert for BOTH tiers. Sets up the
+# toolchain, runs a caller bench command that writes an output file, then
+# github-action-benchmark compares against history and fails on regression.
+# History is stored on a gh-pages branch, so the caller grants contents: write.
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        type: string
+        default: 'ubuntu-latest'
+      language:
+        description: 'Toolchain to set up: python, rust, node, go, or none.'
+        type: string
+        default: 'python'
+      working_directory:
+        type: string
+        default: '.'
+      python_version:
+        type: string
+        default: '3.13'
+      node_version:
+        type: string
+        default: '22'
+      rust_toolchain:
+        type: string
+        default: 'stable'
+      go_version:
+        type: string
+        default: 'stable'
+      bench_command:
+        description: 'Command that runs benchmarks and writes output_file_path.'
+        type: string
+        default: ''
+      tool:
+        description: 'github-action-benchmark tool: cargo, pytest, benchmarkjs, go, googlecpp, ...'
+        type: string
+        default: 'pytest'
+      output_file_path:
+        type: string
+        default: 'output.json'
+      alert_threshold:
+        type: string
+        default: '200%'
+      fail_on_alert:
+        type: boolean
+        default: true
+      auto_push:
+        description: 'Store history on gh-pages (requires contents: write).'
+        type: boolean
+        default: true
+      enable_harden_runner:
+        type: boolean
+        default: true
+      timeout_minutes:
+        type: number
+        default: 30
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  benchmark:
+    name: benchmark (${{ inputs.language }})
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - name: Harden runner
+        if: ${{ inputs.enable_harden_runner }}
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411  # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        if: ${{ inputs.language == 'python' }}
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        with:
+          python-version: ${{ inputs.python_version }}
+
+      - name: Set up Node.js
+        if: ${{ inputs.language == 'node' }}
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: ${{ inputs.node_version }}
+
+      - name: Set up Rust
+        if: ${{ inputs.language == 'rust' }}
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659  # v1.17.0
+        with:
+          toolchain: ${{ inputs.rust_toolchain }}
+
+      - name: Set up Go
+        if: ${{ inputs.language == 'go' }}
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16  # v6.5.0
+        with:
+          go-version: ${{ inputs.go_version }}
+
+      - name: Run benchmarks
+        if: ${{ inputs.bench_command != '' }}
+        env:
+          BENCH_COMMAND: ${{ inputs.bench_command }}
+        run: bash -c "$BENCH_COMMAND"
+
+      - name: Compare and alert
+        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba  # v1.22.1
+        with:
+          tool: ${{ inputs.tool }}
+          output-file-path: ${{ inputs.output_file_path }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          alert-threshold: ${{ inputs.alert_threshold }}
+          fail-on-alert: ${{ inputs.fail_on_alert }}
+          auto-push: ${{ inputs.auto_push }}
+          comment-on-alert: false

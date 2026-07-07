@@ -15,6 +15,7 @@
 | Java CI (`java-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/java-ci.yml` | `-` |
 | Kotlin/Android CI (`kotlin-android-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/kotlin-android-ci.yml` | `examples/languages/kotlin-android.yml` |
 | Monorepo changed-paths filter (`monorepo-changed-paths`) | actions-core | ga | free | conditional | available | `.github/workflows/monorepo-changed-paths.yml` | `-` |
+| Mutation testing (`mutation-testing`) | actions-core | ga | free | conditional | available | `.github/workflows/mutation-testing.yml` | `examples/testing/mutation-testing.yml` |
 | Node.js CI (`node-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/node-ci.yml` | `-` |
 | Lightweight static validation (`private-static-validation`) | actions-core | ga | free | free | available | `.github/workflows/private-static.yml` | `-` |
 | Python CI (`python-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/python-ci.yml` | `-` |
@@ -35,6 +36,7 @@
 | Merge queue (`merge-queue`) | governance | ga | conditional | unavailable | conditional | `-` | `-` |
 | Repository rulesets (`rulesets`) | governance | ga | free | conditional | available | `-` | `-` |
 | Workflow execution protections (`workflow-execution-protections`) | governance | preview | free | conditional | conditional | `-` | `-` |
+| Performance benchmark + regression alert (`benchmark`) | observability | ga | free | conditional | available | `.github/workflows/benchmark.yml` | `examples/testing/benchmark.yml` |
 | Immutable releases (`immutable-releases`) | releases-packages | ga | free | free | available | `-` | `-` |
 | npm trusted publishing (`npm-trusted-publishing`) | releases-packages | ga | free | free | available | `-` | `examples/release/npm-trusted-publishing.yml` |
 | PyPI trusted publishing (`pypi-trusted-publishing`) | releases-packages | ga | free | free | available | `-` | `examples/release/pypi-trusted-publishing.yml` |
@@ -47,6 +49,7 @@
 | CodeQL code scanning (`codeql-code-scanning`) | security-scanning | ga | free | unavailable | available | `.github/workflows/public-codeql.yml` | `-` |
 | Container build and Trivy scan (`container-scan-trivy`) | security-scanning | ga | free | free | available | `.github/workflows/container-ci.yml` | `-` |
 | Copilot Autofix for code scanning (`copilot-autofix`) | security-scanning | ga | free | unavailable | available | `-` | `-` |
+| Fuzzing (`fuzzing`) | security-scanning | ga | free | conditional | available | `.github/workflows/fuzzing.yml` | `examples/testing/fuzzing.yml` |
 | Gitleaks secret scan (`gitleaks-secret-scan`) | security-scanning | ga | free | free | available | `.github/workflows/secret-scan.yml` | `-` |
 | hadolint Dockerfile lint (`hadolint-dockerfile`) | security-scanning | ga | free | free | available | `.github/workflows/hadolint-ci.yml` | `examples/security/hadolint.yml` |
 | IaC scan (Checkov) (`iac-scan-checkov`) | security-scanning | ga | free | free | available | `.github/workflows/iac-scan.yml` | `examples/security/iac-scan.yml` |

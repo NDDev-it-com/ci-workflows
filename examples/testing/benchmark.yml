@@ -1,0 +1,15 @@
+# Benchmark + regression alert caller. Needs contents: write for gh-pages history.
+# Replace @<sha> with a pinned full commit SHA.
+name: benchmark
+on:
+  push: { branches: [main] }
+permissions: {}
+jobs:
+  benchmark:
+    permissions: { contents: write }
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/benchmark.yml@<sha>
+    with:
+      language: python
+      tool: pytest
+      bench_command: 'pytest --benchmark-only --benchmark-json=output.json'
+      output_file_path: output.json

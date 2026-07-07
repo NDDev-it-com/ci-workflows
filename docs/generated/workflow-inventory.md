@@ -4,6 +4,7 @@
 | Workflow | Capability IDs | Statuses |
 | --- | --- | --- |
 | `.github/workflows/actionlint.yml` | `actionlint` | ga |
+| `.github/workflows/benchmark.yml` | `benchmark` | ga |
 | `.github/workflows/ci.yml` | internal | internal |
 | `.github/workflows/container-ci.yml` | `container-scan-trivy` | ga |
 | `.github/workflows/coverage-gate.yml` | `coverage-gate` | ga |
@@ -13,6 +14,7 @@
 | `.github/workflows/docs-ci.yml` | `docs-ci` | ga |
 | `.github/workflows/docs-quality.yml` | `docs-quality` | ga |
 | `.github/workflows/dotnet-ci.yml` | `dotnet-ci` | ga |
+| `.github/workflows/fuzzing.yml` | `fuzzing` | ga |
 | `.github/workflows/go-ci.yml` | `go-ci` | ga |
 | `.github/workflows/grype-scan.yml` | `grype-sca` | ga |
 | `.github/workflows/hadolint-ci.yml` | `hadolint-dockerfile` | ga |
@@ -20,6 +22,7 @@
 | `.github/workflows/java-ci.yml` | `java-ci` | ga |
 | `.github/workflows/kotlin-android-ci.yml` | `kotlin-android-ci` | ga |
 | `.github/workflows/monorepo-changed-paths.yml` | `monorepo-changed-paths` | ga |
+| `.github/workflows/mutation-testing.yml` | `mutation-testing` | ga |
 | `.github/workflows/node-ci.yml` | `node-ci` | ga |
 | `.github/workflows/osv-scan.yml` | `osv-scanner-sca` | ga |
 | `.github/workflows/pr-hygiene.yml` | `pr-hygiene` | ga |

@@ -1,0 +1,78 @@
+name: fuzzing
+
+# Reusable fuzzing for BOTH tiers. Defaults to Rust cargo-fuzz (libFuzzer) on a
+# nightly toolchain with a bounded time budget - run it on a schedule. Override
+# the commands for other harnesses (e.g. ClusterFuzzLite, libFuzzer, AFL++).
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        type: string
+        default: 'ubuntu-latest'
+      working_directory:
+        type: string
+        default: '.'
+      rust_toolchain:
+        type: string
+        default: 'nightly'
+      install_command:
+        description: 'Install the fuzzer. Empty to skip.'
+        type: string
+        default: 'cargo install cargo-fuzz --locked'
+      fuzz_command:
+        description: 'Run fuzzing with a bounded budget.'
+        type: string
+        default: 'cargo fuzz run fuzz_target_1 -- -max_total_time=60'
+      enable_harden_runner:
+        type: boolean
+        default: true
+      timeout_minutes:
+        type: number
+        default: 30
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  fuzz:
+    name: fuzz
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - name: Harden runner
+        if: ${{ inputs.enable_harden_runner }}
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411  # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659  # v1.17.0
+        with:
+          toolchain: ${{ inputs.rust_toolchain }}
+
+      - name: Install fuzzer
+        if: ${{ inputs.install_command != '' }}
+        env:
+          INSTALL_COMMAND: ${{ inputs.install_command }}
+        run: bash -c "$INSTALL_COMMAND"
+
+      - name: Run fuzzing
+        env:
+          FUZZ_COMMAND: ${{ inputs.fuzz_command }}
+        run: |
+          bash -c "$FUZZ_COMMAND"
+          echo "Fuzzing run completed." >> "$GITHUB_STEP_SUMMARY"

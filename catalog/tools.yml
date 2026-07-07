@@ -392,3 +392,13 @@ tools:
     used_by:
       - .github/workflows/iac-scan.yml
     last_verified: "2026-07-08"
+
+  - id: github-action-benchmark
+    name: benchmark-action/github-action-benchmark
+    homepage: "https://github.com/benchmark-action/github-action-benchmark"
+    kind: action
+    current_version: "v1.22.1"
+    pin: "benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba"
+    used_by:
+      - .github/workflows/benchmark.yml
+    last_verified: "2026-07-08"

@@ -1306,3 +1306,66 @@ capabilities:
     sources:
       - "https://www.checkov.io/"
       - "https://github.com/bridgecrewio/checkov-action"
+
+  - id: mutation-testing
+    name: Mutation testing
+    cluster: actions-core
+    status: ga
+    public_oss: free
+    private_free: conditional
+    private_paid: available
+    workflow: .github/workflows/mutation-testing.yml
+    example: examples/testing/mutation-testing.yml
+    required_permissions:
+      - "contents: read"
+    required_settings: []
+    risks:
+      - "Mutation runs are slow; schedule them rather than gating every PR"
+      - "Private-repo runner minutes are metered beyond the included free allotment"
+    deprecations: null
+    last_verified: "2026-07-08"
+    sources:
+      - "https://mutmut.readthedocs.io/"
+      - "https://github.com/sourcefrog/cargo-mutants"
+
+  - id: fuzzing
+    name: Fuzzing
+    cluster: security-scanning
+    status: ga
+    public_oss: free
+    private_free: conditional
+    private_paid: available
+    workflow: .github/workflows/fuzzing.yml
+    example: examples/testing/fuzzing.yml
+    required_permissions:
+      - "contents: read"
+    required_settings: []
+    risks:
+      - "cargo-fuzz needs a nightly toolchain; bound each run with -max_total_time"
+      - "For continuous coverage-guided fuzzing, integrate ClusterFuzzLite"
+    deprecations: null
+    last_verified: "2026-07-08"
+    sources:
+      - "https://rust-fuzz.github.io/book/cargo-fuzz.html"
+      - "https://google.github.io/clusterfuzzlite/"
+
+  - id: benchmark
+    name: Performance benchmark + regression alert
+    cluster: observability
+    status: ga
+    public_oss: free
+    private_free: conditional
+    private_paid: available
+    workflow: .github/workflows/benchmark.yml
+    example: examples/testing/benchmark.yml
+    required_permissions:
+      - "contents: write (gh-pages history when auto_push is true)"
+    required_settings: []
+    risks:
+      - "Storing history needs contents: write and a gh-pages branch; set auto_push false for compare-only runs"
+      - "Benchmark noise on shared runners can cause false regressions; tune alert_threshold"
+    deprecations: null
+    last_verified: "2026-07-08"
+    sources:
+      - "https://github.com/benchmark-action/github-action-benchmark"
+      - "https://bencher.dev/"

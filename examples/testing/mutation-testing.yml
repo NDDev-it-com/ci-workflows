@@ -1,0 +1,15 @@
+# Mutation testing caller (any tier). Replace @<sha>.
+# Private-free callers add `with: { enable_harden_runner: false }`.
+name: mutation-testing
+on:
+  workflow_dispatch:
+  schedule: [{ cron: "0 3 * * 1" }]
+permissions: {}
+jobs:
+  mutation:
+    permissions: { contents: read }
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/mutation-testing.yml@<sha>
+    with:
+      language: python
+      install_command: 'pip install mutmut'
+      mutation_command: 'mutmut run'

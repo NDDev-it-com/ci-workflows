@@ -1,0 +1,13 @@
+# Fuzzing caller (scheduled). Replace @<sha>.
+# Private-free callers add `with: { enable_harden_runner: false }`.
+name: fuzzing
+on:
+  workflow_dispatch:
+  schedule: [{ cron: "0 4 * * *" }]
+permissions: {}
+jobs:
+  fuzz:
+    permissions: { contents: read }
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/fuzzing.yml@<sha>
+    with:
+      fuzz_command: 'cargo fuzz run fuzz_target_1 -- -max_total_time=300'
