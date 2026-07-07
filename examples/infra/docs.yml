@@ -1,0 +1,16 @@
+# Docs CI (broken relative-link check) caller (any tier). Replace @<sha>.
+# Private-free callers add `with: { enable_harden_runner: false }`.
+name: docs
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+permissions: {}
+concurrency:
+  group: docs-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  docs:
+    permissions: { contents: read }
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/docs-ci.yml@<sha>
+    with:
+      docs_glob: 'docs/**/*.md'

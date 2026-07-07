@@ -6,26 +6,26 @@
 | actionlint workflow linter (`actionlint`) | actions-core | ga | free | free | available | `.github/workflows/actionlint.yml` | `-` |
 | Coverage gate (`coverage-gate`) | actions-core | ga | free | conditional | available | `.github/workflows/coverage-gate.yml` | `examples/quality/coverage-gate.yml` |
 | C/C++ CI (`cpp-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/cpp-ci.yml` | `examples/languages/cpp.yml` |
-| Cross-platform smoke test (`cross-platform-smoke`) | actions-core | ga | free | free | available | `.github/workflows/cross-platform-smoke.yml` | `-` |
+| Cross-platform smoke test (`cross-platform-smoke`) | actions-core | ga | free | free | available | `.github/workflows/cross-platform-smoke.yml` | `examples/infra/cross-platform.yml` |
 | Dart/Flutter CI (`dart-flutter-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/dart-flutter-ci.yml` | `examples/languages/dart-flutter.yml` |
-| Docs CI (`docs-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/docs-ci.yml` | `-` |
+| Docs CI (`docs-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/docs-ci.yml` | `examples/infra/docs.yml` |
 | Docs quality (links, spelling, markdown) (`docs-quality`) | actions-core | ga | free | free | available | `.github/workflows/docs-quality.yml` | `examples/quality/docs-quality.yml` |
-| .NET CI (`dotnet-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/dotnet-ci.yml` | `-` |
-| Go CI (`go-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/go-ci.yml` | `-` |
-| Java CI (`java-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/java-ci.yml` | `-` |
+| .NET CI (`dotnet-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/dotnet-ci.yml` | `examples/languages/dotnet.yml` |
+| Go CI (`go-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/go-ci.yml` | `examples/languages/go.yml` |
+| Java CI (`java-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/java-ci.yml` | `examples/languages/java.yml` |
 | Kotlin/Android CI (`kotlin-android-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/kotlin-android-ci.yml` | `examples/languages/kotlin-android.yml` |
-| Monorepo changed-paths filter (`monorepo-changed-paths`) | actions-core | ga | free | conditional | available | `.github/workflows/monorepo-changed-paths.yml` | `-` |
+| Monorepo changed-paths filter (`monorepo-changed-paths`) | actions-core | ga | free | conditional | available | `.github/workflows/monorepo-changed-paths.yml` | `examples/infra/monorepo.yml` |
 | Mutation testing (`mutation-testing`) | actions-core | ga | free | conditional | available | `.github/workflows/mutation-testing.yml` | `examples/testing/mutation-testing.yml` |
-| Node.js CI (`node-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/node-ci.yml` | `-` |
+| Node.js CI (`node-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/node-ci.yml` | `examples/languages/node.yml` |
 | Lightweight static validation (`private-static-validation`) | actions-core | ga | free | free | available | `.github/workflows/private-static.yml` | `-` |
-| Python CI (`python-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/python-ci.yml` | `-` |
+| Python CI (`python-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/python-ci.yml` | `examples/languages/python.yml` |
 | Qt CI (`qt-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/qt-ci.yml` | `examples/languages/qt.yml` |
 | R CI (`r-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/r-ci.yml` | `examples/languages/r.yml` |
-| Rust CI (`rust-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/rust-ci.yml` | `-` |
+| Rust CI (`rust-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/rust-ci.yml` | `examples/languages/rust.yml` |
 | SQL CI (`sql-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/sql-ci.yml` | `examples/languages/sql.yml` |
 | Actions step-level parallel execution (`step-level-parallel-execution`) | actions-core | preview | free | free | available | `-` | `-` |
 | Swift CI (`swift-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/swift-ci.yml` | `examples/languages/swift.yml` |
-| Terraform CI (`terraform-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/terraform-ci.yml` | `-` |
+| Terraform CI (`terraform-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/terraform-ci.yml` | `examples/infra/terraform.yml` |
 | HTML/CSS/web CI (`web-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/web-ci.yml` | `examples/languages/web.yml` |
 | GitHub Agentic Workflows (`agentic-workflows`) | ai-agentic | preview | conditional | conditional | conditional | `-` | `-` |
 | AI code review (`ai-code-review`) | ai-agentic | ga | conditional | conditional | conditional | `-` | `examples/level3/ai-review.yml` |
@@ -49,7 +49,7 @@
 | Self-hosted runners (`self-hosted-runners`) | runners | ga | conditional | free | available | `-` | `-` |
 | Standard GitHub-hosted runners (`standard-hosted-runners`) | runners | ga | free | conditional | available | `-` | `-` |
 | CodeQL code scanning (`codeql-code-scanning`) | security-scanning | ga | free | unavailable | available | `.github/workflows/public-codeql.yml` | `-` |
-| Container build and Trivy scan (`container-scan-trivy`) | security-scanning | ga | free | free | available | `.github/workflows/container-ci.yml` | `-` |
+| Container build and Trivy scan (`container-scan-trivy`) | security-scanning | ga | free | free | available | `.github/workflows/container-ci.yml` | `examples/infra/container.yml` |
 | Copilot Autofix for code scanning (`copilot-autofix`) | security-scanning | ga | free | unavailable | available | `-` | `-` |
 | Fuzzing (`fuzzing`) | security-scanning | ga | free | conditional | available | `.github/workflows/fuzzing.yml` | `examples/testing/fuzzing.yml` |
 | Gitleaks secret scan (`gitleaks-secret-scan`) | security-scanning | ga | free | free | available | `.github/workflows/secret-scan.yml` | `-` |

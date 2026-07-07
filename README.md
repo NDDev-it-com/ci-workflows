@@ -205,7 +205,7 @@ docs/generated/ catalog-derived matrices (do not edit by hand)
   rulesets/    branch/tag/push ruleset specs
   ISSUE_TEMPLATE/  issue forms
 scripts/    static validators (validate_all.py) + attestation verifier
-examples/   copy-paste callers: per-tier + languages/ quality/ security/ testing/ level3/
+examples/   copy-paste callers: per-tier + languages/ quality/ security/ testing/ infra/ level3/
 ```
 
 ## Conventions

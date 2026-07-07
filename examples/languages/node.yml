@@ -1,0 +1,18 @@
+# Node.js CI caller (any tier). Replace @<sha> with a pinned full commit SHA.
+# Private-free callers add `with: { enable_harden_runner: false }`.
+name: node
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+permissions: {}
+concurrency:
+  group: node-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  node:
+    permissions: { contents: read }
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/node-ci.yml@<sha>
+    with:
+      node_version: '22'
+      cache: npm
+      test_command: 'npm test'

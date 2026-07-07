@@ -1,0 +1,19 @@
+# Python CI caller (any tier). Replace @<sha> with a pinned full commit SHA.
+# Private-free callers add `with: { enable_harden_runner: false }`.
+name: python
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+permissions: {}
+concurrency:
+  group: python-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  python:
+    permissions: { contents: read }
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/python-ci.yml@<sha>
+    with:
+      python_version: '3.13'
+      cache: pip
+      install_command: 'python -m pip install -e ".[test]"'
+      test_command: 'pytest'

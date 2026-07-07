@@ -1,0 +1,18 @@
+# Rust CI caller (any tier). Replace @<sha> with a pinned full commit SHA.
+# Private-free callers add `with: { enable_harden_runner: false }`.
+name: rust
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+permissions: {}
+concurrency:
+  group: rust-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  rust:
+    permissions: { contents: read }
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/rust-ci.yml@<sha>
+    with:
+      components: 'clippy,rustfmt'
+      build_command: 'cargo build --locked --all-targets'
+      test_command: 'cargo test --locked'

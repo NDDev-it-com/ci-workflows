@@ -1,0 +1,20 @@
+# Monorepo changed-paths router (any tier). Replace @<sha>.
+# The reusable emits outputs.result (JSON of matched filters) that downstream
+# jobs gate on with `needs: changes` + `if: fromJSON(needs.changes.outputs.result).backend`.
+name: monorepo
+on:
+  pull_request: { branches: [main] }
+permissions: {}
+concurrency:
+  group: monorepo-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  changes:
+    permissions: { contents: read }
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/monorepo-changed-paths.yml@<sha>
+    with:
+      filters: |
+        backend:
+          - 'backend/**'
+        frontend:
+          - 'frontend/**'

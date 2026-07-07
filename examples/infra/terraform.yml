@@ -1,0 +1,17 @@
+# Terraform fmt/init/validate caller (any tier). Replace @<sha>.
+# Private-free callers add `with: { enable_harden_runner: false }`.
+name: terraform
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+permissions: {}
+concurrency:
+  group: terraform-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  terraform:
+    permissions: { contents: read }
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/terraform-ci.yml@<sha>
+    with:
+      terraform_version: '1.13.0'   # pin for reproducible CI
+      working_directory: infra

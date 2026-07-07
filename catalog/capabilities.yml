@@ -243,7 +243,7 @@ capabilities:
     private_free: free
     private_paid: available
     workflow: .github/workflows/cross-platform-smoke.yml
-    example: null
+    example: examples/infra/cross-platform.yml
     required_permissions:
       - "contents: read"
     required_settings: []
@@ -782,7 +782,7 @@ capabilities:
     private_free: conditional
     private_paid: available
     workflow: .github/workflows/python-ci.yml
-    example: null
+    example: examples/languages/python.yml
     required_permissions:
       - "contents: read"
     required_settings: []
@@ -802,7 +802,7 @@ capabilities:
     private_free: conditional
     private_paid: available
     workflow: .github/workflows/node-ci.yml
-    example: null
+    example: examples/languages/node.yml
     required_permissions:
       - "contents: read"
     required_settings: []
@@ -821,7 +821,7 @@ capabilities:
     private_free: conditional
     private_paid: available
     workflow: .github/workflows/go-ci.yml
-    example: null
+    example: examples/languages/go.yml
     required_permissions:
       - "contents: read"
     required_settings: []
@@ -840,7 +840,7 @@ capabilities:
     private_free: conditional
     private_paid: available
     workflow: .github/workflows/rust-ci.yml
-    example: null
+    example: examples/languages/rust.yml
     required_permissions:
       - "contents: read"
     required_settings: []
@@ -859,7 +859,7 @@ capabilities:
     private_free: conditional
     private_paid: available
     workflow: .github/workflows/java-ci.yml
-    example: null
+    example: examples/languages/java.yml
     required_permissions:
       - "contents: read"
     required_settings: []
@@ -878,7 +878,7 @@ capabilities:
     private_free: conditional
     private_paid: available
     workflow: .github/workflows/dotnet-ci.yml
-    example: null
+    example: examples/languages/dotnet.yml
     required_permissions:
       - "contents: read"
     required_settings: []
@@ -897,7 +897,7 @@ capabilities:
     private_free: free
     private_paid: available
     workflow: .github/workflows/container-ci.yml
-    example: null
+    example: examples/infra/container.yml
     required_permissions:
       - "contents: read"
       - "security-events: write"
@@ -920,7 +920,7 @@ capabilities:
     private_free: conditional
     private_paid: available
     workflow: .github/workflows/terraform-ci.yml
-    example: null
+    example: examples/infra/terraform.yml
     required_permissions:
       - "contents: read"
     required_settings: []
@@ -940,7 +940,7 @@ capabilities:
     private_free: conditional
     private_paid: available
     workflow: .github/workflows/docs-ci.yml
-    example: null
+    example: examples/infra/docs.yml
     required_permissions:
       - "contents: read"
     required_settings: []
@@ -959,7 +959,7 @@ capabilities:
     private_free: conditional
     private_paid: available
     workflow: .github/workflows/monorepo-changed-paths.yml
-    example: null
+    example: examples/infra/monorepo.yml
     required_permissions:
       - "contents: read"
     required_settings: []
