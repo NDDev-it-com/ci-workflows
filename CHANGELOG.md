@@ -12,8 +12,14 @@
   the GitHub attestation steps, requesting only `contents: write`. Its
   manifest records `slsa_build_level: null`. Copy-paste caller:
   `examples/release/private-free-release.yml`.
+- Tracked agent instruction docs `AGENTS.md` (Codex-native) and
+  `.claude/CLAUDE.md` (Claude Code-native), plus `.DS_Store` in `.gitignore`.
 
 ### Changed
+
+- This repository's own release archive now includes `AGENTS.md` and
+  `.claude/CLAUDE.md` alongside the other tracked contributor docs, so the
+  published source archive is the complete library surface.
 
 - `actionlint.yml` now states and enforces its real runner contract: the
   workflow installs the checksum-verified linux_amd64 binary, so a
