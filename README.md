@@ -226,6 +226,24 @@ intentional fail-closed changes from the 0.4.x contract.
 Pin `0.5.1` or its full commit SHA to include canonical release notes in the
 immutable manifest/checksum boundary. No caller input changed from `0.5.0`.
 
+### Migrating to 0.6.0
+
+- **Release:** private repositories on Free/Pro/Team switch from
+  `release-supply-chain.yml` to `release-supply-chain-free.yml` and drop
+  `id-token: write` / `attestations: write` from the caller job (GitHub
+  Artifact Attestations require GHEC on private repos). Public and GHEC
+  callers change nothing.
+- **Benchmark:** the `auto_push` input is gone. Callers that passed
+  `auto_push: false` switch to `benchmark-compare.yml` with
+  `permissions: { contents: read }`; default-behavior callers keep
+  `benchmark.yml` unchanged.
+- **Monorepo router:** `filters` must be a strict JSON object of exact file
+  paths or `/`-terminated directory prefixes — wildcard patterns now fail the
+  run. Unresolvable bases fail instead of reporting "unchanged"; pushes
+  without a usable previous tip conservatively run every group.
+- **actionlint:** non-Linux-X64 runners are rejected by an explicit
+  first-step guard (previously they failed mid-install with obscure errors).
+
 ## Common inputs
 
 - `runner` — runner label (default `ubuntu-latest`). Workflows with a

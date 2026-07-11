@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-11
+
 ### Added
 
 - `release-supply-chain-free.yml`: the identical closed release pipeline
