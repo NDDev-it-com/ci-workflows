@@ -35,6 +35,24 @@
   storage-size figure. Regenerate the `.claude/skills` mirror. Found by an
   independent forensic review (RVR-P2-010).
 
+- **Harden the runtime-coverage honesty gate against weak and stale proofs.**
+  `validate_runtime_coverage.py` accepted any `https` URL for a
+  `runtime-proven` record (its own fixture used `example.invalid`), so a docs
+  page or a foreign-repo run would have passed, and it never noticed that the
+  `release-supply-chain.yml` record still pointed at a 0.7.0 run
+  (`…/29165402032` at `eda8ff7`) taken two edits before the current file.
+  Require `last_run` to be a
+  `github.com/NDDev-it-com/nddev-ci-workflows/actions/runs/<id>` URL and add a
+  `proven_digest` (sha256 of the workflow file at the proving run) that the
+  validator recomputes and matches, so any later edit to a proven workflow
+  reddens CI until it is re-run and re-recorded (or downgraded) instead of
+  silently keeping the label. Repoint all three runtime-proven records to runs
+  that provably executed the current bytes (actionlint / zizmor-sarif → the
+  `ci.yml` run `…/29172553315`; release-supply-chain → the 0.8.1 release run
+  `…/29167958787` at `8b8e3ea`) and record each digest. Fixtures now cover
+  foreign-URL, non-run-URL, missing-digest, and stale-digest. Found by an
+  independent forensic review (RVR-P2-009).
+
 ### Changed
 
 - **Catalog tool inventory + currency (`catalog/tools.yml`).** Add the seven

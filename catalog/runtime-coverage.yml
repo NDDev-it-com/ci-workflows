@@ -15,7 +15,8 @@ entries:
   - workflow: .github/workflows/actionlint.yml
     status: runtime-proven
     evidence: "Called by this repo's ci.yml on every run; Linux X64 default-input lane executed live."
-    last_run: https://github.com/NDDev-it-com/nddev-ci-workflows/actions/runs/29165390636
+    last_run: https://github.com/NDDev-it-com/nddev-ci-workflows/actions/runs/29172553315
+    proven_digest: bbd3d7d2b010deb0e44ea47b655de77cac5fc3ad21869d7babe21547128139fd
     waiver: null
   - workflow: .github/workflows/benchmark-compare.yml
     status: static-only
@@ -178,8 +179,9 @@ entries:
     waiver: null
   - workflow: .github/workflows/release-supply-chain.yml
     status: runtime-proven
-    evidence: "Dogfooded by this repo's release.yml; public-repo tag lane executed live on release."
-    last_run: https://github.com/NDDev-it-com/nddev-ci-workflows/actions/runs/29165402032
+    evidence: "Dogfooded by this repo's release.yml on the 0.8.1 tag (8b8e3ea); public-repo tag lane executed live and both attestations verify."
+    last_run: https://github.com/NDDev-it-com/nddev-ci-workflows/actions/runs/29167958787
+    proven_digest: fbf8a75094f2d506d744c03d7751772ee7858ca2535bae001cfeb0e96c337f43
     waiver: null
   - workflow: .github/workflows/rust-ci.yml
     status: unverified
@@ -224,5 +226,6 @@ entries:
   - workflow: .github/workflows/zizmor-sarif.yml
     status: runtime-proven
     evidence: "Called by this repo's ci.yml on every run; SARIF lane executed live."
-    last_run: https://github.com/NDDev-it-com/nddev-ci-workflows/actions/runs/29165390636
+    last_run: https://github.com/NDDev-it-com/nddev-ci-workflows/actions/runs/29172553315
+    proven_digest: 68e4560b4808cde18826abc0045b6d2b65a3dc4237391bf4a5c22fc54e563849
     waiver: null
