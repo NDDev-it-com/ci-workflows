@@ -10,3 +10,6 @@ dist/
 
 # Serena MCP local project config (developer tooling, not part of the published catalog)
 /.serena/
+
+# macOS Finder metadata
+.DS_Store

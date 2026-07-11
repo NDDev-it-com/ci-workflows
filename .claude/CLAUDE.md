@@ -1,0 +1,78 @@
+# nddev-ci-workflows — Claude Code project memory
+
+Reusable GitHub Actions workflow library + machine-readable capability
+catalog. The product is `.github/workflows/*.yml` (`ci.yml` and `release.yml`
+are self workflows; everything else is `on: workflow_call` consumed by
+callers pinned to full commit SHAs). `docs/` mirrors the catalog; never treat
+prose docs as the source of truth.
+
+## Golden path for any change
+
+1. Edit workflows/scripts.
+2. Update `catalog/capabilities.yml` (and `catalog/tools.yml` `used_by` /
+   pins) — the catalog is the source of truth.
+3. `python3 scripts/generate_docs.py` — `docs/generated/*` is generated
+   output; hand-edits will fail CI drift checks.
+4. Sync `README.md`, tier docs (`docs/00`–`docs/15`), and the matching
+   caller example under `examples/`.
+5. Add a `CHANGELOG.md` entry under `[Unreleased]`.
+6. Validate (below), then PR — `main` is squash-merge-only behind the
+   `ci-gate` check.
+
+## Commands
+
+```bash
+python3 -m pip install --require-hashes -r requirements-ci.txt  # PyYAML only
+python3 scripts/validate_all.py                                 # full gate
+actionlint
+zizmor --persona regular --min-severity low .github/workflows
+python3 scripts/generate_docs.py --check                        # drift only
+```
+
+`validate_all.py` is the same aggregate the required `ci-gate` runs. Several
+checks execute real fixtures (temporary git repos, extracted embedded Python
+programs), so a failure message usually names the exact broken contract.
+
+## Contracts Claude must not break
+
+- **Paired variants stay byte-parallel.** `release-supply-chain.yml` ↔
+  `release-supply-chain-free.yml` differ only in the attest steps,
+  permissions, and `slsa_build_level` (3 vs null); `benchmark.yml` ↔
+  `benchmark-compare.yml` differ only in `auto-push` and permissions. Edits
+  to one side must be mirrored or `check_release_supply_chain.py` /
+  `check_benchmark_contract.py` fail.
+- **Tier truth.** GitHub Artifact Attestations: public repos on any plan;
+  private/internal require GitHub Enterprise Cloud (not GHAS). Private-free
+  releases use `release-supply-chain-free.yml` (`contents: write` only).
+- **Fail-closed router.** `monorepo-changed-paths.yml` accepts only strict
+  JSON filters (exact paths or `/`-terminated directory prefixes); wildcard
+  patterns, unresolvable bases, and malformed groups must fail the run;
+  uncertain push bases go conservative all-true — never silent all-false
+  (`check_monorepo_routing.py` fixtures).
+- **Runner honesty.** `actionlint.yml` guards Linux X64 as step one;
+  `release-supply-chain*.yml` validate Linux X64/ARM64 before checkout.
+- **Security invariants.** Full-SHA pins with `# vX.Y.Z` comments;
+  `permissions: {}` top-level + least-privilege jobs; `timeout-minutes`
+  everywhere; `persist-credentials: false`; no `${{ ... }}` inside `run:`
+  (env indirection only); embedded Python via `python3 -I`; Harden-Runner
+  only in the public/GHAS allowlist of `check_harden_runner_contract.py`,
+  unconditional, first step — never behind a boolean input.
+
+## Git and release etiquette
+
+- Conventional Commits (<100-char subject), `git commit -s` (DCO) and `-S`
+  (SSH signing is configured in this checkout), no `Co-Authored-By`.
+- PRs fill `.github/PULL_REQUEST_TEMPLATE.md` (permissions diff +
+  threat-model note for workflow changes); merge is squash-only after
+  `ci-gate` is green.
+- Release = maintainer pushes SemVer tag; `release.yml` validates
+  byte-exact `VERSION`, a single matching `CHANGELOG.md` heading, then
+  publishes five immutable checksummed assets in one create call. Never
+  attempt `gh release upload --clobber`.
+
+## Local-only context
+
+- `.serena/` (Serena MCP memories) is intentionally gitignored — local
+  developer tooling, not published catalog content.
+- `AUDIT/` (when present) holds external review deliverables; keep it out of
+  commits.
