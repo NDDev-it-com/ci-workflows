@@ -28,7 +28,11 @@ from _workflow_yaml import WORKFLOWS_DIR, load_yaml
 REUSABLE = WORKFLOWS_DIR / "release-supply-chain.yml"
 FREE = WORKFLOWS_DIR / "release-supply-chain-free.yml"
 SELF_RELEASE = WORKFLOWS_DIR / "release.yml"
-ATTEST_STEP_NAMES = ("Attest build provenance (archive)", "Attest SBOM (archive)")
+ATTEST_STEP_NAMES = (
+    "Attest build provenance (archive)",
+    "Attest build provenance (runtime bundle)",
+    "Attest SBOM (archive)",
+)
 EXPECTED_STATIC_ASSETS = {
     "sbom.spdx.json",
     "release-notes.md",
@@ -1132,8 +1136,10 @@ def check() -> list[str]:
         "Verify extracted archive payload",
         "Generate SPDX SBOM from exact archive payload (Syft)",
         "Prepare canonical release notes",
+        "Build deterministic runtime bundle",
         "Finalize manifest, checksums, and asset closure",
         "Attest build provenance (archive)",
+        "Attest build provenance (runtime bundle)",
         "Attest SBOM (archive)",
         "Upload workflow artifact",
         "Publish immutable GitHub Release (single create)",

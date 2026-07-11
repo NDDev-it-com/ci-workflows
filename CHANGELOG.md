@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-12
+
+### Added
+
+- **`release-supply-chain.yml` optional `runtime_paths`.** When set, the
+  workflow builds a second deterministic, minimal runtime bundle from the
+  selected tracked paths (reproducible tar assembled from Git blobs; executable
+  bits preserved; symlinks and non-regular entries rejected), includes it in
+  the release manifest, `SHA256SUMS`, and the single immutable release-create
+  call, and attests its build provenance alongside the source archive. Empty
+  (default) leaves every existing asset, checksum, and attestation
+  byte-for-byte unchanged, so current callers are unaffected. (RVR-P3-001)
+
 ### Fixed
 
 - **`monorepo-changed-paths` rejects `pull_request_target`.** Under that

@@ -40,6 +40,14 @@ on:
           selection containing spaces.
         type: string
         default: 'README.md LICENSE NOTICE VERSION CHANGELOG.md .github'
+      runtime_paths:
+        description: >-
+          Optional space-separated normalized tracked path selections for a
+          second, minimal runtime bundle attached alongside the source archive.
+          Empty (default) produces no runtime bundle and leaves every other
+          asset, checksum, and attestation byte-for-byte unchanged.
+        type: string
+        default: ''
       runner:
         type: string
         default: 'ubuntu-latest'
@@ -65,6 +73,7 @@ jobs:
       RELEASE_VERSION: ${{ inputs.version }}
       PACKAGE_NAME: ${{ inputs.package_name }}
       ARCHIVE_PATHS: ${{ inputs.archive_paths }}
+      RUNTIME_PATHS: ${{ inputs.runtime_paths }}
     steps:
       - name: Validate release inputs before checkout
         env:
@@ -604,6 +613,97 @@ jobs:
           print(f"canonical release notes: {output}")
           PY
 
+      - name: Build deterministic runtime bundle
+        if: inputs.runtime_paths != ''
+        env:
+          RELEASE_DIST: ${{ runner.temp }}/release-dist
+        run: |
+          set -euo pipefail
+          python3 -I - "$RELEASE_DIST/${PACKAGE_NAME}-runtime-${RELEASE_VERSION}.tar.gz" <<'PY'
+          import gzip
+          import io
+          import os
+          import pathlib
+          import shlex
+          import subprocess
+          import sys
+          import tarfile
+
+          def fail(message):
+              print(f"runtime bundle: {message}", file=sys.stderr)
+              raise SystemExit(1)
+
+          raw = os.environ["RUNTIME_PATHS"]
+          if any(ord(character) < 32 or ord(character) == 127 for character in raw):
+              fail("control characters are not allowed")
+          try:
+              requested = shlex.split(raw, comments=False, posix=True)
+          except ValueError:
+              fail("runtime_paths must be a well-formed space-separated list")
+          if not requested:
+              fail("runtime_paths must select at least one tracked path")
+          for index, token in enumerate(requested, start=1):
+              path = pathlib.PurePosixPath(token)
+              if (
+                  token.startswith(("-", "/"))
+                  or token in {"", ".", ".."}
+                  or path.as_posix() != token
+                  or any(part in {"", ".", ".."} for part in path.parts)
+              ):
+                  fail(f"non-normalized or unsafe selection at position {index}")
+
+          index_entries = subprocess.run(
+              ["git", "--literal-pathspecs", "ls-files", "-s", "-z", "--", *requested],
+              check=False,
+              stdout=subprocess.PIPE,
+              stderr=subprocess.DEVNULL,
+          )
+          if index_entries.returncode != 0:
+              fail("git rejected the runtime selection")
+          members = []
+          for chunk in index_entries.stdout.split(b"\0"):
+              if not chunk:
+                  continue
+              meta, _, path_bytes = chunk.partition(b"\t")
+              fields = meta.split(b" ")
+              if len(fields) != 3:
+                  fail("unexpected git index entry")
+              mode, blob, _stage = fields
+              if mode not in (b"100644", b"100755"):
+                  fail(f"runtime bundle rejects non-regular entry mode {mode.decode()}")
+              name = os.fsdecode(path_bytes)
+              if name.startswith(("/", "-")) or any(
+                  part in {"", ".", ".."} for part in name.split("/")
+              ):
+                  fail("unsafe expanded runtime path")
+              members.append((name, mode == b"100755", os.fsdecode(blob)))
+          if not members:
+              fail("runtime selection matched no tracked files")
+
+          mtime = int(
+              subprocess.check_output(["git", "log", "-1", "--format=%ct"], text=True).strip()
+          )
+          buffer = io.BytesIO()
+          with tarfile.open(fileobj=buffer, mode="w", format=tarfile.USTAR_FORMAT) as bundle:
+              for name, executable, blob in sorted(members):
+                  data = subprocess.check_output(["git", "cat-file", "blob", blob])
+                  info = tarfile.TarInfo(name)
+                  info.size = len(data)
+                  info.mtime = mtime
+                  info.mode = 0o755 if executable else 0o644
+                  info.uid = info.gid = 0
+                  info.uname = info.gname = ""
+                  bundle.addfile(info, io.BytesIO(data))
+
+          output = pathlib.Path(sys.argv[1])
+          if output.exists() or output.is_symlink():
+              fail("runtime bundle output path already exists")
+          output.write_bytes(gzip.compress(buffer.getvalue(), mtime=0))
+          if output.stat().st_size == 0:
+              fail("runtime bundle is empty")
+          print(f"runtime bundle: {len(members)} files -> {output.name}")
+          PY
+
       - name: Finalize manifest, checksums, and asset closure
         env:
           RELEASE_DIST: ${{ runner.temp }}/release-dist
@@ -626,8 +726,13 @@ jobs:
           package_name = os.environ["PACKAGE_NAME"]
           release_dist = Path(os.environ["RELEASE_DIST"])
           archive = f"{package_name}-{version}.tar.gz"
+          runtime_requested = bool(os.environ.get("RUNTIME_PATHS", "").strip())
+          runtime_archive = f"{package_name}-runtime-{version}.tar.gz"
+          staged = {archive, "sbom.spdx.json", "release-notes.md"}
+          if runtime_requested:
+              staged.add(runtime_archive)
           initial_assets = {path.name for path in release_dist.iterdir()}
-          if initial_assets != {archive, "sbom.spdx.json", "release-notes.md"}:
+          if initial_assets != staged:
               fail("archive/SBOM/release-notes staging set is not closed")
           for asset in initial_assets:
               path = release_dist / asset
@@ -649,6 +754,10 @@ jobs:
           ).strip()
           if source_commit != head_commit:
               fail("release tag commit changed after checkout validation")
+          content_artifacts = [archive]
+          if runtime_requested:
+              content_artifacts.append(runtime_archive)
+          content_artifacts += ["sbom.spdx.json", "release-notes.md"]
           manifest = {
               "package_name": package_name,
               "version": version,
@@ -657,9 +766,7 @@ jobs:
               "source_tag_object": source_tag_object,
               "slsa_build_level": 3,
               "required_artifacts": [
-                  archive,
-                  "sbom.spdx.json",
-                  "release-notes.md",
+                  *content_artifacts,
                   "release-manifest.json",
                   "SHA256SUMS",
               ],
@@ -670,9 +777,7 @@ jobs:
           )
 
           checksum_names = (
-              archive,
-              "sbom.spdx.json",
-              "release-notes.md",
+              *content_artifacts,
               "release-manifest.json",
           )
           checksum_lines = []
@@ -700,6 +805,12 @@ jobs:
         uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373  # v4.1.1
         with:
           subject-path: ${{ runner.temp }}/release-dist/${{ inputs.package_name }}-${{ inputs.version }}.tar.gz
+
+      - name: Attest build provenance (runtime bundle)
+        if: inputs.runtime_paths != ''
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373  # v4.1.1
+        with:
+          subject-path: ${{ runner.temp }}/release-dist/${{ inputs.package_name }}-runtime-${{ inputs.version }}.tar.gz
 
       - name: Attest SBOM (archive)
         # actions/attest native SBOM mode (sbom-path) replaces the deprecated
@@ -730,6 +841,9 @@ jobs:
             "$RELEASE_DIST/release-manifest.json"
             "$RELEASE_DIST/SHA256SUMS"
           )
+          if [ -n "${RUNTIME_PATHS:-}" ]; then
+            assets+=("$RELEASE_DIST/${PACKAGE_NAME}-runtime-${RELEASE_VERSION}.tar.gz")
+          fi
           for asset in "${assets[@]}"; do
             if [ -L "$asset" ] || [ ! -f "$asset" ]; then
               echo "release asset closure is incomplete" >&2
