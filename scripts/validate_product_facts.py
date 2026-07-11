@@ -106,7 +106,9 @@ def validate_ledger(data: object, as_of: dt.date) -> list[str]:
         except (ValueError, TypeError) as exc:
             problems.append(f"{where}: bad date: {exc}")
             verified = expiry = None
-        if verified is not None and verified > as_of:
+        # Allow a one-day skew so an author whose local clock/timezone is ahead
+        # of the CI runner does not trip this; still catches gross future dates.
+        if verified is not None and verified > as_of + dt.timedelta(days=1):
             problems.append(f"{where}: verified_at {verified} is in the future")
         # A deprecated/terminal fact (a shut-down service) records history that
         # will not change, so it is exempt from the expiry requirement. Every

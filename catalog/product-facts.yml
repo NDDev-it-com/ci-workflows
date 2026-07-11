@@ -283,7 +283,7 @@ facts:
   overage: not-applicable
   status: official
   source_authority: primary
-  verified_at: '2026-07-12'
+  verified_at: '2026-07-11'
   expires_after: '2026-08-10'
   source_urls:
   - https://docs.github.com/en/code-security/concepts/supply-chain-security/supply-chain-security
@@ -506,14 +506,14 @@ facts:
   overage: AI usage and Actions minutes may add cost
   status: official
   source_authority: primary
-  verified_at: '2026-07-12'
+  verified_at: '2026-07-11'
   expires_after: '2026-07-20'
   source_urls:
   - https://github.blog/changelog/2026-06-16-github-code-quality-generally-available-july-20-2026/
   - https://docs.github.com/en/billing/concepts/product-billing/github-code-quality
   notes:
   - 'Time-sensitive transition: refresh immediately on or after 2026-07-20.'
-  - 'Verified 2026-07-12 against the changelog and billing docs: GA 2026-07-20, $10/active committer/month, usage-based AI, CodeQL consumes Actions minutes, Team + Enterprise Cloud only (not Enterprise Server).'
+  - 'Verified 2026-07-11 against the changelog and billing docs: GA 2026-07-20, $10/active committer/month, usage-based AI, CodeQL consumes Actions minutes, Team + Enterprise Cloud only (not Enterprise Server).'
 - id: gitlab-free-hosted
   provider: GitLab
   product: GitLab.com Free compute
