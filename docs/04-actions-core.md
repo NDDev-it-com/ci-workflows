@@ -75,7 +75,7 @@ mirror them in the caller job. Common mappings:
 | `public-scorecard.yml` | `security-events: write`, `id-token: write`, `contents: read`, `actions: read` |
 | `public-scorecard-json.yml` | `id-token: write`, `contents: read`, `actions: read` |
 | `public-dependency-review.yml` | `contents: read`, `pull-requests: write` |
-| `release-supply-chain.yml` | `contents: write`, `id-token: write`, `attestations: write` |
+| `release-supply-chain.yml` | `contents: write`, `id-token: write`, `attestations: write`, `artifact-metadata: write` |
 | lint / smoke / static | `contents: read` |
 
 ## Event triggers for orchestration

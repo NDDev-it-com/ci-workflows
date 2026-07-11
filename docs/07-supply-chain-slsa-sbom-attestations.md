@@ -71,9 +71,10 @@ Required permissions for any attestation job:
 
 ```yaml
 permissions:
-  id-token: write        # Sigstore keyless signing
-  attestations: write    # record the attestation
-  contents: read         # (write only if the same job also publishes the Release)
+  id-token: write          # Sigstore keyless signing
+  attestations: write      # record the attestation
+  artifact-metadata: write # actions/attest artifact storage record (v4.1.1)
+  contents: read           # (write only if the same job also publishes the Release)
 ```
 
 ## Generating the SBOM
@@ -81,7 +82,7 @@ permissions:
 Two supported paths:
 
 1. **Checksum-pinned Syft CLI** — the release reusable downloads the exact
-   Syft 1.42.3 Linux AMD64/ARM64 archive, verifies its pinned byte size and
+   Syft 1.46.0 Linux AMD64/ARM64 archive, verifies its pinned byte size and
    SHA-256, and scans a private extraction of the tracked-source archive. It
    emits SPDX-JSON suitable for attestation and never executes a remote
    installer or scans the wider checkout.

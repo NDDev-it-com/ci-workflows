@@ -31,7 +31,7 @@ container images, checksum for downloaded binaries).
   so matched secrets are never printed.
 - **trivy / grype / hadolint** — the container lane's scanners; trivy also
   covers IaC and dependencies. Emit SARIF for upload on public/GHAS.
-- **syft** — version 1.42.3 is downloaded directly for Linux AMD64/ARM64 and
+- **syft** — version 1.46.0 is downloaded directly for Linux AMD64/ARM64 and
   verified against a pinned byte size and SHA-256 before producing SPDX-JSON;
   its output feeds the SBOM attestation (see
   [07 Supply chain](07-supply-chain-slsa-sbom-attestations.md#generating-the-sbom)).

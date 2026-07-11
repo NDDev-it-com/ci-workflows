@@ -165,7 +165,7 @@ on: { push: { tags: ["[0-9]+.[0-9]+.[0-9]+"] } }
 permissions: {}
 jobs:
   publish:
-    permissions: { contents: write, id-token: write, attestations: write }
+    permissions: { contents: write, id-token: write, attestations: write, artifact-metadata: write }
     uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/release-supply-chain.yml@<sha>
     with:
       version: ${{ github.ref_name }}
@@ -209,7 +209,7 @@ The SBOM scans the exact extracted archive payload. Every release publishes
 exactly five assets: the archive, `sbom.spdx.json`, `release-notes.md`,
 `release-manifest.json`, and `SHA256SUMS`. The same canonical notes file is used
 for the release body and is checksum-bound because GitHub permits immutable
-release metadata to be edited. Syft 1.42.3 is downloaded directly for Linux
+release metadata to be edited. Syft 1.46.0 is downloaded directly for Linux
 X64/ARM64 runners and verified against pinned archive size and SHA-256 before
 execution; no remote installer script runs. The manifest records the source tag
 object and peeled commit, and the remote tag is revalidated immediately before
@@ -243,6 +243,16 @@ immutable manifest/checksum boundary. No caller input changed from `0.5.0`.
   without a usable previous tip conservatively run every group.
 - **actionlint:** non-Linux-X64 runners are rejected by an explicit
   first-step guard (previously they failed mid-install with obscure errors).
+
+### Migrating to 0.8.1
+
+- **Attested releases:** callers of `release-supply-chain.yml` must add
+  `artifact-metadata: write` to the publish job's `permissions` (alongside
+  `id-token: write` / `attestations: write`). The attest actions
+  (`actions/attest@v4.1.1`) document it as required to write the artifact
+  storage record; because a caller's token is the ceiling for the reusable
+  workflow, omitting it caps the attest step below the scope it needs. The
+  free variant is unaffected (`contents: write` only).
 
 ## Common inputs
 

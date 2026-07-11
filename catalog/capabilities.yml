@@ -354,6 +354,7 @@ capabilities:
     required_permissions:
       - "id-token: write"
       - "attestations: write"
+      - "artifact-metadata: write"
       - "contents: read"
     required_settings:
       - "Actions enabled"
@@ -403,6 +404,7 @@ capabilities:
     required_permissions:
       - "id-token: write"
       - "attestations: write"
+      - "artifact-metadata: write"
       - "contents: read"
     required_settings:
       - "Build must run inside a reusable workflow to qualify for SLSA Build L3"
@@ -738,6 +740,7 @@ capabilities:
       - "contents: write"
       - "id-token: write"
       - "attestations: write"
+      - "artifact-metadata: write"
     required_settings:
       - "OIDC available for attestations"
       - "Public repository on any plan; private/internal repositories require GitHub Enterprise Cloud for the attestation steps"

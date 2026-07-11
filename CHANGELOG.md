@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **Sync the attested-release permission + Syft contract into every
+  consumer-facing surface.** 0.8.1 added `artifact-metadata: write` to the
+  attesting jobs and bumped Syft to 1.46.0 in the workflows and release
+  validator, but the caller-facing docs, examples, and catalog still showed
+  the old three-scope set and Syft 1.42.3. Because a caller's `GITHUB_TOKEN`
+  permissions are the ceiling for a reusable workflow, a consumer copying the
+  stale three-scope example under-scopes the attest step. Update the
+  `release-supply-chain.yml` caller permissions in `README.md`,
+  `examples/public-oss/release.yml`, and `docs/04`/`docs/09`; add
+  `artifact-metadata: write` to the `artifact-attestations`,
+  `slsa-build-provenance`, and attested `releases-packages` capabilities in
+  `catalog/capabilities.yml`; correct the Syft version in `README.md`,
+  `docs/07`, and `docs/13`; and add a 0.8.1 caller migration note. Contract-
+  truth synchronization only — no workflow behavior change.
+
 ## [0.8.1] - 2026-07-11
 
 ### Fixed
