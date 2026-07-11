@@ -1,7 +1,7 @@
 # External tools referenced by nddev-ci-workflows.
 # Machine-readable source of truth. Mirrored by docs/. Enforced by scripts/validate_catalog.py.
 # Action `pin` values are full commit SHAs (tags are mutable); CLIs pin by version/checksum and use null here.
-# Last verified: 2026-07-04
+# Last verified: 2026-07-12
 
 tools:
   - id: actionlint
@@ -76,11 +76,13 @@ tools:
     name: github/codeql-action
     homepage: "https://github.com/github/codeql-action"
     kind: action
-    current_version: "v4.36.3"
-    pin: "github/codeql-action@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a"
+    current_version: "v4.37.0"
+    pin: "github/codeql-action@99df26d4f13ea111d4ec1a7dddef6063f76b97e9"
     used_by:
       - .github/workflows/public-codeql.yml
-    last_verified: "2026-07-04"
+      - .github/workflows/public-scorecard.yml
+      - .github/workflows/zizmor-sarif.yml
+    last_verified: "2026-07-12"
 
   - id: dependency-review-action
     name: actions/dependency-review-action
@@ -259,11 +261,11 @@ tools:
     name: lycheeverse/lychee-action
     homepage: "https://github.com/lycheeverse/lychee-action"
     kind: action
-    current_version: "v2.8.0"
-    pin: "lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411"
+    current_version: "v2.9.0"
+    pin: "lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8"
     used_by:
       - .github/workflows/docs-quality.yml
-    last_verified: "2026-07-08"
+    last_verified: "2026-07-12"
 
   - id: typos-action
     name: crate-ci/typos
@@ -309,21 +311,21 @@ tools:
     name: actions/labeler
     homepage: "https://github.com/actions/labeler"
     kind: action
-    current_version: "v6.1.0"
-    pin: "actions/labeler@f27b608878404679385c85cfa523b85ccb86e213"
+    current_version: "v6.2.0"
+    pin: "actions/labeler@b8dd2d9be0f68b860e7dae5dae7d772984eacd6d"
     used_by:
       - .github/workflows/pr-hygiene.yml
-    last_verified: "2026-07-08"
+    last_verified: "2026-07-12"
 
   - id: stale
     name: actions/stale
     homepage: "https://github.com/actions/stale"
     kind: action
-    current_version: "v10.3.0"
-    pin: "actions/stale@eb5cf3af3ac0a1aa4c9c45633dd1ae542a27a899"
+    current_version: "v10.4.0"
+    pin: "actions/stale@1e223db275d687790206a7acac4d1a11bd6fe629"
     used_by:
       - .github/workflows/pr-hygiene.yml
-    last_verified: "2026-07-08"
+    last_verified: "2026-07-12"
 
   - id: osv-scanner
     name: osv-scanner
@@ -339,11 +341,11 @@ tools:
     name: semgrep
     homepage: "https://github.com/semgrep/semgrep"
     kind: cli
-    current_version: "v1.168.0"
+    current_version: "v1.169.0"
     pin: null
     used_by:
       - .github/workflows/semgrep-ci.yml
-    last_verified: "2026-07-08"
+    last_verified: "2026-07-12"
 
   - id: anchore-scan-action
     name: anchore/scan-action
@@ -385,3 +387,84 @@ tools:
       - .github/workflows/benchmark.yml
       - .github/workflows/benchmark-compare.yml
     last_verified: "2026-07-08"
+
+  - id: setup-node
+    name: actions/setup-node
+    homepage: "https://github.com/actions/setup-node"
+    kind: action
+    current_version: "v6.4.0"
+    pin: "actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e"
+    used_by:
+      - .github/workflows/benchmark.yml
+      - .github/workflows/benchmark-compare.yml
+      - .github/workflows/mutation-testing.yml
+      - .github/workflows/node-ci.yml
+      - .github/workflows/web-ci.yml
+    last_verified: "2026-07-12"
+
+  - id: setup-go
+    name: actions/setup-go
+    homepage: "https://github.com/actions/setup-go"
+    kind: action
+    current_version: "v6.5.0"
+    pin: "actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16"
+    used_by:
+      - .github/workflows/benchmark.yml
+      - .github/workflows/benchmark-compare.yml
+      - .github/workflows/go-ci.yml
+    last_verified: "2026-07-12"
+
+  - id: setup-rust-toolchain
+    name: actions-rust-lang/setup-rust-toolchain
+    homepage: "https://github.com/actions-rust-lang/setup-rust-toolchain"
+    kind: action
+    current_version: "v1.17.0"
+    pin: "actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659"
+    used_by:
+      - .github/workflows/benchmark.yml
+      - .github/workflows/benchmark-compare.yml
+      - .github/workflows/fuzzing.yml
+      - .github/workflows/mutation-testing.yml
+      - .github/workflows/rust-ci.yml
+    last_verified: "2026-07-12"
+
+  - id: setup-dotnet
+    name: actions/setup-dotnet
+    homepage: "https://github.com/actions/setup-dotnet"
+    kind: action
+    current_version: "v5.4.0"
+    pin: "actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1"
+    used_by:
+      - .github/workflows/dotnet-ci.yml
+    last_verified: "2026-07-12"
+
+  - id: setup-java
+    name: actions/setup-java
+    homepage: "https://github.com/actions/setup-java"
+    kind: action
+    current_version: "v5.5.0"
+    pin: "actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a"
+    used_by:
+      - .github/workflows/java-ci.yml
+      - .github/workflows/kotlin-android-ci.yml
+    last_verified: "2026-07-12"
+
+  - id: setup-terraform
+    name: hashicorp/setup-terraform
+    homepage: "https://github.com/hashicorp/setup-terraform"
+    kind: action
+    current_version: "v4.0.1"
+    pin: "hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e"
+    used_by:
+      - .github/workflows/terraform-ci.yml
+    last_verified: "2026-07-12"
+
+  - id: trivy-action
+    name: aquasecurity/trivy-action
+    homepage: "https://github.com/aquasecurity/trivy-action"
+    kind: action
+    current_version: "v0.36.0"
+    pin: "aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25"
+    used_by:
+      - .github/workflows/container-ci.yml
+    last_verified: "2026-07-12"
