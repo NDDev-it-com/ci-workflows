@@ -2,8 +2,25 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **Grant `artifact-metadata: write` to the attesting release jobs.**
+  `actions/attest@v4.1.1` documents `id-token: write` + `attestations: write`
+  + `artifact-metadata: write` as its required permission set; the release
+  jobs in `release-supply-chain.yml` and `release.yml` were missing
+  `artifact-metadata: write`, so the action's artifact-storage-record step
+  ran without its scope (the Sigstore signing/attestation itself still
+  succeeds, which is why past releases passed). Add the scope to both jobs and
+  to the release validator's exact attested-permission assertion. The
+  attestation-free variant is unaffected (it has no attest steps). Found by a
+  deep review against the `actions/attest` README at the pinned tag.
+
 ### Changed
 
+- Relabel the release provenance claim from "SLSA v1.0" to "SLSA v1" in the
+  workflow header, README, and SECURITY.md. slsa.dev has retired v1.0 (v1.2 is
+  current); the reusable-workflow → Build L3 mechanism is unchanged across
+  v1.1/v1.2, so only the version label needed correcting.
 - Bump the checksum-pinned Syft SBOM generator from 1.42.3 to 1.46.0 (latest)
   in both `release-supply-chain.yml` and `release-supply-chain-free.yml`, with
   the release validator's `SYFT_PINS` and `catalog/tools.yml` updated in

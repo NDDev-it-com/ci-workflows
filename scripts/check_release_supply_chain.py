@@ -1365,10 +1365,11 @@ def check() -> list[str]:
         "contents": "write",
         "id-token": "write",
         "attestations": "write",
+        "artifact-metadata": "write",
     }:
         problems.append(
             "attested release job must request exactly contents/id-token/"
-            "attestations write"
+            "attestations/artifact-metadata write (actions/attest v4.1.1 contract)"
         )
 
     # Byte-level step parity: the free pipeline must be the attested pipeline

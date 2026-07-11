@@ -36,6 +36,6 @@ response as soon as reasonably possible.
   tags are
   protected by `.github/rulesets/tag-semver.json`.
 - Releases are tag-driven and immutable, and ship an SPDX SBOM, SHA256SUMS, a
-  build-provenance attestation, and an SBOM attestation (SLSA v1.0 Build L3,
+  build-provenance attestation, and an SBOM attestation (SLSA v1 Build L3,
   built inside the reusable `release-supply-chain.yml`). Verify with
   `scripts/verify_attestations.sh`.

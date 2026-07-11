@@ -189,7 +189,7 @@ jobs:
 
 The release is **immutable** and ships canonical checksummed release notes, an
 SPDX SBOM, SHA256SUMS, and (attested variant) a build-provenance attestation
-plus an SBOM attestation (SLSA v1.0 Build L3). The free variant records
+plus an SBOM attestation (SLSA v1 Build L3). The free variant records
 `slsa_build_level: null` in its manifest and makes no provenance claim. Verify
 attested releases with
 [`scripts/verify_attestations.sh`](scripts/verify_attestations.sh). See

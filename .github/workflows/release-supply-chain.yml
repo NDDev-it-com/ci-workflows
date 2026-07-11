@@ -17,7 +17,7 @@ name: release-supply-chain
 # single create call.
 #
 # SLSA note: build provenance generated from inside this reusable workflow meets
-# SLSA v1.0 Build Level 3 (build logic is isolated from the caller).
+# SLSA v1 Build Level 3 (build logic is isolated from the caller).
 #
 # Immutable releases (GA 2025-10-28): assets on a published release cannot be
 # modified, deleted, or clobbered. This workflow therefore fails fast if the
@@ -66,9 +66,10 @@ jobs:
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 30
     permissions:
-      contents: write        # create the GitHub Release
-      id-token: write        # OIDC token for Sigstore signing
-      attestations: write    # persist build-provenance + SBOM attestations
+      contents: write            # create the GitHub Release
+      id-token: write            # OIDC token for Sigstore signing
+      attestations: write        # persist build-provenance + SBOM attestations
+      artifact-metadata: write   # actions/attest artifact storage record (required at v4.1.1)
     env:
       RELEASE_VERSION: ${{ inputs.version }}
       PACKAGE_NAME: ${{ inputs.package_name }}
