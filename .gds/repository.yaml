@@ -45,7 +45,7 @@ verification:
 
 agent:
   context_profile: "public-module"
-  generated_agents: true
+  generated_agents: false
   serena:
     enabled: false
     provenance_required: false
