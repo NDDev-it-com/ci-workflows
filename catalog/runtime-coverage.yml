@@ -1,0 +1,228 @@
+# Runtime contract coverage for every published reusable workflow.
+#
+# Honest ledger, not an aspiration: a workflow is only 'runtime-proven'
+# when a real observed workflow_call run exists (last_run set). Workflows
+# with executable embedded-program/contract validators but no live
+# workflow_call run are 'static-only'. Everything else is 'unverified'
+# until a safe consumer fixture runs it, or 'waived' with an owner and
+# expiry. scripts/validate_runtime_coverage.py enforces completeness
+# (every reusable workflow has exactly one record) and evidence/waiver
+# discipline, and reports the honest status counts.
+schema: nddev-ci-runtime-contract-coverage/v1
+repository: NDDev-it-com/nddev-ci-workflows
+baseline_ref: 218f63feb6be020e71ff8ac8e18146a12fa23a38
+entries:
+  - workflow: .github/workflows/actionlint.yml
+    status: runtime-proven
+    evidence: "Called by this repo's ci.yml on every run; Linux X64 default-input lane executed live."
+    last_run: https://github.com/NDDev-it-com/nddev-ci-workflows/actions/runs/29165390636
+    waiver: null
+  - workflow: .github/workflows/benchmark-compare.yml
+    status: static-only
+    validator: scripts/check_benchmark_contract.py
+    evidence: 'Executable contract validator exercises the embedded program(s); no live workflow_call run.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/benchmark.yml
+    status: static-only
+    validator: scripts/check_benchmark_contract.py
+    evidence: 'Executable contract validator exercises the embedded program(s); no live workflow_call run.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/container-ci.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/coverage-gate.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/cpp-ci.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/cross-platform-smoke.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/dart-flutter-ci.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/docs-ci.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/docs-quality.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/dotnet-ci.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/fuzzing.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/go-ci.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/grype-scan.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/hadolint-ci.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/iac-scan.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/java-ci.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/kotlin-android-ci.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/monorepo-changed-paths.yml
+    status: static-only
+    validator: scripts/check_monorepo_routing.py
+    evidence: 'Executable contract validator exercises the embedded program(s); no live workflow_call run.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/mutation-testing.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/node-ci.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/osv-scan.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/pr-hygiene.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/private-static.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/public-codeql.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/public-dependency-review.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/public-scorecard-json.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/public-scorecard.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/python-ci.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/qt-ci.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/r-ci.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/release-supply-chain-free.yml
+    status: static-only
+    validator: scripts/check_release_supply_chain.py
+    evidence: 'Executable contract validator exercises the embedded program(s); no live workflow_call run.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/release-supply-chain.yml
+    status: runtime-proven
+    evidence: "Dogfooded by this repo's release.yml; public-repo tag lane executed live on release."
+    last_run: https://github.com/NDDev-it-com/nddev-ci-workflows/actions/runs/29165402032
+    waiver: null
+  - workflow: .github/workflows/rust-ci.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/secret-scan.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/semgrep-ci.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/sql-ci.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/swift-ci.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/terraform-ci.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/web-ci.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/zizmor-no-sarif.yml
+    status: unverified
+    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    last_run: null
+    waiver: null
+  - workflow: .github/workflows/zizmor-sarif.yml
+    status: runtime-proven
+    evidence: "Called by this repo's ci.yml on every run; SARIF lane executed live."
+    last_run: https://github.com/NDDev-it-com/nddev-ci-workflows/actions/runs/29165390636
+    waiver: null

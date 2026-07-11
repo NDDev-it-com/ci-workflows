@@ -39,6 +39,7 @@ import check_workflow_contracts
 import generate_docs
 import validate_catalog
 import validate_product_facts
+import validate_runtime_coverage
 
 CHECKS = [
     ("pinned-actions", check_pinned_actions.check),
@@ -55,6 +56,7 @@ CHECKS = [
     ("rulesets", check_rulesets.check),
     ("catalog", validate_catalog.check),
     ("product-facts", validate_product_facts.check),
+    ("runtime-coverage", validate_runtime_coverage.check),
     ("generated-docs", generate_docs.check),
 ]
 

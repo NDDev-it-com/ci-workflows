@@ -4,6 +4,22 @@
 
 ### Added
 
+- **Runtime contract coverage ledger (`catalog/runtime-coverage.yml`).** A
+  green static gate does not prove every published reusable workflow starts
+  and behaves correctly across its advertised events, tiers, runners, and
+  permissions. The repository now keeps an honest coverage record for all 42
+  reusable workflows: `runtime-proven` (a real observed `workflow_call` run —
+  currently the three the repo dogfoods, `actionlint`/`zizmor-sarif` via its
+  own CI and `release-supply-chain` via its own release, each with a run URL),
+  `static-only` (an executable embedded-program validator stands in for a live
+  run), or `unverified` (no observed run — the honest default for the other
+  35), plus `waived` with owner/reason/expiry.
+  `scripts/validate_runtime_coverage.py` (wired into `validate_all`) enforces
+  one record per reusable workflow, requires a run URL for `runtime-proven`, a
+  named validator for `static-only`, and an unexpired waiver for `waived`, and
+  reports the status counts so an unverified surface cannot masquerade as
+  covered. (RVR-P2-007)
+
 - **Product-fact freshness gate (`catalog/product-facts.yml`).** External
   plan, price, and quota facts change on the provider's schedule, not ours,
   so the catalog now separates volatile product facts from stable capability
