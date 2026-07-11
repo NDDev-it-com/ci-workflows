@@ -19,6 +19,20 @@
   `docs/07`, and `docs/13`; and add a 0.8.1 caller migration note. Contract-
   truth synchronization only — no workflow behavior change.
 
+### Changed
+
+- **Catalog tool inventory + currency (`catalog/tools.yml`).** Add the seven
+  in-use actions that were absent from the catalog — `actions/setup-node`,
+  `actions/setup-go`, `actions-rust-lang/setup-rust-toolchain`,
+  `actions/setup-dotnet`, `actions/setup-java`, `hashicorp/setup-terraform`,
+  and `aquasecurity/trivy-action` — and correct `github/codeql-action`'s
+  `used_by` (it also runs in `zizmor-sarif.yml` and `public-scorecard.yml`).
+  Bump drifted pins to latest across the workflows and catalog in lockstep:
+  codeql-action v4.36.3→v4.37.0, lychee-action v2.8.0→v2.9.0, labeler
+  v6.1.0→v6.2.0, stale v10.3.0→v10.4.0, setup-java v5.4.0→v5.5.0, and the
+  documented semgrep CLI version v1.168.0→v1.169.0. All remain full-SHA pinned
+  with `# vX.Y.Z` comments; no workflow behavior change.
+
 ## [0.8.1] - 2026-07-11
 
 ### Fixed
