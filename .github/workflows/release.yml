@@ -112,5 +112,5 @@ jobs:
       archive_paths: >-
         README.md LICENSE NOTICE SECURITY.md SUPPORT.md CODE_OF_CONDUCT.md
         CONTRIBUTING.md AGENTS.md VERSION CHANGELOG.md .gitignore .github
-        .claude catalog docs examples scripts requirements-ci.in
+        .agents .claude catalog docs examples scripts requirements-ci.in
         requirements-ci.txt

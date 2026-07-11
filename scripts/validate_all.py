@@ -35,6 +35,7 @@ import check_harden_runner_contract
 import check_merge_group
 import check_monorepo_routing
 import check_rulesets
+import check_skills
 import check_workflow_contracts
 import generate_docs
 import validate_catalog
@@ -57,6 +58,7 @@ CHECKS = [
     ("catalog", validate_catalog.check),
     ("product-facts", validate_product_facts.check),
     ("runtime-coverage", validate_runtime_coverage.check),
+    ("skills", check_skills.check),
     ("generated-docs", generate_docs.check),
 ]
 

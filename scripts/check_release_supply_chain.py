@@ -1200,6 +1200,7 @@ def check() -> list[str]:
         "CHANGELOG.md",
         ".gitignore",
         ".github",
+        ".agents",
         ".claude",
         "catalog",
         "docs",

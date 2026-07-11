@@ -9,14 +9,40 @@ repositories pin by full commit SHA. Docs under `docs/` are human mirrors;
 ## Source of truth
 
 - `catalog/capabilities.yml`, `catalog/tools.yml`, `catalog/deprecations.yml`
-  are the machine-readable source of truth. Edit the catalog first, docs
-  second.
-- `docs/generated/*` is generated — never edit by hand. After a catalog or
-  workflow change run `python3 scripts/generate_docs.py`; CI fails on drift.
+  are the machine-readable source of truth for capabilities and pins. Edit the
+  catalog first, docs second.
+- `catalog/product-facts.yml` is the single canonical source for volatile
+  external plan/price/quota facts. Never hand-copy a tariff into prose; every
+  live fact carries `verified_at`/`expires_after` and
+  `scripts/validate_product_facts.py` fails CI once a fact expires. Capabilities
+  link their tier claims to facts via the optional `product_facts` field.
+- `catalog/runtime-coverage.yml` is the honest runtime-evidence ledger for every
+  reusable workflow (`runtime-proven` needs a real run URL; `static-only` names
+  its validator; `unverified` is the default; `waived` needs owner/reason/
+  expiry). Do not upgrade a workflow to `runtime-proven` without an observed
+  `workflow_call` run.
+- `docs/generated/*` is generated — never edit by hand. After a catalog,
+  product-fact, or workflow change run `python3 scripts/generate_docs.py`; CI
+  fails on drift.
 - Tier claims (public / private-free / private-paid) must match the real
   GitHub billing contract. Known plan gate: GitHub Artifact Attestations are
   public-only on Free/Pro/Team plans; private/internal repositories require
-  GitHub Enterprise Cloud (GHAS/Code Security does not unlock them).
+  GitHub Enterprise Cloud (GHAS/Code Security does not unlock them). GitHub
+  Code Quality becomes a paid product on 2026-07-20 — refresh that fact then.
+
+## CI skills
+
+`.agents/skills/` holds eight authored CI/GitHub-Actions skills (Codex and
+OpenCode discover them); `.claude/skills/` is a generated, byte-identical
+mirror — never edit it, run `python3 scripts/sync_skills.py` and let
+`scripts/check_skills.py` (in validate_all) enforce parity. Reach for
+`ci-free-tier-planner` when choosing tiers (its data is
+`catalog/product-facts.yml`), `ci-runtime-contract-testing` /
+`ci-inventory-audit` when reasoning about coverage (data:
+`catalog/runtime-coverage.yml`), `github-actions-authoring` /
+`github-actions-security` when writing or reviewing workflow YAML, and
+`ci-release-provenance` for the release chain. Skills carry doctrine only —
+mutable facts stay in the catalogs above.
 
 ## Validation — run before every PR
 
