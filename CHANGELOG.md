@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Make `private-static.yml` caller-provided install and validation command
+  blocks fail on the first unsuccessful command, and enforce both fail-fast
+  runners through the reusable-workflow contract validator.
+
 ## [0.10.0] - 2026-07-12
 
 ### Added

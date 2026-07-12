@@ -69,10 +69,10 @@ jobs:
         shell: bash
         env:
           INSTALL_COMMAND: ${{ inputs.install_command }}
-        run: bash -c "$INSTALL_COMMAND"
+        run: bash -euo pipefail -c "$INSTALL_COMMAND"
 
       - name: Run validation
         shell: bash
         env:
           VALIDATION_COMMAND: ${{ inputs.command }}
-        run: bash -c "$VALIDATION_COMMAND"
+        run: bash -euo pipefail -c "$VALIDATION_COMMAND"

@@ -2,7 +2,9 @@
 """Reusable-workflow contract: every workflow except the self workflows
 (`ci.yml`, `release.yml`) must be reusable (`on: workflow_call`). The self
 workflows must NOT be reusable, and `ci.yml` must expose the `ci-gate` job that
-branch protection requires as a status check.
+branch protection requires as a status check. Caller-provided command runners
+must also fail on the first failing command instead of returning the status of
+only the final command.
 """
 from __future__ import annotations
 
@@ -26,6 +28,20 @@ def check() -> list[str]:
     jobs = ci.get("jobs", {}) or {}
     if "ci-gate" not in jobs:
         problems.append("ci.yml: missing required `ci-gate` job (branch-protection status check)")
+
+    private_static = load_yaml((workflow_files()[0].parent / "private-static.yml"))
+    static_steps = private_static.get("jobs", {}).get("static", {}).get("steps", [])
+    steps_by_name = {step.get("name"): step for step in static_steps if isinstance(step, dict)}
+    fail_fast_commands = {
+        "Run install command": 'bash -euo pipefail -c "$INSTALL_COMMAND"',
+        "Run validation": 'bash -euo pipefail -c "$VALIDATION_COMMAND"',
+    }
+    for name, expected in fail_fast_commands.items():
+        actual = steps_by_name.get(name, {}).get("run")
+        if actual != expected:
+            problems.append(
+                f"private-static.yml: {name!r} must use the fail-fast runner {expected!r}"
+            )
     return problems
 
 
