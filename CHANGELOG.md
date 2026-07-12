@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-07-12
+
 ### Fixed
 
 - **Sync the attested-release permission + Syft contract into every
