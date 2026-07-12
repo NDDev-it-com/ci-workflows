@@ -37,10 +37,14 @@ repositories pin by full commit SHA. Docs under `docs/` are human mirrors;
 
 ## CI skills
 
-`.agents/skills/` holds eight authored CI/GitHub-Actions skills (Codex and
-OpenCode discover them); `.claude/skills/` is a generated, byte-identical
-mirror — never edit it, run `python3 scripts/sync_skills.py` and let
-`scripts/check_skills.py` (in validate_all) enforce parity. Reach for
+`.agents/skills/` holds the project's authored skills (Codex and OpenCode
+discover them); `.claude/skills/` is a generated, byte-identical mirror — never
+edit it, run `python3 scripts/sync_skills.py` and let `scripts/check_skills.py`
+(in validate_all) enforce parity, the fixed skill set, and the
+no-hard-coded-quota guard. Two groups: eight portable CI/GitHub-Actions doctrine
+skills (`ci-*`, `github-actions-*`), and three repo-operation skills for working
+on this repo — `nddev-repo-orientation` (start here), `nddev-change-flow` (the
+golden path), `nddev-release-flow` (releasing). Reach for
 `ci-free-tier-planner` when choosing tiers (its data is
 `catalog/product-facts.yml`), `ci-runtime-contract-testing` /
 `ci-inventory-audit` when reasoning about coverage (data:

@@ -22,9 +22,12 @@ MIRROR = REPO_ROOT / ".claude" / "skills"
 NAME_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 MARKER = ".generated-from-agents-skills"
 EXPECTED_SKILLS = {
+    # Portable CI/GitHub-Actions doctrine (published as product).
     "ci-inventory-audit", "github-actions-authoring", "github-actions-security",
     "ci-free-tier-planner", "ci-failure-triage", "ci-release-provenance",
     "ci-cost-performance", "ci-runtime-contract-testing",
+    # Repository-operation skills for agents working on this repo.
+    "nddev-repo-orientation", "nddev-change-flow", "nddev-release-flow",
 }
 PLACEHOLDERS = ("TODO_PLACEHOLDER", "<fill-me>", "TBD_PLACEHOLDER")
 # Volatile plan/price/quota figures must live only in catalog/product-facts.yml

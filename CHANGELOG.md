@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Three repository-operation skills for agents** under `.agents/skills/`
+  (mirrored to `.claude/skills/`): `nddev-repo-orientation` (instant mental
+  model, file map, contract index, and a task router), `nddev-change-flow` (the
+  complete golden-path checklist, including paired-variant mirroring and the
+  runtime-coverage "static-only dance"), and `nddev-release-flow` (version prep,
+  the signed tag, the immutable-release verification checklist, and the
+  post-release ledger re-promotion). They complement the eight portable
+  CI/GitHub-Actions doctrine skills and route to the catalog and agent
+  instructions as the source of truth rather than duplicating volatile facts.
+  `EXPECTED_SKILLS` and the `AGENTS.md` / `.claude/CLAUDE.md` skill sections now
+  describe the two groups.
+
 ### Changed
 
 - Re-promote the `release-supply-chain.yml` runtime-coverage record to
