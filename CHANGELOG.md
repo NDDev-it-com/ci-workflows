@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Re-promote the `release-supply-chain.yml` runtime-coverage record to
+  `runtime-proven` after the 0.9.0 release run
+  (`…/actions/runs/29173277373` at `e27d4e3`) re-executed the current workflow
+  live, recording the fresh run URL and `proven_digest`. Completes the honesty
+  cycle opened when RVR-P2-011 edited the workflow and correctly dropped it to
+  `static-only`.
+
 ## [0.9.0] - 2026-07-12
 
 ### Fixed

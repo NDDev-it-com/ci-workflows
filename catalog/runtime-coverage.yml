@@ -178,10 +178,10 @@ entries:
     last_run: null
     waiver: null
   - workflow: .github/workflows/release-supply-chain.yml
-    status: static-only
-    evidence: "Edited after the 0.8.1 proving run to bound runtime_paths to a subset of archive_paths (RVR-P2-011); check_release_supply_chain.py exercises the extracted archive/payload/syft/runtime/notes/asset/version programs in hermetic temp git repos until the next release re-proves it live."
-    validator: scripts/check_release_supply_chain.py
-    last_run: null
+    status: runtime-proven
+    evidence: "Dogfooded by this repo's release.yml on the 0.9.0 tag (e27d4e3); archive/SBOM/attest/publish lanes executed live and both attestations verify. The optional runtime_paths ⊆ archive_paths bundle path is covered by check_release_supply_chain.py fixtures."
+    last_run: https://github.com/NDDev-it-com/nddev-ci-workflows/actions/runs/29173277373
+    proven_digest: 693e911833b3c20ddf53cba60a4215d2b56a15a473f6d65691592a10a0995e38
     waiver: null
   - workflow: .github/workflows/rust-ci.yml
     status: unverified
