@@ -44,6 +44,9 @@ on:
         description: >-
           Optional space-separated normalized tracked path selections for a
           second, minimal runtime bundle attached alongside the source archive.
+          Every selection must also be covered by archive_paths (the runtime
+          bundle must be a subset of the source archive) so the source SPDX
+          SBOM stays a complete inventory of everything the release ships.
           Empty (default) produces no runtime bundle and leaves every other
           asset, checksum, and attestation byte-for-byte unchanged.
         type: string
@@ -680,6 +683,42 @@ jobs:
               members.append((name, mode == b"100755", os.fsdecode(blob)))
           if not members:
               fail("runtime selection matched no tracked files")
+
+          # Every runtime-bundle file must also be in the source archive, whose
+          # exact payload is the only thing Syft scans for sbom.spdx.json. If the
+          # runtime bundle pulled in tracked files outside archive_paths they
+          # would ship attested-for-provenance but absent from the SBOM, so keep
+          # the runtime selection a subset of archive_paths -- that keeps the
+          # source SBOM a complete inventory of everything the release ships.
+          archive_raw = os.environ.get("ARCHIVE_PATHS", "")
+          try:
+              archive_tokens = shlex.split(archive_raw, comments=False, posix=True)
+          except ValueError:
+              fail("archive_paths must be a well-formed space-separated list")
+          if not archive_tokens:
+              fail("archive_paths must be non-empty to bound the runtime bundle")
+          archive_index = subprocess.run(
+              ["git", "--literal-pathspecs", "ls-files", "-z", "--", *archive_tokens],
+              check=False,
+              stdout=subprocess.PIPE,
+              stderr=subprocess.DEVNULL,
+          )
+          if archive_index.returncode != 0:
+              fail("git rejected archive_paths while bounding the runtime bundle")
+          archive_files = {
+              os.fsdecode(chunk)
+              for chunk in archive_index.stdout.split(b"\0")
+              if chunk
+          }
+          outside = sorted(
+              name for name, _executable, _blob in members
+              if name not in archive_files
+          )
+          if outside:
+              fail(
+                  "runtime_paths selects files outside archive_paths, so they "
+                  f"would ship without SBOM coverage: {outside}"
+              )
 
           mtime = int(
               subprocess.check_output(["git", "log", "-1", "--format=%ct"], text=True).strip()

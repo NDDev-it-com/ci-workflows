@@ -322,6 +322,53 @@ def _check_archive_program(program: str, problems: list[str]) -> None:
         _expect_failure(problems, "archive_paths/modified-tracked-file", dirty)
 
 
+def _check_runtime_bundle_program(program: str, problems: list[str]) -> None:
+    with tempfile.TemporaryDirectory(prefix="nddev-release-runtime-") as raw_root:
+        root = Path(raw_root)
+        _init_repo(root)
+        (root / "README.md").write_text("doc\n", encoding="utf-8")
+        (root / "src").mkdir()
+        (root / "src" / "app.py").write_text("app\n", encoding="utf-8")
+        (root / "extra.txt").write_text("tracked but not archived\n", encoding="utf-8")
+        _commit_all(root)
+
+        def run(runtime_paths: str, archive_paths: str, index: int):
+            return _run_python(
+                program,
+                cwd=root,
+                env={
+                    "RUNTIME_PATHS": runtime_paths,
+                    "ARCHIVE_PATHS": archive_paths,
+                    "PACKAGE_NAME": "pkg",
+                    "RELEASE_VERSION": "1.2.3",
+                },
+                args=(str(root / f"pkg-runtime-{index}.tar.gz"),),
+            )
+
+        subset = run("src", "README.md src", 1)
+        if subset.returncode != 0:
+            problems.append(
+                "runtime bundle rejected a valid subset selection: "
+                + (subset.stderr.strip() or "unknown error")
+            )
+        # The core RVR-P2-011 guarantee: a runtime file outside archive_paths is
+        # absent from the Syft-scanned source payload, so it must be refused.
+        _expect_failure(
+            problems,
+            "runtime-bundle/outside-archive",
+            run("extra.txt", "README.md src", 2),
+        )
+        _expect_failure(
+            problems, "runtime-bundle/absolute", run("/etc/passwd", "README.md src", 3)
+        )
+        _expect_failure(
+            problems, "runtime-bundle/unmatched", run("missing", "README.md src", 4)
+        )
+        _expect_failure(
+            problems, "runtime-bundle/empty-archive-bound", run("src", "", 5)
+        )
+
+
 def _write_payload_fixture(root: Path) -> tuple[Path, Path]:
     source = root / "source"
     payload = root / "payload"
@@ -1418,6 +1465,9 @@ def check() -> list[str]:
         )
         archive_program = _embedded_python(build)
         payload_program = _embedded_python(payload)
+        runtime_program = _embedded_python(
+            _step(reusable, "release", "Build deterministic runtime bundle")
+        )
         asset_program = _embedded_python(
             _step(
                 reusable, "release", "Finalize manifest, checksums, and asset closure"
@@ -1438,6 +1488,7 @@ def check() -> list[str]:
 
     _check_archive_program(archive_program, problems)
     _check_payload_program(payload_program, problems)
+    _check_runtime_bundle_program(runtime_program, problems)
     _check_version_programs(input_program, checked_out_program, self_version, problems)
     _check_syft_program(syft_run, syft_env, problems)
     _check_notes_program(notes_program, problems)

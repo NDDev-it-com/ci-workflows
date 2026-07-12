@@ -53,6 +53,23 @@
   foreign-URL, non-run-URL, missing-digest, and stale-digest. Found by an
   independent forensic review (RVR-P2-009).
 
+- **Bound the optional runtime bundle to the SBOM-covered source archive
+  (RVR-P2-011).** `release-supply-chain.yml` and its byte-parallel free twin
+  attach an optional second `runtime_paths` bundle that received a
+  build-provenance attestation but no SBOM — and because `runtime_paths` was
+  validated independently of `archive_paths`, it could ship tracked files the
+  Syft scan of the source payload never saw. Enforce `runtime_paths ⊆
+  archive_paths` inside the deterministic-bundle program (both variants,
+  byte-identically) so every file in the runtime bundle is also in the source
+  archive that `sbom.spdx.json` inventories — the source SBOM is now provably a
+  superset of everything the release ships. Add a `check_release_supply_chain.py`
+  fixture (the runtime-bundle program was previously the one embedded program
+  with no hermetic test) covering subset-accepted and outside-archive / absolute
+  / unmatched / empty-archive-refused. The `release-supply-chain.yml`
+  runtime-coverage record drops to `static-only` (its contract validator stands
+  in) until the next release re-proves it live. Found by an independent forensic
+  review.
+
 ### Changed
 
 - **Catalog tool inventory + currency (`catalog/tools.yml`).** Add the seven
