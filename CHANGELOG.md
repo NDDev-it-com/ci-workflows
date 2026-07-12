@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-07-12
+
 ### Added
 
 - **Three repository-operation skills for agents** under `.agents/skills/`
