@@ -21,6 +21,10 @@ updates:
         applies-to: version-updates
         patterns:
           - "*"
+        # Swift major tags can move before a stable release. Keep them in a
+        # separately reviewable PR that must carry runtime consumer evidence.
+        exclude-patterns:
+          - swift-actions/setup-swift
   - package-ecosystem: pip
     directory: "/"
     schedule:

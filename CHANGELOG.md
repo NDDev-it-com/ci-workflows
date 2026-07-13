@@ -10,6 +10,10 @@
 
 ### Changed
 
+- Exclude `swift-actions/setup-swift` from the broad GitHub Actions Dependabot
+  group so major Swift action updates receive a separate review and runtime
+  consumer proof instead of blocking unrelated stable action updates.
+
 - Make `private-static.yml` caller-provided install and validation command
   blocks fail on the first unsuccessful command, and enforce both fail-fast
   runners through the reusable-workflow contract validator.
