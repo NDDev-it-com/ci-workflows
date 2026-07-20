@@ -2,7 +2,7 @@ schema_version: 1
 
 repository:
   id: "repo_01KX8PR6R8YJETP3PV4H7E608B"
-  display_name: "nddev-ci-workflows"
+  display_name: "ci-workflows"
   roles:
     - "project"
     - "module"
@@ -13,7 +13,7 @@ provider:
   installation: "installation:github-organization"
   repository_id: 1289065451
   owner: "NDDev-it-com"
-  name: "nddev-ci-workflows"
+  name: "ci-workflows"
 
 classification:
   portfolios:
