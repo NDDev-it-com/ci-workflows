@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-07-21
+
 ### Changed
 
 - **Repository renamed `nddev-ci-workflows` → `ci-workflows`.** Every active
