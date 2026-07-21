@@ -28,6 +28,7 @@ import check_actionlint_contract
 import check_benchmark_contract
 import check_permissions
 import check_pinned_actions
+import check_tool_pinning
 import check_release_supply_chain
 import check_docs_links
 import check_examples
@@ -44,6 +45,7 @@ import validate_runtime_coverage
 
 CHECKS = [
     ("pinned-actions", check_pinned_actions.check),
+    ("tool-pinning", check_tool_pinning.check),
     ("permissions", check_permissions.check),
     ("workflow-contracts", check_workflow_contracts.check),
     ("harden-runner-contract", check_harden_runner_contract.check),

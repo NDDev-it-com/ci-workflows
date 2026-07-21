@@ -340,11 +340,11 @@ tools:
     name: semgrep
     homepage: "https://github.com/semgrep/semgrep"
     kind: cli
-    current_version: "v1.169.0"
+    current_version: "v1.170.0"
     pin: null
     used_by:
       - .github/workflows/semgrep-ci.yml
-    last_verified: "2026-07-12"
+    last_verified: "2026-07-21"
 
   - id: anchore-scan-action
     name: anchore/scan-action
