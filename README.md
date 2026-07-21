@@ -1,4 +1,4 @@
-# nddev-ci-workflows
+# ci-workflows
 
 A **July-2026 GitHub-native CI/CD, security, governance, and supply-chain
 automation knowledge base plus reusable workflow library** for the NDDev estate.
@@ -83,18 +83,18 @@ permissions: {}
 jobs:
   codeql:
     permissions: { actions: read, contents: read, security-events: write }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-codeql.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/public-codeql.yml@<sha>
     with:
       languages: '["python","actions"]'
   secret-scan:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/secret-scan.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/secret-scan.yml@<sha>
   actionlint:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/actionlint.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/actionlint.yml@<sha>
   zizmor:
     permissions: { contents: read, security-events: write }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/zizmor-sarif.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/zizmor-sarif.yml@<sha>
 ```
 
 Dependency Review runs **on pull requests only**:
@@ -107,7 +107,7 @@ permissions: {}
 jobs:
   dependency-review:
     permissions: { contents: read, pull-requests: write }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-dependency-review.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/public-dependency-review.yml@<sha>
 ```
 
 OSSF Scorecard runs **on push-to-default + schedule only** (`pull_request` is
@@ -127,7 +127,7 @@ permissions: {}
 jobs:
   scorecard:
     permissions: { id-token: write, contents: read, actions: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-scorecard-json.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/public-scorecard-json.yml@<sha>
 ```
 
 ### Private repository (free-minimal)
@@ -142,16 +142,16 @@ permissions: {}
 jobs:
   secret-scan:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/secret-scan.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/secret-scan.yml@<sha>
   actionlint:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/actionlint.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/actionlint.yml@<sha>
   zizmor:
     permissions: { contents: read }   # no security-events: write — least privilege
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/zizmor-no-sarif.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/zizmor-no-sarif.yml@<sha>
   validate:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/private-static.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/private-static.yml@<sha>
     with:
       command: "python3 scripts/validate_all.py"
 ```
@@ -170,7 +170,7 @@ permissions: {}
 jobs:
   publish:
     permissions: { contents: write, id-token: write, attestations: write, artifact-metadata: write }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/release-supply-chain.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/release-supply-chain.yml@<sha>
     with:
       version: ${{ github.ref_name }}
       package_name: my-repo
@@ -184,7 +184,7 @@ five checksummed assets, `contents: write` only, no attest actions:
 jobs:
   publish:
     permissions: { contents: write }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/release-supply-chain-free.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/release-supply-chain-free.yml@<sha>
     with:
       version: ${{ github.ref_name }}
       package_name: my-repo
@@ -316,4 +316,4 @@ examples/   copy-paste callers: per-tier + languages/ quality/ security/ testing
 
 - Security policy: [SECURITY.md](SECURITY.md)
 - Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
-- Releases: https://github.com/NDDev-it-com/nddev-ci-workflows/releases
+- Releases: https://github.com/NDDev-it-com/ci-workflows/releases

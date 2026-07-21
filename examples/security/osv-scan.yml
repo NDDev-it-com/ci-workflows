@@ -10,6 +10,6 @@ concurrency:
 jobs:
   osv-scan:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/osv-scan.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/osv-scan.yml@<sha>
     with:
       scan_args: '--recursive .'

@@ -1,6 +1,6 @@
 ---
 name: nddev-release-flow
-description: The end-to-end release procedure for nddev-ci-workflows — version prep, the signed SemVer tag, the immutable-release verification checklist, and the post-release runtime-coverage re-promotion. Invoke when cutting or verifying a release. Requires an authorized maintainer.
+description: The end-to-end release procedure for ci-workflows — version prep, the signed SemVer tag, the immutable-release verification checklist, and the post-release runtime-coverage re-promotion. Invoke when cutting or verifying a release. Requires an authorized maintainer.
 license: AGPL-3.0-or-later
 compatibility: Codex and Agent Skills compatible; OpenCode discovers .agents/skills. Generate .claude/skills mirrors for Claude Code.
 metadata:
@@ -10,7 +10,7 @@ metadata:
   reviewed_at: '2026-07-12'
 ---
 
-# Releasing nddev-ci-workflows
+# Releasing ci-workflows
 
 Publishing a release is outward-facing and irreversible — do it only with
 maintainer authorization. New to the repo? Read `nddev-repo-orientation` and
@@ -55,7 +55,7 @@ configured in this checkout):
 ```bash
 git checkout main && git pull --ff-only
 cat VERSION                                # must equal the tag you are about to cut
-git tag -s X.Y.Z -m "nddev-ci-workflows X.Y.Z"
+git tag -s X.Y.Z -m "ci-workflows X.Y.Z"
 git tag -v X.Y.Z                           # expect a Good signature
 git push origin X.Y.Z                      # this triggers release.yml
 ```

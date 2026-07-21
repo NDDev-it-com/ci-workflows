@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Repository renamed `nddev-ci-workflows` → `ci-workflows`.** Every active
+  and identity surface now uses the new coordinate: release `package_name`,
+  all `examples/**` reusable `uses:` refs, README/docs/skills, and the two
+  gate-coupled slugs (`check_examples.py` `USES_RE`, `validate_runtime_coverage.py`
+  `REPO_SLUG` + `runtime-coverage.yml` run URLs). Consumers must repin reusable
+  `uses:` references to `NDDev-it-com/ci-workflows/…` (GitHub does not redirect
+  `uses:` across a rename).
+- Pin previously-mutable uv/bun tool versions: `semgrep-ci` `semgrep_version`
+  default `1.170.0`, `sql-ci` `sqlfluff_version` default `4.2.2`, and the
+  `web-ci` default `lint_command` now pins `stylelint@17.14.1` +
+  `htmlhint@1.9.2`. Empty/bare versions previously floated to the latest
+  release at run time.
+
+### Added
+
+- `check_tool_pinning` validator (wired into `validate_all`): rejects empty
+  uv/bun tool-version inputs and bare `uvx`/`bunx <tool>` invocations, keeping
+  tool versions as reproducible as the full-SHA action pins.
+
 ## [0.11.3] - 2026-07-21
 
 ### Changed

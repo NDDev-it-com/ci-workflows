@@ -2,7 +2,7 @@
 # The Scorecard action supports only `push` and `schedule` on the default
 # branch; `pull_request`/`workflow_dispatch` are experimental. Keep it separate
 # from the pull_request-triggered security suite.
-# Replace @<sha> with a pinned full commit SHA of nddev-ci-workflows.
+# Replace @<sha> with a pinned full commit SHA of ci-workflows.
 name: scorecard
 on:
   push: { branches: [main] }
@@ -15,4 +15,4 @@ jobs:
       id-token: write
       contents: read
       actions: read
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-scorecard-json.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/public-scorecard-json.yml@<sha>

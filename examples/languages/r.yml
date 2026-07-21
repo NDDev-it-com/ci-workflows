@@ -10,7 +10,7 @@ concurrency:
 jobs:
   r:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/r-ci.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/r-ci.yml@<sha>
     with:
       lint: true
       test_command: "Rscript -e 'testthat::test_local()'"

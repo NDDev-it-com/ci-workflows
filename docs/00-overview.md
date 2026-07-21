@@ -1,6 +1,6 @@
-# nddev-ci-workflows — Overview
+# ci-workflows — Overview
 
-`nddev-ci-workflows` is a **reusable GitHub Actions library plus a GitHub-native
+`ci-workflows` is a **reusable GitHub Actions library plus a GitHub-native
 CI/CD, security, governance, and supply-chain knowledge base** for the NDDev
 estate, current for July 2026. Consumers reference the reusable workflows by
 full commit SHA; the docs in this folder explain the platform behavior those
@@ -37,7 +37,7 @@ jobs:
   actionlint:
     permissions:
       contents: read
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/actionlint.yml@<full-sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/actionlint.yml@<full-sha>
 ```
 
 The caller job must grant every permission the reusable job declares, or the run

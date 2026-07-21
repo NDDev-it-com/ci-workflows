@@ -1,4 +1,4 @@
-# nddev-ci-workflows — Claude Code project memory
+# ci-workflows — Claude Code project memory
 
 Reusable GitHub Actions workflow library + machine-readable capability
 catalog. The product is `.github/workflows/*.yml` (`ci.yml` and `release.yml`

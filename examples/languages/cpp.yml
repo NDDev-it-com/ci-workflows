@@ -10,7 +10,7 @@ concurrency:
 jobs:
   cpp:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/cpp-ci.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/cpp-ci.yml@<sha>
     with:
       apt_packages: 'cppcheck ninja-build'
       format_check: true

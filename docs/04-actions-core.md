@@ -25,7 +25,7 @@ on:
 jobs:
   lint:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/actionlint.yml@<full-sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/actionlint.yml@<full-sha>
 ```
 
 Rules that matter:
@@ -62,7 +62,7 @@ jobs:
       actions: read
       contents: read
       security-events: write   # required by public-codeql.yml
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-codeql.yml@<full-sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/public-codeql.yml@<full-sha>
 ```
 
 Each reusable in this library documents its required permissions in its header;

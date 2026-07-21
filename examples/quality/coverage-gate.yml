@@ -11,7 +11,7 @@ concurrency:
 jobs:
   coverage:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/coverage-gate.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/coverage-gate.yml@<sha>
     with:
       coverage_command: 'uv sync --frozen && uv run pytest --cov --cov-report=xml'
       files: coverage.xml

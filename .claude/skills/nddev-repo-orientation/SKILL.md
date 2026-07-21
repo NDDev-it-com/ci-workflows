@@ -1,6 +1,6 @@
 ---
 name: nddev-repo-orientation
-description: Orient an agent on the nddev-ci-workflows repository in a single read — its catalog-as-source-of-truth architecture, the non-negotiable contracts, the validation gate, and which skill or file to reach for each task. Invoke first when you start work in this repository.
+description: Orient an agent on the ci-workflows repository in a single read — its catalog-as-source-of-truth architecture, the non-negotiable contracts, the validation gate, and which skill or file to reach for each task. Invoke first when you start work in this repository.
 license: AGPL-3.0-or-later
 compatibility: Codex and Agent Skills compatible; OpenCode discovers .agents/skills. Generate .claude/skills mirrors for Claude Code.
 metadata:
@@ -10,9 +10,9 @@ metadata:
   reviewed_at: '2026-07-12'
 ---
 
-# nddev-ci-workflows — repository orientation
+# ci-workflows — repository orientation
 
-Read this first when you start work in `nddev-ci-workflows`. It gives you the
+Read this first when you start work in `ci-workflows`. It gives you the
 mental model, the rules you cannot break, and a router to the right skill or
 file for whatever you were asked to do. It is a map, not a source of truth —
 whenever a specific fact matters, follow the pointer to the authoritative file

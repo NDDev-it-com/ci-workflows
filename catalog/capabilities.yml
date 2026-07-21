@@ -1,4 +1,4 @@
-# nddev-ci-workflows capability catalog
+# ci-workflows capability catalog
 # Machine-readable source of truth. Mirrored by docs/. Enforced by scripts/validate_catalog.py.
 # Schema and enums are documented in catalog/README.md.
 # Last verified: 2026-07-04

@@ -44,7 +44,7 @@ jobs:
       actions: read
       contents: read
       security-events: write
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-codeql.yml@<full-sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/public-codeql.yml@<full-sha>
     with:
       languages: '["python","actions"]'
       queries: security-and-quality
@@ -84,7 +84,7 @@ jobs:
       id-token: write
       contents: read
       actions: read
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-scorecard-json.yml@<full-sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/public-scorecard-json.yml@<full-sha>
 ```
 
 <a id="dependency-review"></a>
@@ -102,7 +102,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-dependency-review.yml@<full-sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/public-dependency-review.yml@<full-sha>
     with:
       fail_on_severity: moderate
 ```

@@ -10,7 +10,7 @@ concurrency:
 jobs:
   qt:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/qt-ci.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/qt-ci.yml@<sha>
     with:
       qt_version: '6.8.*'
       qt_modules: 'qtcharts'

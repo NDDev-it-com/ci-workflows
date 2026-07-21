@@ -109,7 +109,7 @@ jobs:
     uses: ./.github/workflows/release-supply-chain.yml
     with:
       version: ${{ needs.resolve.outputs.version }}
-      package_name: nddev-ci-workflows
+      package_name: ci-workflows
       archive_paths: >-
         README.md LICENSE NOTICE SECURITY.md SUPPORT.md CODE_OF_CONDUCT.md
         CONTRIBUTING.md AGENTS.md VERSION CHANGELOG.md .gitignore .github

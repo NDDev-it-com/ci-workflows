@@ -11,4 +11,4 @@ permissions: {}
 jobs:
   pr-hygiene:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/pr-hygiene.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/pr-hygiene.yml@<sha>

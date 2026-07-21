@@ -1,6 +1,6 @@
 $schema: "https://json-schema.org/draft/2020-12/schema"
-$id: "https://github.com/NDDev-it-com/nddev-ci-workflows/catalog/schema/capability.schema.yaml"
-title: nddev-ci-workflows capability catalog
+$id: "https://github.com/NDDev-it-com/ci-workflows/catalog/schema/capability.schema.yaml"
+title: ci-workflows capability catalog
 type: object
 required:
   - capabilities

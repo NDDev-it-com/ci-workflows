@@ -10,6 +10,6 @@ concurrency:
 jobs:
   iac-scan:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/iac-scan.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/iac-scan.yml@<sha>
     with:
       framework: terraform

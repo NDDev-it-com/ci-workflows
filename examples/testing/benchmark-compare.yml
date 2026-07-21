@@ -9,7 +9,7 @@ permissions: {}
 jobs:
   benchmark:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/benchmark-compare.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/benchmark-compare.yml@<sha>
     with:
       language: python
       tool: pytest

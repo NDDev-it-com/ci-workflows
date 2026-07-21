@@ -10,4 +10,4 @@ concurrency:
 jobs:
   docs-quality:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/docs-quality.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/docs-quality.yml@<sha>

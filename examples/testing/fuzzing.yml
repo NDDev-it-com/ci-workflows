@@ -7,6 +7,6 @@ permissions: {}
 jobs:
   fuzz:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/fuzzing.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/fuzzing.yml@<sha>
     with:
       fuzz_command: 'cargo fuzz run fuzz_target_1 -- -max_total_time=300'

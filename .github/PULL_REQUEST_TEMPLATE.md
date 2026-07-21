@@ -1,5 +1,5 @@
 <!--
-Thanks for contributing to nddev-ci-workflows.
+Thanks for contributing to ci-workflows.
 Every workflow here is a full-SHA-pinned dependency for other repos, so please
 complete this checklist. Security VULNERABILITIES must NOT be filed here — use a
 private GitHub Security Advisory (see SECURITY.md).

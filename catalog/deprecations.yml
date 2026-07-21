@@ -1,4 +1,4 @@
-# Deprecated, retiring, and removed capabilities relevant to nddev-ci-workflows.
+# Deprecated, retiring, and removed capabilities relevant to ci-workflows.
 # Machine-readable source of truth. Mirrored by docs/. Enforced by scripts/validate_catalog.py.
 # status enum: retiring | deprecated | removed
 # Last verified: 2026-07-04

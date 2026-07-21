@@ -9,13 +9,13 @@
 # (every reusable workflow has exactly one record) and evidence/waiver
 # discipline, and reports the honest status counts.
 schema: nddev-ci-runtime-contract-coverage/v1
-repository: NDDev-it-com/nddev-ci-workflows
+repository: NDDev-it-com/ci-workflows
 baseline_ref: 218f63feb6be020e71ff8ac8e18146a12fa23a38
 entries:
   - workflow: .github/workflows/actionlint.yml
     status: runtime-proven
     evidence: "Called by this repo's ci.yml on every run; Linux X64 default-input lane executed live."
-    last_run: https://github.com/NDDev-it-com/nddev-ci-workflows/actions/runs/29172553315
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/29172553315
     proven_digest: bbd3d7d2b010deb0e44ea47b655de77cac5fc3ad21869d7babe21547128139fd
     waiver: null
   - workflow: .github/workflows/benchmark-compare.yml
@@ -180,7 +180,7 @@ entries:
   - workflow: .github/workflows/release-supply-chain.yml
     status: runtime-proven
     evidence: "Dogfooded by this repo's release.yml on the 0.9.0 tag (e27d4e3); archive/SBOM/attest/publish lanes executed live and both attestations verify. The optional runtime_paths ⊆ archive_paths bundle path is covered by check_release_supply_chain.py fixtures."
-    last_run: https://github.com/NDDev-it-com/nddev-ci-workflows/actions/runs/29173277373
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/29173277373
     proven_digest: 693e911833b3c20ddf53cba60a4215d2b56a15a473f6d65691592a10a0995e38
     waiver: null
   - workflow: .github/workflows/rust-ci.yml

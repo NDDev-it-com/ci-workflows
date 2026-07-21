@@ -10,7 +10,7 @@ concurrency:
 jobs:
   rust:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/rust-ci.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/rust-ci.yml@<sha>
     with:
       components: 'clippy,rustfmt'
       build_command: 'cargo build --locked --all-targets'

@@ -1,7 +1,7 @@
 # Tag-driven immutable release WITHOUT attestations, for private repositories
 # on the Free, Pro, or Team plan (GitHub Artifact Attestations there require
 # GitHub Enterprise Cloud). Same five checksummed assets as the attested
-# variant. Replace @<sha> with a pinned full commit SHA of nddev-ci-workflows.
+# variant. Replace @<sha> with a pinned full commit SHA of ci-workflows.
 name: release
 on:
   push:
@@ -13,7 +13,7 @@ concurrency:
 jobs:
   publish:
     permissions: { contents: write }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/release-supply-chain-free.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/release-supply-chain-free.yml@<sha>
     with:
       version: ${{ github.ref_name }}
       package_name: my-repo

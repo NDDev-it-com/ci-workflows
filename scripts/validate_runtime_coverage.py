@@ -40,7 +40,7 @@ VALID_STATUS = {
 # than silently masquerading as still-proven. The validator cannot fetch the
 # run's tree, so it does not bind the run to the bytes — that stays a human
 # review step — but staleness is no longer invisible.
-REPO_SLUG = "NDDev-it-com/nddev-ci-workflows"
+REPO_SLUG = "NDDev-it-com/ci-workflows"
 REPO_RUN_RE = re.compile(
     r"^https://github\.com/" + re.escape(REPO_SLUG) + r"/actions/runs/\d+$"
 )

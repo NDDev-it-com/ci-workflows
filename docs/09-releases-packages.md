@@ -51,7 +51,7 @@ jobs:
       id-token: write
       attestations: write
       artifact-metadata: write
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/release-supply-chain.yml@<full-sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/release-supply-chain.yml@<full-sha>
     with:
       version: ${{ github.ref_name }}
       package_name: my-repo

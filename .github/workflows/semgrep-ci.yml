@@ -18,9 +18,9 @@ on:
         type: string
         default: 'p/ci'
       semgrep_version:
-        description: 'Exact semgrep version to pin (empty installs the latest release).'
+        description: 'Exact semgrep version to pin.'
         type: string
-        default: ''
+        default: '1.170.0'
       extra_args:
         type: string
         default: ''

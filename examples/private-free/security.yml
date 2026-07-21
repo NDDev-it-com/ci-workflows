@@ -1,7 +1,7 @@
 # Private free-minimal security suite (zero paid GitHub Advanced Security).
 # Harden-Runner and code scanning are paid on private repos, so this caller uses
 # workflows whose files contain neither paid capability.
-# Replace @<sha> with a pinned full commit SHA of nddev-ci-workflows.
+# Replace @<sha> with a pinned full commit SHA of ci-workflows.
 name: security
 on:
   push: { branches: [main] }
@@ -13,15 +13,15 @@ concurrency:
 jobs:
   secret-scan:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/secret-scan.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/secret-scan.yml@<sha>
   actionlint:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/actionlint.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/actionlint.yml@<sha>
   zizmor:
     permissions: { contents: read }   # least privilege: no security-events: write
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/zizmor-no-sarif.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/zizmor-no-sarif.yml@<sha>
   validate:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/private-static.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/private-static.yml@<sha>
     with:
       command: "python3 scripts/validate_all.py"

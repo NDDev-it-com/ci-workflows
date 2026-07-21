@@ -16,7 +16,7 @@ from _workflow_yaml import get_on, load_yaml
 REPO_ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES_DIR = REPO_ROOT / "examples"
 USES_RE = re.compile(
-    r"^NDDev-it-com/nddev-ci-workflows/\.github/workflows/[^@]+\.ya?ml@(<sha>|[0-9a-f]{40})$"
+    r"^NDDev-it-com/ci-workflows/\.github/workflows/[^@]+\.ya?ml@(<sha>|[0-9a-f]{40})$"
 )
 
 

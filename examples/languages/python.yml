@@ -10,7 +10,7 @@ concurrency:
 jobs:
   python:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/python-ci.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/python-ci.yml@<sha>
     with:
       python_version: '3.13'
       install_command: 'uv sync --frozen'

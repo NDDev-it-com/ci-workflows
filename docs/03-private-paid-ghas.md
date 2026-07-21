@@ -54,19 +54,19 @@ jobs:
       actions: read
       contents: read
       security-events: write
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-codeql.yml@<full-sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/public-codeql.yml@<full-sha>
     with:
       languages: '["python","actions"]'
   zizmor:
     permissions:
       contents: read
       security-events: write
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/zizmor-sarif.yml@<full-sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/zizmor-sarif.yml@<full-sha>
   dependency-review:
     permissions:
       contents: read
       pull-requests: write
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-dependency-review.yml@<full-sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/public-dependency-review.yml@<full-sha>
 ```
 
 ## Copilot Autofix

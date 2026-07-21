@@ -10,7 +10,7 @@ concurrency:
 jobs:
   sql:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/sql-ci.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/sql-ci.yml@<sha>
     with:
       dialect: postgres
       paths: 'migrations'

@@ -7,7 +7,7 @@ permissions: {}
 jobs:
   mutation:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/mutation-testing.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/mutation-testing.yml@<sha>
     with:
       language: python
       install_command: 'uv tool install mutmut'

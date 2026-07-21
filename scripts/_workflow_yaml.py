@@ -1,4 +1,4 @@
-"""Shared helpers for the nddev-ci-workflows validators.
+"""Shared helpers for the ci-workflows validators.
 
 GitHub Actions YAML uses the key ``on:``, which PyYAML's safe loader parses as
 the boolean ``True``. These helpers normalize that quirk and centralize the

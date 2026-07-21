@@ -10,7 +10,7 @@ concurrency:
 jobs:
   kotlin-android:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/kotlin-android-ci.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/kotlin-android-ci.yml@<sha>
     with:
       lint_command: './gradlew ktlintCheck detekt'
       build_command: './gradlew build'

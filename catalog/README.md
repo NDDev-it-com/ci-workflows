@@ -1,7 +1,7 @@
 # Capability catalog
 
 This directory is the **machine-readable source of truth** for the capabilities,
-external tools, and deprecations of `nddev-ci-workflows`. Human-facing docs under
+external tools, and deprecations of `ci-workflows`. Human-facing docs under
 `docs/` are mirrors of this catalog, not the other way around.
 `scripts/validate_catalog.py` enforces the schema and internal consistency
 defined below (required keys, key order, enum membership, and cross-file

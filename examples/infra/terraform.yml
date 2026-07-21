@@ -10,7 +10,7 @@ concurrency:
 jobs:
   terraform:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/terraform-ci.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/terraform-ci.yml@<sha>
     with:
       terraform_version: '1.13.0'   # pin for reproducible CI
       working_directory: infra

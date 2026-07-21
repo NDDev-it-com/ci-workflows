@@ -10,7 +10,7 @@ concurrency:
 jobs:
   node:
     permissions: { contents: read }
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/node-ci.yml@<sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/node-ci.yml@<sha>
     with:
       install_command: 'bun install --frozen-lockfile'
       test_command: 'bun test'

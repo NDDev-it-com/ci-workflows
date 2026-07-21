@@ -24,9 +24,9 @@ on:
         type: string
         default: '.'
       sqlfluff_version:
-        description: 'Exact sqlfluff version to pin (empty installs the latest release).'
+        description: 'Exact sqlfluff version to pin.'
         type: string
-        default: ''
+        default: '4.2.2'
       lint:
         description: 'Run sqlfluff lint.'
         type: boolean

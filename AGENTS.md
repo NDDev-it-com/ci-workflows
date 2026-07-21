@@ -1,4 +1,4 @@
-# nddev-ci-workflows — agent instructions
+# ci-workflows — agent instructions
 
 Reusable GitHub Actions workflow library plus a machine-readable capability
 catalog. `.github/workflows/` holds two self workflows (`ci.yml`,

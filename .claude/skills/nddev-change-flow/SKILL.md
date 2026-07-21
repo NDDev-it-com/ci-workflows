@@ -1,6 +1,6 @@
 ---
 name: nddev-change-flow
-description: The complete golden-path checklist for any change to the nddev-ci-workflows repository — editing a workflow, catalog entry, action pin, doc, or skill — so you touch every layer the catalog-driven pipeline expects and leave the validation gate green. Invoke before you edit.
+description: The complete golden-path checklist for any change to the ci-workflows repository — editing a workflow, catalog entry, action pin, doc, or skill — so you touch every layer the catalog-driven pipeline expects and leave the validation gate green. Invoke before you edit.
 license: AGPL-3.0-or-later
 compatibility: Codex and Agent Skills compatible; OpenCode discovers .agents/skills. Generate .claude/skills mirrors for Claude Code.
 metadata:
@@ -10,7 +10,7 @@ metadata:
   reviewed_at: '2026-07-12'
 ---
 
-# Making a change to nddev-ci-workflows
+# Making a change to ci-workflows
 
 Every change here is a supply-chain change for a downstream consumer, so the
 repository is fail-closed and heavily validated. Follow the golden path so you
