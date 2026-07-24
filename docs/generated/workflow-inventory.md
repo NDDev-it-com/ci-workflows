@@ -7,15 +7,18 @@
 | `.github/workflows/benchmark-compare.yml` | `benchmark-compare` | ga |
 | `.github/workflows/benchmark.yml` | `benchmark` | ga |
 | `.github/workflows/ci.yml` | internal | internal |
+| `.github/workflows/codeql.yml` | internal | internal |
 | `.github/workflows/container-ci.yml` | `container-scan-trivy` | ga |
 | `.github/workflows/coverage-gate.yml` | `coverage-gate` | ga |
 | `.github/workflows/cpp-ci.yml` | `cpp-ci` | ga |
 | `.github/workflows/cross-platform-smoke.yml` | `cross-platform-smoke` | ga |
 | `.github/workflows/dart-flutter-ci.yml` | `dart-flutter-ci` | ga |
+| `.github/workflows/dependency-review.yml` | internal | internal |
 | `.github/workflows/docs-ci.yml` | `docs-ci` | ga |
 | `.github/workflows/docs-quality.yml` | `docs-quality` | ga |
 | `.github/workflows/dotnet-ci.yml` | `dotnet-ci` | ga |
 | `.github/workflows/fuzzing.yml` | `fuzzing` | ga |
+| `.github/workflows/gitleaks.yml` | internal | internal |
 | `.github/workflows/go-ci.yml` | `go-ci` | ga |
 | `.github/workflows/grype-scan.yml` | `grype-sca` | ga |
 | `.github/workflows/hadolint-ci.yml` | `hadolint-dockerfile` | ga |
@@ -39,6 +42,7 @@
 | `.github/workflows/release-supply-chain.yml` | `artifact-attestations`, `sbom-generation`, `slsa-build-provenance`, `release-supply-chain` | ga |
 | `.github/workflows/release.yml` | internal | internal |
 | `.github/workflows/rust-ci.yml` | `rust-ci` | ga |
+| `.github/workflows/scorecard.yml` | internal | internal |
 | `.github/workflows/secret-scan.yml` | `gitleaks-secret-scan` | ga |
 | `.github/workflows/semgrep-ci.yml` | `semgrep-sast` | ga |
 | `.github/workflows/sql-ci.yml` | `sql-ci` | ga |

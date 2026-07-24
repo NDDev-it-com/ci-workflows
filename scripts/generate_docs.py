@@ -13,6 +13,8 @@ from typing import Any
 
 import yaml
 
+from _workflow_yaml import SELF_WORKFLOWS
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CATALOG = REPO_ROOT / "catalog" / "capabilities.yml"
 WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
@@ -83,7 +85,7 @@ def workflow_inventory(caps: list[dict[str, Any]]) -> str:
     ]
     for path in sorted(WORKFLOWS_DIR.glob("*.yml")):
         rel = f".github/workflows/{path.name}"
-        if path.name in {"ci.yml", "release.yml"}:
+        if path.name in SELF_WORKFLOWS:
             ids = "internal"
             statuses = "internal"
         else:

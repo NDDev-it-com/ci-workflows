@@ -12,6 +12,8 @@ from pathlib import Path
 
 import yaml
 
+from _workflow_yaml import SELF_WORKFLOWS
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CATALOG_DIR = REPO_ROOT / "catalog"
 WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
@@ -121,7 +123,7 @@ def check() -> list[str]:
         workflow_files = {
             f".github/workflows/{path.name}"
             for path in WORKFLOWS_DIR.glob("*.yml")
-            if path.name not in {"ci.yml", "release.yml"}
+            if path.name not in SELF_WORKFLOWS
         }
         missing_workflows = workflow_files - workflows_in_catalog
         if missing_workflows:

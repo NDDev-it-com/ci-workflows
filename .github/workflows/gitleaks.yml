@@ -1,0 +1,21 @@
+# Gitleaks over this repository's own history. Named gitleaks.yml because
+# secret-scan.yml is the reusable definition itself.
+name: gitleaks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: gitleaks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gitleaks:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/secret-scan.yml

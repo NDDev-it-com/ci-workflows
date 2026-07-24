@@ -14,8 +14,17 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parent.parent
 WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
 
-# Self workflows are not reusable (they are not `on: workflow_call`).
-SELF_WORKFLOWS = {"ci.yml", "release.yml"}
+# Self workflows are not reusable (they are not `on: workflow_call`). They are
+# this repository applying its own catalog to itself, so they carry no catalog,
+# runtime-coverage, or generated-inventory entry.
+SELF_WORKFLOWS = {
+    "ci.yml",
+    "codeql.yml",
+    "dependency-review.yml",
+    "gitleaks.yml",
+    "release.yml",
+    "scorecard.yml",
+}
 
 
 def workflow_files() -> list[Path]:
