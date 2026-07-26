@@ -5,13 +5,22 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # ci-gate is this repository's required context. A required check is never
+  # reported to a merge queue unless its workflow subscribes to merge_group,
+  # so without this an enabled queue would wait forever for a status that can
+  # never arrive.
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch:
 
 permissions: {}
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Cancel superseded PR iterations, but never a queued merge-group candidate
+  # or a main push: cancelling those makes branch protection observe a
+  # partial-cancel status instead of a decisive result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   validate:
