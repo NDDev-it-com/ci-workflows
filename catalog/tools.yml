@@ -220,11 +220,11 @@ tools:
     name: swift-actions/setup-swift
     homepage: "https://github.com/swift-actions/setup-swift"
     kind: action
-    current_version: "v2.4.0"
-    pin: "swift-actions/setup-swift@7ca6abe6b3b0e8b5421b88be48feee39cbf52c6a"
+    current_version: v3
+    pin: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9
     used_by:
       - .github/workflows/swift-ci.yml
-    last_verified: "2026-07-08"
+    last_verified: 2026-07-25
 
   - id: setup-r
     name: r-lib/actions/setup-r
@@ -370,11 +370,11 @@ tools:
     name: bridgecrewio/checkov-action
     homepage: "https://github.com/bridgecrewio/checkov-action"
     kind: action
-    current_version: "v12.3112.0"
-    pin: "bridgecrewio/checkov-action@a7683e7b72a04503521247973281ec8142e1ac1f"
+    current_version: v12.3114.0
+    pin: bridgecrewio/checkov-action@7b972723c44fb3d256283fac96fae5d7c1894bb7
     used_by:
       - .github/workflows/iac-scan.yml
-    last_verified: "2026-07-13"
+    last_verified: 2026-07-25
 
   - id: github-action-benchmark
     name: benchmark-action/github-action-benchmark
@@ -391,13 +391,13 @@ tools:
     name: actions/setup-node
     homepage: "https://github.com/actions/setup-node"
     kind: action
-    current_version: "v6.4.0"
-    pin: "actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e"
+    current_version: v7.0.0
+    pin: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
     used_by:
       - .github/workflows/benchmark.yml
       - .github/workflows/benchmark-compare.yml
       - .github/workflows/mutation-testing.yml
-    last_verified: "2026-07-12"
+    last_verified: 2026-07-25
 
   - id: setup-uv
     name: astral-sh/setup-uv
@@ -465,12 +465,12 @@ tools:
     name: actions/setup-java
     homepage: "https://github.com/actions/setup-java"
     kind: action
-    current_version: "v5.5.0"
-    pin: "actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a"
+    current_version: v5.6.0
+    pin: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
     used_by:
       - .github/workflows/java-ci.yml
       - .github/workflows/kotlin-android-ci.yml
-    last_verified: "2026-07-12"
+    last_verified: 2026-07-25
 
   - id: setup-terraform
     name: hashicorp/setup-terraform

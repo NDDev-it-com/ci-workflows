@@ -1,7 +1,7 @@
 name: sql-ci
 
-# Reusable SQL CI for BOTH tiers: pinned setup-python, and
-# sqlfluff lint (dialect-aware) plus an optional caller command passed via env.
+# Reusable SQL CI for BOTH tiers: pinned setup-uv, and sqlfluff lint
+# (dialect-aware) plus an optional caller command passed via env.
 
 on:
   workflow_call:
@@ -9,9 +9,6 @@ on:
       runner:
         type: string
         default: 'ubuntu-latest'
-      python_version:
-        type: string
-        default: '3.13'
       working_directory:
         type: string
         default: '.'

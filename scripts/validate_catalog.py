@@ -12,6 +12,8 @@ from pathlib import Path
 
 import yaml
 
+from _workflow_yaml import SELF_WORKFLOWS
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CATALOG_DIR = REPO_ROOT / "catalog"
 WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
@@ -121,7 +123,7 @@ def check() -> list[str]:
         workflow_files = {
             f".github/workflows/{path.name}"
             for path in WORKFLOWS_DIR.glob("*.yml")
-            if path.name not in {"ci.yml", "release.yml"}
+            if path.name not in SELF_WORKFLOWS
         }
         missing_workflows = workflow_files - workflows_in_catalog
         if missing_workflows:
@@ -167,8 +169,29 @@ def check() -> list[str]:
                 if kind == "container" and not CONTAINER_PIN_RE.match(pin):
                     problems.append(f"tool `{tid}`: container pin is not digest-pinned: {pin}")
             for used_by in tool.get("used_by", []):
-                if not (REPO_ROOT / used_by).exists():
+                used_path = REPO_ROOT / used_by
+                if not used_path.exists():
                     problems.append(f"tool `{tid}`: used_by path does not exist: {used_by}")
+                    continue
+                # The catalog is the declared source of truth for supply-chain
+                # posture, so a pin it records must be the pin the workflow
+                # actually uses. Checking only the pin's shape let four tools
+                # drift a full version behind (setup-swift by a major) while
+                # the gate stayed green.
+                if kind != "action" or not isinstance(pin, str) or "@" not in pin:
+                    continue
+                action_ref, pinned_sha = pin.split("@", 1)
+                actual = set(
+                    re.findall(
+                        rf"{re.escape(action_ref)}@([0-9a-f]{{40}})",
+                        used_path.read_text(encoding="utf-8"),
+                    )
+                )
+                for found in sorted(actual - {pinned_sha}):
+                    problems.append(
+                        f"tool `{tid}`: catalog pin {pinned_sha} does not match "
+                        f"{found} used in {used_by}"
+                    )
     elif tools_doc is not None:
         problems.append("tools.yml: expected a top-level mapping")
 

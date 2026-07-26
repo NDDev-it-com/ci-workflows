@@ -21,10 +21,10 @@ GitHub-native community surfaces and the health checklist.
 | `.github/FUNDING.yml` | Sponsorship links |
 
 This repository already ships `README.md`, `LICENSE`, `NOTICE`, `SECURITY.md`,
-and `.github/CODEOWNERS`. The remaining files (`CONTRIBUTING.md`,
-`CODE_OF_CONDUCT.md`, `SUPPORT.md`, `.github/ISSUE_TEMPLATE/`,
-`.github/PULL_REQUEST_TEMPLATE.md`, `.github/FUNDING.yml`) are the community
-surfaces to add for a fully green health check.
+`.github/CODEOWNERS`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`,
+`.github/ISSUE_TEMPLATE/`, and `.github/PULL_REQUEST_TEMPLATE.md`. Only
+`.github/FUNDING.yml` is absent, and it is optional — add it if sponsorship is
+ever accepted.
 
 ## Issue forms
 
