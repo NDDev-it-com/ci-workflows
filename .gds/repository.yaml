@@ -53,6 +53,9 @@ agent:
 module:
   contract: "public"
   consumption:
+    # Physically pinned as a gitlink by the control plane, and executed by
+    # GitHub directly from this repository as a reusable workflow.
+    - "git-submodule"
     - "runtime-service"
   compatibility: "semver"
   pin_policy: "default-branch-commit"
