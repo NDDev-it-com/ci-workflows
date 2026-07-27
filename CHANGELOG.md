@@ -4,6 +4,20 @@
 
 ### Fixed
 
+- **A grouped action bump could not land on its own.** Dependabot updates the
+  `uses:` pins inside the workflows but knows nothing about `catalog/tools.yml`,
+  so `validate_catalog.py` failed on seven tools whose catalog pin no longer
+  matched the workflow that used it, and `validate_runtime_coverage.py` failed
+  because two workflow files changed after the run that proved them. Catalog
+  pins and `current_version` synced for `attest`, `checkout`, `setup-python`,
+  `setup-go`, `setup-dotnet`, `labeler`, and `markdownlint-cli2-action`.
+  `actionlint.yml` is re-proven against the CI run that executed the new bytes —
+  this repository's own `ci.yml` calls it through a relative ref, so the proof is
+  real. `release-supply-chain.yml` is downgraded to `static-only`: nothing in
+  this repository's CI calls it, so no run has executed the new bytes, and the
+  ledger's rule is to downgrade rather than carry a stale proof. The next real
+  release re-proves it.
+
 - **The catalog recorded four action pins that no workflow used.** `setup-node`,
   `setup-java`, `setup-swift`, and `checkov-action` had drifted a version behind
   the SHA their `used_by` workflows actually reference — `setup-swift` by a full

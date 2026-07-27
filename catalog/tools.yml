@@ -109,8 +109,8 @@ tools:
     name: actions/attest
     homepage: "https://github.com/actions/attest"
     kind: action
-    current_version: "v4.1.1"
-    pin: "actions/attest@a1948c3f048ba23858d222213b7c278aabede763"
+    current_version: "v4.2.0"
+    pin: "actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6"
     used_by:
       - .github/workflows/release-supply-chain.yml
     last_verified: "2026-07-08"
@@ -129,8 +129,8 @@ tools:
     name: actions/checkout
     homepage: "https://github.com/actions/checkout"
     kind: action
-    current_version: "v7.0.0"
-    pin: "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0"
+    current_version: "v7.0.1"
+    pin: "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
     used_by:
       - .github/workflows/public-codeql.yml
       - .github/workflows/public-dependency-review.yml
@@ -147,8 +147,8 @@ tools:
     name: actions/setup-python
     homepage: "https://github.com/actions/setup-python"
     kind: action
-    current_version: "v6.3.0"
-    pin: "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1"
+    current_version: "v7.0.0"
+    pin: "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97"
     used_by:
       - .github/workflows/ci.yml
       - .github/workflows/cross-platform-smoke.yml
@@ -280,8 +280,8 @@ tools:
     name: DavidAnson/markdownlint-cli2-action
     homepage: "https://github.com/DavidAnson/markdownlint-cli2-action"
     kind: action
-    current_version: "v24.0.0"
-    pin: "DavidAnson/markdownlint-cli2-action@8de2aa07cae85fd17c0b35642db70cf5495f1d25"
+    current_version: "v24.1.0"
+    pin: "DavidAnson/markdownlint-cli2-action@6bf21b07787794f89a243495939cd651942aeabe"
     used_by:
       - .github/workflows/docs-quality.yml
     last_verified: "2026-07-08"
@@ -310,8 +310,8 @@ tools:
     name: actions/labeler
     homepage: "https://github.com/actions/labeler"
     kind: action
-    current_version: "v6.2.0"
-    pin: "actions/labeler@b8dd2d9be0f68b860e7dae5dae7d772984eacd6d"
+    current_version: "v7.0.0"
+    pin: "actions/labeler@bf12e9b00b37c5c0ca2b87b79b2daf7891dbda13"
     used_by:
       - .github/workflows/pr-hygiene.yml
     last_verified: "2026-07-12"
@@ -429,8 +429,8 @@ tools:
     name: actions/setup-go
     homepage: "https://github.com/actions/setup-go"
     kind: action
-    current_version: "v6.5.0"
-    pin: "actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16"
+    current_version: "v7.0.0"
+    pin: "actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e"
     used_by:
       - .github/workflows/benchmark.yml
       - .github/workflows/benchmark-compare.yml
@@ -455,8 +455,8 @@ tools:
     name: actions/setup-dotnet
     homepage: "https://github.com/actions/setup-dotnet"
     kind: action
-    current_version: "v5.4.0"
-    pin: "actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1"
+    current_version: "v6.0.0"
+    pin: "actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68"
     used_by:
       - .github/workflows/dotnet-ci.yml
     last_verified: "2026-07-12"

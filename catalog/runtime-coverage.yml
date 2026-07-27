@@ -15,8 +15,8 @@ entries:
   - workflow: .github/workflows/actionlint.yml
     status: runtime-proven
     evidence: "Called by this repo's ci.yml on every run; Linux X64 default-input lane executed live."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/29172553315
-    proven_digest: bbd3d7d2b010deb0e44ea47b655de77cac5fc3ad21869d7babe21547128139fd
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/30243258297
+    proven_digest: 116c4af8c18861a7c94000e277c3a4e9f1d158bcfbda02a7e6510dfc9d9cf8ff
     waiver: null
   - workflow: .github/workflows/benchmark-compare.yml
     status: static-only
@@ -178,10 +178,13 @@ entries:
     last_run: null
     waiver: null
   - workflow: .github/workflows/release-supply-chain.yml
-    status: runtime-proven
-    evidence: "Dogfooded by this repo's release.yml on the 0.9.0 tag (e27d4e3); archive/SBOM/attest/publish lanes executed live and both attestations verify. The optional runtime_paths ⊆ archive_paths bundle path is covered by check_release_supply_chain.py fixtures."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/29173277373
-    proven_digest: 693e911833b3c20ddf53cba60a4215d2b56a15a473f6d65691592a10a0995e38
+    status: static-only
+    validator: scripts/check_release_supply_chain.py
+    evidence: 'Executable contract validator exercises the embedded program(s). The
+      runtime proof lapsed when actions/attest and actions/checkout were bumped: this
+      repository CI never calls this workflow, so nothing has run the new bytes. The
+      next real release re-proves it.'
+    last_run: null
     waiver: null
   - workflow: .github/workflows/rust-ci.yml
     status: unverified
