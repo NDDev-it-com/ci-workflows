@@ -3,7 +3,7 @@
   "compiled_policy": {
     "repository_id": "repo_01KX8PR6R8YJETP3PV4H7E608B",
     "bundle_version": "0.1.0-dev",
-    "digest": "sha256:4c083f091179f66aa722860be41e90b35434a91f8c9b929e607d4a645b1fc9de"
+    "digest": "sha256:5d453079aee0e708ffdec1f011fb03f0b6162a81b6930b10e67e4d8887c6d8e9"
   },
   "sources": [
     {
@@ -12,7 +12,7 @@
       "priority": 100,
       "distribution": "public",
       "path": "policies/base/repository-default.yaml",
-      "digest": "sha256:5075e944793d13e6c506da09f136214872a40c5b91eabb06fae09d0993631649"
+      "digest": "sha256:e74e6dc4429eda77b02e0f5267dc0db5b25b1a666262660b9dd992d53922f15c"
     },
     {
       "id": "organization-default",
@@ -119,6 +119,27 @@
           "value": "read"
         }
       }
+    },
+    "package_management": {
+      "forbidden_executables": [
+        "pip",
+        "pipx",
+        "poetry",
+        "npm",
+        "npx",
+        "pnpm",
+        "yarn",
+        "corepack",
+        "mise",
+        "asdf"
+      ],
+      "language_dependency_managers": [
+        "uv",
+        "bun"
+      ],
+      "mutable_version_resolution": "forbidden",
+      "npm_family_on_managed_path": "forbidden",
+      "remote_stream_to_shell": "forbidden"
     },
     "release": {
       "compatibility_contract_required": true
@@ -379,6 +400,111 @@
       "operation": "set"
     },
     "/effective/github/workflow/default_workflow_permissions/value": {
+      "source": "repository-default",
+      "tier": "base",
+      "priority": 100,
+      "file": "policies/base/repository-default.yaml",
+      "operation": "set"
+    },
+    "/effective/package_management/forbidden_executables/0": {
+      "source": "repository-default",
+      "tier": "base",
+      "priority": 100,
+      "file": "policies/base/repository-default.yaml",
+      "operation": "set"
+    },
+    "/effective/package_management/forbidden_executables/1": {
+      "source": "repository-default",
+      "tier": "base",
+      "priority": 100,
+      "file": "policies/base/repository-default.yaml",
+      "operation": "set"
+    },
+    "/effective/package_management/forbidden_executables/2": {
+      "source": "repository-default",
+      "tier": "base",
+      "priority": 100,
+      "file": "policies/base/repository-default.yaml",
+      "operation": "set"
+    },
+    "/effective/package_management/forbidden_executables/3": {
+      "source": "repository-default",
+      "tier": "base",
+      "priority": 100,
+      "file": "policies/base/repository-default.yaml",
+      "operation": "set"
+    },
+    "/effective/package_management/forbidden_executables/4": {
+      "source": "repository-default",
+      "tier": "base",
+      "priority": 100,
+      "file": "policies/base/repository-default.yaml",
+      "operation": "set"
+    },
+    "/effective/package_management/forbidden_executables/5": {
+      "source": "repository-default",
+      "tier": "base",
+      "priority": 100,
+      "file": "policies/base/repository-default.yaml",
+      "operation": "set"
+    },
+    "/effective/package_management/forbidden_executables/6": {
+      "source": "repository-default",
+      "tier": "base",
+      "priority": 100,
+      "file": "policies/base/repository-default.yaml",
+      "operation": "set"
+    },
+    "/effective/package_management/forbidden_executables/7": {
+      "source": "repository-default",
+      "tier": "base",
+      "priority": 100,
+      "file": "policies/base/repository-default.yaml",
+      "operation": "set"
+    },
+    "/effective/package_management/forbidden_executables/8": {
+      "source": "repository-default",
+      "tier": "base",
+      "priority": 100,
+      "file": "policies/base/repository-default.yaml",
+      "operation": "set"
+    },
+    "/effective/package_management/forbidden_executables/9": {
+      "source": "repository-default",
+      "tier": "base",
+      "priority": 100,
+      "file": "policies/base/repository-default.yaml",
+      "operation": "set"
+    },
+    "/effective/package_management/language_dependency_managers/0": {
+      "source": "repository-default",
+      "tier": "base",
+      "priority": 100,
+      "file": "policies/base/repository-default.yaml",
+      "operation": "set"
+    },
+    "/effective/package_management/language_dependency_managers/1": {
+      "source": "repository-default",
+      "tier": "base",
+      "priority": 100,
+      "file": "policies/base/repository-default.yaml",
+      "operation": "set"
+    },
+    "/effective/package_management/mutable_version_resolution": {
+      "source": "repository-default",
+      "tier": "base",
+      "priority": 100,
+      "file": "policies/base/repository-default.yaml",
+      "operation": "set"
+    },
+    "/effective/package_management/npm_family_on_managed_path": {
+      "source": "repository-default",
+      "tier": "base",
+      "priority": 100,
+      "file": "policies/base/repository-default.yaml",
+      "operation": "set"
+    },
+    "/effective/package_management/remote_stream_to_shell": {
       "source": "repository-default",
       "tier": "base",
       "priority": 100,
