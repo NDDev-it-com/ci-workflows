@@ -37,6 +37,16 @@ three tiers as an opt-in fourth one — see
 [16 Code Quality tier](16-code-quality.md). Both free tiers exclude it, and the
 free maintainability substitutes are listed there.
 
+### What this estate actually owns
+
+The three tiers describe what GitHub *offers*. [17 NDDev estate
+tier](17-nddev-tier.md) records what the NDDev-it-com organization has **already
+bought** — Enterprise Cloud, Code Security, Secret Protection, and Code Quality —
+so repositories here stop being configured as if they were on the free plan. Its
+most consequential correction: Artifact Attestations are gated on Enterprise
+Cloud for private repos, and this estate **has** it, so private repositories
+release with full provenance instead of the `-free` variant.
+
 ## How to consume a reusable workflow
 
 Reference by `owner/repo/.github/workflows/<name>.yml@<full-sha>` from a caller
@@ -95,7 +105,8 @@ For end-to-end caller examples per tier, see the tier docs and the repository
 - Tiers: [01 Public OSS free](01-public-oss-free.md) ·
   [02 Private free](02-private-free.md) ·
   [03 Private paid / GHAS](03-private-paid-ghas.md) ·
-  [16 Code Quality](16-code-quality.md)
+  [16 Code Quality](16-code-quality.md) ·
+  [17 NDDev estate](17-nddev-tier.md)
 - Platform: [04 Actions core](04-actions-core.md) · [05 Runners](05-runners.md)
 - Security: [06 Security scanning](06-security-scanning.md) ·
   [07 Supply chain / SLSA / SBOM / attestations](07-supply-chain-slsa-sbom-attestations.md)

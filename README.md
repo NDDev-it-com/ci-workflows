@@ -29,6 +29,14 @@ rather than per repository. Both free tiers exclude it; enable it deliberately
 via the org-level **Repository access** control. See
 [`docs/16-code-quality.md`](docs/16-code-quality.md).
 
+**The NDDev estate is not on the free plan.** The three tiers above describe what
+GitHub offers; [`docs/17-nddev-tier.md`](docs/17-nddev-tier.md) records what this
+organization has already bought — Enterprise Cloud, Code Security, Secret
+Protection, Code Quality — and which generic tier advice therefore does **not**
+apply here. Chiefly: private repositories release with attested
+`release-supply-chain.yml`, not the `-free` variant, because Artifact
+Attestations are gated on Enterprise Cloud and this estate has it.
+
 ## Capability → workflow map
 
 | Capability | Workflow | Public | Private-free | Private-paid |

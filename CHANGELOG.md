@@ -44,6 +44,33 @@
   not re-derive it, replacing a stale instruction to "refresh that fact" on a
   date that has passed.
 
+- **The library described GitHub's price list, not this estate's receipts.**
+  Every tier doc reasoned from what GitHub charges a hypothetical adopter, so a
+  private NDDev repository was configured as if it were on the free plan while
+  the organization was already paying for Enterprise Cloud, Code Security,
+  Secret Protection, and Code Quality. `docs/17-nddev-tier.md` records the
+  verified entitlements and the advice that consequently does not apply.
+
+  The concrete loss this closes: `docs/02-private-free.md` routes private
+  releases to `release-supply-chain-free.yml` because Artifact Attestations
+  require Enterprise Cloud on private repos. This estate **has** Enterprise
+  Cloud, so all 26 private repositories were emitting `slsa_build_level: null`
+  and discarding provenance that was already bought. They can use the attested
+  `release-supply-chain.yml`.
+
+  Also recorded, because it inverts the usual cost instinct: these products bill
+  per active committer counted **once per organization**, so with one committer
+  the estate pays the same whether one repository or fifty are enabled — partial
+  coverage would have cost identically and protected less. `examples/nddev/`
+  joins the aggregate-example allowlist in `validate_catalog.py`, alongside the
+  three existing per-tier security suites.
+
+  The doc is explicit about what is *absent* too: Copilot Autofix is unavailable
+  (Copilot Business provisioned, zero seats assigned), and SHA pinning is
+  unenforced at both org and enterprise (`sha_pinning_required: false`) — flagged
+  rather than recommended blindly, since enabling it org-wide would break any
+  repository still pinning actions by tag.
+
 ### Fixed
 
 - **A grouped action bump could not land on its own.** Dependabot updates the
