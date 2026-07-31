@@ -35,6 +35,14 @@ turning it on for private repos, where it is billed per active committer.
 > `release-supply-chain-free.yml` instead
 > (see [07 Supply chain](07-supply-chain-slsa-sbom-attestations.md)).
 
+> **Also not unlocked by GHAS:** GitHub Code Quality is a **separate licence**,
+> billed per active committer independently of Code Security and Secret
+> Protection. Buying either GHAS product does not include it, and buying Code
+> Quality does not give you CodeQL *security* scanning on a private repo. Both
+> drive CodeQL, so holding both means paying two products to run one engine over
+> the same code for different query suites —
+> see [16 Code Quality tier](16-code-quality.md#relationship-to-ghas).
+
 ## Enabling on a private repo
 
 1. Purchase/assign GHAS (Code Security and/or Secret Protection) at the org or

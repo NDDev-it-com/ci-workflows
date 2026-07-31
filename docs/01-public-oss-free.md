@@ -5,6 +5,12 @@ for free**, including features that are paid on private repositories. This is th
 tier the NDDev estate targets for open-source work, and it is where the library
 delivers its full value.
 
+> **One documented exception: GitHub Code Quality is not free on public repos.**
+> Unlike CodeQL and everything else in the table below, it is billed per active
+> committer regardless of visibility. Being public only makes its Actions minutes
+> free. Keep it out of this tier — see
+> [16 Code Quality tier](16-code-quality.md).
+
 ## What public OSS gets free
 
 | Capability | Free on public? | Delivered by |
@@ -19,6 +25,7 @@ delivers its full value.
 | GitHub Pages | ✅ | [10 Deployments & environments](10-deployments-environments.md) |
 | Repository rulesets | ✅ | [08 Governance & rulesets](08-governance-rulesets.md) |
 | harden-runner egress control | ✅ | explicit public/GHAS workflows |
+| GitHub Code Quality | ❌ paid per active committer even on public | [16 Code Quality tier](16-code-quality.md) |
 
 > Standard GitHub-hosted runners are free with unlimited minutes on public
 > repositories. Larger, GPU, and macOS-XL runners are billable **even for

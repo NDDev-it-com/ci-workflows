@@ -19,6 +19,13 @@ them in the private-free tier:
 | `step-security/harden-runner` | Paid on private repos | use a private-free workflow with no action reference |
 | SARIF upload to code scanning | Requires code scanning (paid) | use the no-SARIF workflow variant |
 | GitHub Artifact Attestations | Require GitHub Enterprise Cloud on private/internal (a plan gate — GHAS does not unlock it) | use `release-supply-chain-free.yml` (below) |
+| GitHub Code Quality | Billed per active committer at **any** visibility, on a licence GHAS does not include | [16 Code Quality tier](16-code-quality.md) |
+
+> Code Quality is the one exclusion here that publishing the repository does
+> **not** solve: it is paid on public repos too. Keeping this tier free means
+> leaving the org-level **Repository access** control off this repository — the
+> free maintainability substitutes are listed in
+> [16 Code Quality tier](16-code-quality.md#what-the-free-tiers-do-instead).
 
 ## The zero-cost private stack
 

@@ -32,8 +32,13 @@ repositories pin by full commit SHA. Docs under `docs/` are human mirrors;
 - Tier claims (public / private-free / private-paid) must match the real
   GitHub billing contract. Known plan gate: GitHub Artifact Attestations are
   public-only on Free/Pro/Team plans; private/internal repositories require
-  GitHub Enterprise Cloud (GHAS/Code Security does not unlock them). GitHub
-  Code Quality becomes a paid product on 2026-07-20 — refresh that fact then.
+  GitHub Enterprise Cloud (GHAS/Code Security does not unlock them). Second
+  known gate: GitHub Code Quality (GA and billable since 2026-07-20) is **not**
+  sorted by visibility — it is billed per active committer on public repos too,
+  on a licence independent of GHAS, with committers counted once per
+  organization. It is a platform feature with no REST/GraphQL API, so it carries
+  `workflow: null` / `example: null` and lives in its own tier doc
+  (`docs/16-code-quality.md`); never fold it into the public tier.
 
 ## CI skills
 

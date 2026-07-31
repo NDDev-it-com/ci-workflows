@@ -499,21 +499,29 @@ facts:
   conditions:
   - Public preview before 2026-07-20
   - GA and paid from 2026-07-20
+  - Repository visibility does not discount the licence; public repositories bill the same per-active-committer rate as private
+  - Active committers are counted once per organization across every repository with Code Quality enabled
+  - A committer is active if one of their commits was pushed in the last 90 days, regardless of authoring date
+  - Bot accounts are not billed
+  - Licence is independent of Code Security / Secret Protection; Advanced Security does not include it
   - AI capabilities add usage charges
   - Deterministic CodeQL analysis consumes Actions minutes
-  - Disable before 2026-07-20 to avoid paid enablement if not wanted
+  - Scope with the org-level Repository access control (all / selected / no repositories) to choose which repositories bill
   payment_method: required-from-2026-07-20
   overage: AI usage and Actions minutes may add cost
   status: official
   source_authority: primary
-  verified_at: '2026-07-21'
+  verified_at: '2026-08-01'
   expires_after: '2026-10-21'
   source_urls:
   - https://github.blog/changelog/2026-06-16-github-code-quality-generally-available-july-20-2026/
   - https://docs.github.com/en/billing/concepts/product-billing/github-code-quality
+  - https://docs.github.com/en/code-security/how-tos/maintain-quality-code/enable-code-quality
+  - https://docs.github.com/en/code-security/how-tos/maintain-quality-code/disable-code-quality
   notes:
   - 'GA + paid transition completed 2026-07-20 as scheduled; no longer time-critical.'
   - 'Re-verified 2026-07-21 against the billing docs: standalone per-active-committer license ($10/active committer/month), CodeQL scans consume Actions minutes, AI features consume AI credits at $0.01/credit, independent of Advanced Security licenses; Team + Enterprise Cloud.'
+  - 'Re-verified 2026-08-01: visibility does not gate the licence. Unlike CodeQL/GHAS, a public repository does NOT make Code Quality free — public repos only avoid the Actions-minutes component (standard runners are unmetered on public). This is why the tier docs exclude Code Quality from both free tiers instead of folding it into the public tier.'
 - id: gitlab-free-hosted
   provider: GitLab
   product: GitLab.com Free compute

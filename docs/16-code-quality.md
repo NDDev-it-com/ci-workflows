@@ -1,0 +1,121 @@
+# Code Quality tier — paid per active committer, at any visibility
+
+GitHub Code Quality is a **maintainability** product: it runs CodeQL quality
+queries (not only security queries) and reports findings, quality scores, and
+history, with optional AI-assisted detection and Copilot Autofix. It went GA and
+became billable on **2026-07-20**.
+
+It gets its own tier because it **breaks the visibility rule the other three
+tiers are built on**.
+
+## Why this is a separate tier
+
+The [three-tier model](00-overview.md#the-three-tier-model) sorts capabilities by
+repository visibility and plan: public is free, private-free is the zero-cost
+subset, private-paid unlocks the rest through GHAS. Code Quality obeys none of
+that:
+
+| Assumption that holds for CodeQL / GHAS | What Code Quality actually does |
+| --- | --- |
+| Public repositories get it free | **No.** Public repos are billed the same per-active-committer rate as private |
+| A paid GHAS licence unlocks it | **No.** The licence is independent of Code Security and Secret Protection |
+| Cost scales with the repositories you enable | **No.** Committers are counted **once per organization** |
+
+The only thing being public saves is the **Actions-minutes** component: scans run
+as Actions workflows, and standard runners are unmetered on public repositories.
+The per-committer licence is unchanged.
+
+The consequence for cost control is blunt: **enabling Code Quality on one
+repository already bills your entire active-committer set.** Splitting an estate
+into "a few Code Quality repos and many free repos" saves nothing unless the
+people who commit to the paid repos are a strictly smaller group than the people
+who commit anywhere. Scope the tier by **who commits**, not by how many repos.
+
+Live price, plan, and committer-counting rules are in the fact ledger, not in
+this prose: [`github-code-quality-transition`](generated/free-tier-matrix.md).
+
+## What the free tiers do instead
+
+Both free tiers **exclude** Code Quality and get their maintainability signal
+from workflows in this library, which cost nothing beyond Actions minutes:
+
+| Need | Free substitute | Tier |
+| --- | --- | --- |
+| Security-focused static analysis | `public-codeql.yml` | [01 Public OSS](01-public-oss-free.md) (free on public) |
+| Actions static analysis | `zizmor-sarif.yml` / `zizmor-no-sarif.yml` | both |
+| Coverage threshold gate | `coverage-gate.yml` | both |
+| Lint / type / build packs | the language packs in [15 Language & quality packs](15-language-and-quality-packs.md) | both |
+| Docs quality | `docs-quality.yml` | both |
+| PR hygiene | `pr-hygiene.yml` | both |
+
+Those are not a feature-equivalent replacement — they do not produce Code
+Quality's maintainability scores or its history — but they keep the free tiers
+genuinely free.
+
+## Enabling the tier
+
+Code Quality is a **platform feature, not a reusable workflow.** This library
+ships no caller for it, and there is nothing to pin by SHA: it has no Action, no
+`workflow_call` entrypoint, and **no REST or GraphQL API**. Enablement is UI-only
+and therefore cannot be asserted, drift-checked, or rolled back from CI — which
+is why its catalog entry carries `workflow: null` and `example: null`.
+
+1. **Enterprise** — an enterprise owner must allow Code Quality at the
+   enterprise level, or the org setting has no effect.
+2. **Organization** — Settings → Security → **Code quality** → **Repository
+   access**. This dropdown *is* the tier boundary:
+   - `No repositories` — the whole org stays in the free tiers.
+   - `Selected repositories` — the Code Quality tier; pick them explicitly.
+   - `All repositories` — every repo joins the paid tier, including public ones.
+   Optionally set **Enforce access** so repository admins cannot opt themselves
+   back in.
+3. **Repository** — Settings → Security → **Code quality** → *Enable code
+   quality*, then choose analysed languages and runner type. Actions must be
+   enabled on the repo.
+
+Prefer `Selected repositories` + `Enforce access`: `All repositories` silently
+pulls every public repo into a paid product.
+
+## Using it as a merge gate
+
+Enablement only produces findings. To make it block a bad merge, add the ruleset
+rule on the target branch:
+
+- Repository or org ruleset → **Branch rules** → **Require code quality
+  results**.
+- **Severity** selects the lowest severity that must be resolved before merge:
+  `Errors`, `Warnings and higher`, `Notes and higher`, or `All`.
+- The check that must report success is **`CodeQL - Code Quality`**.
+
+The rule also blocks merges while analysis is **still running** or when it
+**failed** — including failure caused by exhausted Actions minutes. On a private
+repo with a tight minutes budget that turns a billing problem into a merge
+outage; start at `Errors` and widen once the lane is proven.
+
+> The REST ruleset rule-type identifier for this rule is not documented, so the
+> repo's [`.github/rulesets/`](../.github/rulesets/) specs — which are shaped for
+> `POST /repos/{owner}/{repo}/rulesets` and validated by
+> `scripts/check_rulesets.py` — do not encode it. Configure this rule in the UI
+> and treat the JSON specs as covering only the API-expressible rules. See
+> [08 Governance & rulesets](08-governance-rulesets.md).
+
+## Relationship to GHAS
+
+Code Quality is **not** part of GitHub Advanced Security. A repository can hold
+any combination of Code Security, Secret Protection, and Code Quality licences;
+buying [03 Private-paid / GHAS](03-private-paid-ghas.md) does not include it, and
+buying Code Quality does not unlock CodeQL *security* scanning on a private repo.
+
+Both run CodeQL, so on a private repo with both licences you are paying two
+products to drive one engine over the same code for different query suites, and
+both consume Actions minutes.
+
+## Turning the tier off
+
+Set organization **Repository access** to `No repositories`, or toggle the
+repository switch off. Scans and the billing they generate stop immediately;
+usage already accrued in the current cycle still bills. Findings, scores, and
+history are retained and return if you re-enable — disabling is not data loss.
+
+---
+Last verified: 2026-08-01

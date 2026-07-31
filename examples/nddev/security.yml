@@ -1,0 +1,34 @@
+# NDDev estate tier — the full paid stack the NDDev-it-com organization actually owns:
+# Enterprise Cloud + Code Security + Secret Protection + Code Quality.
+# Runs identically on public and private repositories; on private it is the
+# GHAS licences that make CodeQL and SARIF upload legal, not the visibility.
+# Replace @<sha> with a pinned full commit SHA of ci-workflows.
+name: security
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+permissions: {}
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  codeql:
+    permissions: { actions: read, contents: read, security-events: write }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/public-codeql.yml@<sha>
+    with:
+      languages: '["python","actions"]'
+  secret-scan:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/secret-scan.yml@<sha>
+  actionlint:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/actionlint.yml@<sha>
+  zizmor:
+    permissions: { contents: read, security-events: write }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/zizmor-sarif.yml@<sha>
+  dependency-review:
+    permissions: { contents: read, pull-requests: write }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/public-dependency-review.yml@<sha>
+  osv-scan:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/osv-scan.yml@<sha>
