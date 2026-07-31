@@ -11,17 +11,30 @@ Entitlements, verified 2026-08-01 against the enterprise licensing page:
 | --- | --- | --- |
 | **Enterprise Cloud** | 1 consumed | Artifact Attestations work on **private** repos |
 | **Code Security** | 1 active committer, 23 repos | CodeQL + SARIF upload legal on private |
-| **Secret Protection** | 1 active committer, 26 repos | Native secret scanning + push protection on private |
+| **Secret Protection** | 1 active committer, 26 repos | Native secret scanning on private (push protection deliberately off) |
 | **Code Quality** | 1 consumed | Maintainability scans + PR gate — see [16](16-code-quality.md) |
 
 Platform side is already applied: the org security configuration
 **`nddev-config`** (`enforcement: enforced`) is attached to all 50 repositories
-and is the default for new ones. It enables GHAS, secret scanning, push
-protection, validity checks, non-provider patterns, Dependabot security updates,
-and private vulnerability reporting. It deliberately leaves
-`code_scanning_default_setup: not_set` — code scanning stays the job of this
-library's CodeQL workflows, and forcing default setup would collide with the
-`codeql.yml` advanced setup already present in 20 repositories.
+and is the default for new ones. It enables GHAS, secret scanning, validity
+checks, non-provider patterns, Dependabot security updates, and private
+vulnerability reporting.
+
+Two settings are deliberately **not** in it, and both decisions are load-bearing:
+
+- **`secret_scanning_push_protection: disabled`.** Push protection is the only
+  control that stops a secret reaching the remote at all; with it off, detection
+  is after the fact and the remedy is rotation, not prevention. It was turned off
+  as an explicit velocity trade-off. Treat a secret-scanning alert here as an
+  already-leaked credential.
+- **`code_scanning_default_setup: not_set`.** Config attachment is atomic per
+  repository: forcing default setup where an active CodeQL *advanced* setup
+  exists fails the **whole** attachment, taking secret scanning down with it —
+  observed exactly once, when the stock `GitHub recommended` configuration
+  attached to 4 of 24 public repos and failed on the 20 running `codeql.yml`.
+  Code scanning is therefore enabled per repository instead, which is why
+  coverage is **50/50**: 30 repositories on default setup, 20 on their own
+  CodeQL workflow.
 
 ## The correction this tier exists to make
 
@@ -41,7 +54,8 @@ run the **same** callers — the difference is only who pays, and that is settle
 | Capability | Generic private-free | This estate |
 | --- | --- | --- |
 | CodeQL + SARIF | excluded (paid) | `public-codeql.yml`, `zizmor-sarif.yml` |
-| Native secret scanning + push protection | gitleaks substitute | native, plus `secret-scan.yml` for history |
+| Native secret scanning | gitleaks substitute | native, plus `secret-scan.yml` for history |
+| Push protection | unavailable (paid) | licensed but **off** by choice — see above |
 | Dependency review | excluded (paid) | `public-dependency-review.yml` |
 | Release provenance | `release-supply-chain-free.yml` | **`release-supply-chain.yml`** (attested) |
 | Maintainability | lint/coverage only | Code Quality + the free packs |
