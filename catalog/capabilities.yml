@@ -34,6 +34,38 @@ capabilities:
       - "https://docs.github.com/en/code-security/code-scanning/introduction-to-code-scanning/about-code-scanning-with-codeql"
       - "https://github.com/github/codeql-action"
 
+  - id: github-code-quality
+    name: GitHub Code Quality
+    product_facts:
+      - github-code-quality-transition
+    cluster: security-scanning
+    status: ga
+    public_oss: paid
+    private_free: paid
+    private_paid: conditional
+    workflow: null
+    example: null
+    required_permissions: []
+    required_settings:
+      - "Team or Enterprise Cloud plan"
+      - "Enterprise owner allows Code Quality at the enterprise level"
+      - "Organization Settings -> Security -> Code quality -> Repository access scoped to the paid-tier repositories"
+      - "GitHub Actions enabled on the repository (scans run as Actions workflows)"
+      - "Optional PR gate: ruleset rule 'Require code quality results' with a severity threshold"
+    risks:
+      - "Billed per active committer on public repositories too; being public does not make it free the way CodeQL and GHAS are"
+      - "Committers are counted once per organization, so enabling a single repository already bills the whole active committer set"
+      - "Scans consume Actions minutes on private repositories; AI-assisted detection and Autofix consume AI credits"
+      - "Platform feature with no REST or GraphQL API: enable and disable are UI-only and cannot be asserted from CI"
+      - "Requiring code quality results blocks merges while analysis is still running or when it fails, e.g. on exhausted Actions minutes"
+    deprecations: null
+    last_verified: "2026-08-01"
+    sources:
+      - "https://docs.github.com/en/code-security/concepts/about-code-quality"
+      - "https://docs.github.com/en/code-security/how-tos/maintain-quality-code/enable-code-quality"
+      - "https://docs.github.com/en/code-security/how-tos/maintain-quality-code/set-pr-thresholds"
+      - "https://docs.github.com/en/billing/concepts/product-billing/github-code-quality"
+
   - id: ossf-scorecard
     name: OpenSSF Scorecard SARIF
     cluster: security-scanning

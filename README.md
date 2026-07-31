@@ -4,7 +4,8 @@ A **July-2026 GitHub-native CI/CD, security, governance, and supply-chain
 automation knowledge base plus reusable workflow library** for the NDDev estate.
 
 It separates three billing realities — **public OSS**, **private-free**, and
-**private-paid/GHAS** — ships SHA-pinned reusable workflows for each, and
+**private-paid/GHAS** — plus one opt-in product that ignores all three
+(**Code Quality**), ships SHA-pinned reusable workflows for each, and
 documents every capability with its status, cost model, risk, and implementation
 path in [`docs/`](docs/00-overview.md) and the machine-readable
 [`catalog/`](catalog/README.md).
@@ -20,6 +21,13 @@ path in [`docs/`](docs/00-overview.md) and the machine-readable
 See [`docs/01-public-oss-free.md`](docs/01-public-oss-free.md),
 [`docs/02-private-free.md`](docs/02-private-free.md), and
 [`docs/03-private-paid-ghas.md`](docs/03-private-paid-ghas.md).
+
+**GitHub Code Quality sits outside these three.** It is billed per active
+committer at *any* visibility — public repositories are **not** free — on a
+licence GHAS does not include, and committers are counted once per organization
+rather than per repository. Both free tiers exclude it; enable it deliberately
+via the org-level **Repository access** control. See
+[`docs/16-code-quality.md`](docs/16-code-quality.md).
 
 ## Capability → workflow map
 

@@ -2,6 +2,48 @@
 
 ## [Unreleased]
 
+### Added
+
+- **GitHub Code Quality is now a modelled tier instead of an unattached price
+  tag.** The product existed in the ledger as `github-code-quality-transition`
+  and nowhere else: no capability, no tier doc, no mention in the tier tables —
+  so the catalog priced a product it never told adopters how to place. It gets
+  `catalog/capabilities.yml` entry `github-code-quality` and a tier doc,
+  `docs/16-code-quality.md`.
+
+  It is deliberately **not** folded into the public tier. Re-verification
+  against the billing docs on 2026-08-01 established that visibility does not
+  gate the licence: a public repository is billed the same per-active-committer
+  rate as a private one, and being public only removes the Actions-minutes
+  component. That contradicted `docs/01-public-oss-free.md`, which promised the
+  "entire security and supply-chain suite for free" — a claim that would have
+  been false for any adopter who enabled Code Quality on a public repo. The
+  three-tier model sorts by visibility and plan; this product obeys neither, so
+  it is documented as an orthogonal fourth tier and **excluded** from both free
+  tiers, with the free maintainability substitutes (`coverage-gate.yml`,
+  `docs-quality.yml`, `pr-hygiene.yml`, zizmor, the language packs) named
+  explicitly.
+
+  Two further billing facts are now recorded because they invert the usual
+  cost-control instinct: committers are counted **once per organization**, so
+  enabling one repository already bills the whole active-committer set and a
+  "few paid repos, many free repos" split saves nothing unless the committer
+  sets actually differ; and the licence is independent of Code Security and
+  Secret Protection, so GHAS does not include it and holding both means paying
+  two products to drive one CodeQL engine.
+
+  The capability carries `workflow: null` and `example: null`, which is the
+  honest shape rather than a gap: Code Quality has no Action, no `workflow_call`
+  entrypoint, and no REST or GraphQL API, so enablement is UI-only and cannot be
+  pinned by SHA, asserted, or drift-checked from CI. For the same reason the
+  merge gate — ruleset rule "Require code quality results", severity threshold,
+  check `CodeQL - Code Quality` — is documented as a UI procedure and **not**
+  encoded in `.github/rulesets/`: those specs are shaped for
+  `POST /repos/{owner}/{repo}/rulesets` and the rule-type identifier for this
+  rule is undocumented. `AGENTS.md` records the gate so the next contributor does
+  not re-derive it, replacing a stale instruction to "refresh that fact" on a
+  date that has passed.
+
 ### Fixed
 
 - **A grouped action bump could not land on its own.** Dependabot updates the

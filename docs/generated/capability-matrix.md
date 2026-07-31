@@ -54,6 +54,7 @@
 | Container build and Trivy scan (`container-scan-trivy`) | security-scanning | ga | free | free | available | `.github/workflows/container-ci.yml` | `examples/infra/container.yml` |
 | Copilot Autofix for code scanning (`copilot-autofix`) | security-scanning | ga | free | unavailable | available | `-` | `-` |
 | Fuzzing (`fuzzing`) | security-scanning | ga | free | conditional | available | `.github/workflows/fuzzing.yml` | `examples/testing/fuzzing.yml` |
+| GitHub Code Quality (`github-code-quality`) | security-scanning | ga | paid | paid | conditional | `-` | `-` |
 | Gitleaks secret scan (`gitleaks-secret-scan`) | security-scanning | ga | free | free | available | `.github/workflows/secret-scan.yml` | `-` |
 | hadolint Dockerfile lint (`hadolint-dockerfile`) | security-scanning | ga | free | free | available | `.github/workflows/hadolint-ci.yml` | `examples/security/hadolint.yml` |
 | IaC scan (Checkov) (`iac-scan-checkov`) | security-scanning | ga | free | free | available | `.github/workflows/iac-scan.yml` | `examples/security/iac-scan.yml` |
