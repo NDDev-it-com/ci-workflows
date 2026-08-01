@@ -1,0 +1,32 @@
+# OSSF Scorecard — SARIF variant, results land in the Code scanning tab.
+#
+# Use this instead of examples/public-oss/scorecard.yml when you want Scorecard
+# findings to become persistent code-scanning alerts. It needs
+# `security-events: write`, which the JSON variant deliberately does not take —
+# pick the JSON variant when Scorecard should stay a check signal and an
+# artifact rather than an alert source.
+#
+# Code scanning is free on public repositories and paid on private ones, so this
+# variant belongs to the public tier; a private repository without Advanced
+# Security cannot upload the SARIF.
+#
+# Trigger constraint (same as the JSON variant): the Scorecard action officially
+# supports only `push` and `schedule` on the default branch. `pull_request` and
+# `workflow_dispatch` are experimental and forks are unsupported, so keep this
+# out of the pull_request-triggered security suite.
+#
+# Replace @<sha> with a pinned full commit SHA of ci-workflows.
+name: scorecard
+on:
+  push: { branches: [main] }
+  schedule:
+    - cron: "31 2 * * 1"
+permissions: {}
+jobs:
+  scorecard:
+    permissions:
+      security-events: write # Upload the Scorecard SARIF to code scanning.
+      id-token: write # Keyless signing for the publish step.
+      contents: read
+      actions: read
+    uses: NDDev-it-com/ci-workflows/.github/workflows/public-scorecard.yml@<sha>
