@@ -59,7 +59,7 @@
 | hadolint Dockerfile lint (`hadolint-dockerfile`) | security-scanning | ga | free | free | available | `.github/workflows/hadolint-ci.yml` | `examples/security/hadolint.yml` |
 | IaC scan (Checkov) (`iac-scan-checkov`) | security-scanning | ga | free | free | available | `.github/workflows/iac-scan.yml` | `examples/security/iac-scan.yml` |
 | GitHub native secret scanning (`native-secret-scanning`) | security-scanning | ga | free | unavailable | available | `-` | `-` |
-| OpenSSF Scorecard SARIF (`ossf-scorecard`) | security-scanning | ga | free | unavailable | conditional | `.github/workflows/public-scorecard.yml` | `-` |
+| OpenSSF Scorecard SARIF (`ossf-scorecard`) | security-scanning | ga | free | unavailable | conditional | `.github/workflows/public-scorecard.yml` | `examples/public-oss/scorecard-sarif.yml` |
 | OpenSSF Scorecard JSON artifact (`ossf-scorecard-json`) | security-scanning | ga | free | unavailable | conditional | `.github/workflows/public-scorecard-json.yml` | `examples/public-oss/scorecard.yml` |
 | Semgrep OSS SAST (`semgrep-sast`) | security-scanning | ga | free | free | available | `.github/workflows/semgrep-ci.yml` | `examples/security/semgrep.yml` |
 | zizmor workflow security scanner (`zizmor`) | security-scanning | ga | free | free | available | `.github/workflows/zizmor-sarif.yml` | `-` |
