@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+### Added
+
+- **`public-scorecard.yml` was the only reusable without a copy-paste example.**
+  `examples/public-oss/scorecard.yml` covered the JSON variant only, so the
+  SARIF-uploading variant — the one that needs `security-events: write` and
+  turns Scorecard findings into persistent code-scanning alerts — had no
+  validated caller. Adds `examples/public-oss/scorecard-sarif.yml`, including
+  the reason to pick one variant over the other and the shared trigger
+  constraint. Every reusable now has an example.
+
+
 ## [0.13.1] - 2026-08-01
 
 ### Fixed

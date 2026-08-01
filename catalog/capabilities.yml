@@ -74,7 +74,7 @@ capabilities:
     private_free: unavailable
     private_paid: conditional
     workflow: .github/workflows/public-scorecard.yml
-    example: null
+    example: examples/public-oss/scorecard-sarif.yml
     required_permissions:
       - "security-events: write"
       - "id-token: write"
@@ -88,7 +88,7 @@ capabilities:
       - "Supported triggers are push and schedule on the default branch only; pull_request and workflow_dispatch are experimental"
       - "Do not place under pull_request in caller workflows"
     deprecations: null
-    last_verified: "2026-07-04"
+    last_verified: 2026-08-01
     sources:
       - "https://github.com/ossf/scorecard"
       - "https://github.com/ossf/scorecard-action"
