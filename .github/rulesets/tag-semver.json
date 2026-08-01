@@ -11,13 +11,24 @@
   ],
   "conditions": {
     "ref_name": {
-      "include": ["refs/tags/[0-9]*.[0-9]*.[0-9]*"],
+      "include": [
+        "refs/tags/[0-9]*.[0-9]*.[0-9]*"
+      ],
       "exclude": []
     }
   },
   "rules": [
-    { "type": "deletion" },
-    { "type": "non_fast_forward" },
-    { "type": "required_signatures" }
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "non_fast_forward"
+    },
+    {
+      "type": "update"
+    },
+    {
+      "type": "required_signatures"
+    }
   ]
 }
