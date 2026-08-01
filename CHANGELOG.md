@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **Five reusables were self-applied but still recorded as `unverified`.** When
+  `codeql.yml`, `gitleaks.yml`, `dependency-review.yml`, and `scorecard.yml` were
+  added as self workflows calling their reusables through relative refs, the
+  runtime-coverage ledger was never updated to match — so the repository was
+  proving these workflows on every push while the ledger claimed no observed run
+  existed. Promoted to `runtime-proven` against runs that executed the current
+  bytes: `public-codeql.yml`, `secret-scan.yml`, `public-scorecard-json.yml`,
+  `zizmor-sarif.yml`, `public-dependency-review.yml`. Runtime-proven entries go
+  from one to six.
+
+  Nothing was promoted on estate evidence, although consumer repositories did run
+  several of these today: every such run executed an older pinned revision, and a
+  proof is only valid for the bytes it exercised. That tension is structural — a
+  dependency bump invalidates a proof — which is why sustainable coverage comes
+  from self-calling fixtures rather than from opportunistically harvesting
+  consumer runs.
+
 ### Added
 
 - **New skill `ci-consumer-adoption`.** The skill set covered authoring and
