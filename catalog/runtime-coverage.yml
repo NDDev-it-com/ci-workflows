@@ -233,6 +233,6 @@ entries:
   - workflow: .github/workflows/zizmor-sarif.yml
     status: runtime-proven
     evidence: "Called by this repository's own ci.yml through a relative ref; SARIF upload lane executed live on main."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/30702998445
-    proven_digest: 5b98084f6d0fcb2058ea4b6051bf93001eba69e8e2464b7ef3615421f30014d5
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/30706690921
+    proven_digest: 4f355439c4bcb5ffb1c4c3d3e4b2e2bc1b9ffa5c0d95d1355281a9ed60c88ab0
     waiver: null
