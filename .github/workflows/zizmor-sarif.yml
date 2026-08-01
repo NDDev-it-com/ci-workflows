@@ -40,6 +40,9 @@ jobs:
     timeout-minutes: 10
     permissions:
       # Read repository contents and publish zizmor SARIF to code scanning.
+      # actions: read is required by github/codeql-action/upload-sarif, which
+      # reads the workflow run; without it the upload fails on private repos.
+      actions: read
       contents: read
       security-events: write
     steps:
