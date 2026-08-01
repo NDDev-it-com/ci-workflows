@@ -1,0 +1,61 @@
+# NDDev estate tier — PRIVATE repository variant.
+#
+# Identical coverage to examples/nddev/security.yml; the only difference is that
+# every job is routed to the estate's self-hosted fleet so that the metered
+# private-repository minutes never reach the bill.
+#
+# Do NOT copy this file into a public repository. A forked pull request against
+# a public repo executes attacker-controlled code, so pointing a public repo at a
+# self-hosted runner is a remote-code-execution path into your own hardware. The
+# estate's runner group also sets allows_public_repositories: false, but treat
+# that as a backstop rather than the control.
+#
+# Two scans are NOT configured by this file and must be set per repository, or
+# they keep consuming metered minutes regardless of what is written here:
+#   * CodeQL default setup  -> PATCH /repos/{owner}/{repo}/code-scanning/default-setup
+#                              with runner_type=labeled, runner_label=<label>
+#   * Code Quality          -> repository Settings -> Code quality -> Labeled runner
+# See docs/05-runners.md#visibility-routing.
+#
+# Replace @<sha> with a pinned full commit SHA of ci-workflows, and <label> with
+# the self-hosted runner label used by your estate.
+name: security
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+permissions: {}
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  codeql:
+    permissions: { actions: read, contents: read, security-events: write }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/public-codeql.yml@<sha>
+    with:
+      languages: '["python","actions"]'
+      runner: <label>
+  secret-scan:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/secret-scan.yml@<sha>
+    with:
+      runner: <label>
+  actionlint:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/actionlint.yml@<sha>
+    with:
+      runner: <label>
+  zizmor:
+    permissions: { contents: read, security-events: write }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/zizmor-sarif.yml@<sha>
+    with:
+      runner: <label>
+  dependency-review:
+    permissions: { contents: read, pull-requests: write }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/public-dependency-review.yml@<sha>
+    with:
+      runner: <label>
+  osv-scan:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/osv-scan.yml@<sha>
+    with:
+      runner: <label>
