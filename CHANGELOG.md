@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-08-01
+
 ### Added
 
 - **GitHub Code Quality is now a modelled tier instead of an unattached price
