@@ -98,8 +98,8 @@ tools:
     name: ossf/scorecard-action
     homepage: "https://github.com/ossf/scorecard-action"
     kind: action
-    current_version: "v2.4.3"
-    pin: "ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a"
+    current_version: "v2.4.4"
+    pin: "ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc"
     used_by:
       - .github/workflows/public-scorecard.yml
       - .github/workflows/public-scorecard-json.yml
@@ -403,8 +403,8 @@ tools:
     name: astral-sh/setup-uv
     homepage: "https://github.com/astral-sh/setup-uv"
     kind: action
-    current_version: "v8.3.2"
-    pin: "astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990"
+    current_version: "v9.0.0"
+    pin: "astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9"
     used_by:
       - .github/workflows/ci.yml
       - .github/workflows/python-ci.yml
