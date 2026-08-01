@@ -137,19 +137,22 @@ entries:
     last_run: null
     waiver: null
   - workflow: .github/workflows/public-codeql.yml
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Called by this repository's own codeql.yml through a relative ref; language matrix executed live on main."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/30702998427
+    proven_digest: d7de98164001dad988a6c4ccc059a012f92c5e90c82de1198604f8f85c23d125
     waiver: null
   - workflow: .github/workflows/public-dependency-review.yml
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Called by this repository's own dependency-review.yml through a relative ref; pull_request diff gate executed live."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/30702933166
+    proven_digest: a757848e579b6115a42492ad819b29ee52b8baaabf951b8c410348b1c63561de
     waiver: null
   - workflow: .github/workflows/public-scorecard-json.yml
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Called by this repository's own scorecard.yml through a relative ref; JSON-artifact lane executed live on main."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/30702998422
+    proven_digest: 062afe708ea52adf57a9e54079df17ae417c0eadfbe7903571f34fdf6dbf8e82
     waiver: null
   - workflow: .github/workflows/public-scorecard.yml
     status: unverified
@@ -192,9 +195,10 @@ entries:
     last_run: null
     waiver: null
   - workflow: .github/workflows/secret-scan.yml
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Called by this repository's own gitleaks.yml through a relative ref; full-history scan executed live on main."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/30702998450
+    proven_digest: 793383fbba1c9564fa4a2ac581c44df256438ba4530bd44e15c387a6d9d24365
     waiver: null
   - workflow: .github/workflows/semgrep-ci.yml
     status: unverified
@@ -227,7 +231,8 @@ entries:
     last_run: null
     waiver: null
   - workflow: .github/workflows/zizmor-sarif.yml
-    status: unverified
-    evidence: 'Migrated to the uv/uvx toolchain in v0.11.0; the prior runtime-proven run (run 29172553315) predates the migration, so the workflow must be re-run live under ci.yml before it can reclaim runtime-proven.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Called by this repository's own ci.yml through a relative ref; SARIF upload lane executed live on main."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/30702998445
+    proven_digest: 5b98084f6d0fcb2058ea4b6051bf93001eba69e8e2464b7ef3615421f30014d5
     waiver: null
