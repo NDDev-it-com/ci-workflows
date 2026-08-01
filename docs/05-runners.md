@@ -99,5 +99,68 @@ you own patching, isolation, and security.
 - Apply egress controls at the network layer; harden-runner's hosted-runner
   features do not all apply to self-hosted.
 
+<a id="visibility-routing"></a>
+## Routing by visibility
+
+Minutes are free and unlimited on public repositories and metered on private
+ones, so the cost-optimal routing is the opposite of what "use our own hardware
+everywhere" would suggest:
+
+| Repository visibility | Route to | Why |
+| --- | --- | --- |
+| **public** | GitHub-hosted (`ubuntu-latest`) | free and unlimited; self-hosted here is a **security defect**, not a saving |
+| **private / internal** | self-hosted label | private minutes are metered; self-hosted removes them from the bill entirely |
+
+> **This repository is public.** Nothing in `ci-workflows` may route its own jobs
+> to a self-hosted runner, and no example in `examples/` may ship a self-hosted
+> label as a default. A forked pull request against a public repository executes
+> attacker-controlled code, so a self-hosted runner reachable from a public repo
+> is a remote-code-execution path into your own infrastructure. Every `runner`
+> input in this library therefore defaults to a GitHub-hosted label, and the
+> self-hosted value is supplied **by the calling private repository**, never
+> baked in here.
+
+Defence in depth: the estate's runner group sets
+`allows_public_repositories: false`, so even a mistaken `runs-on` in a public
+repository cannot reach the fleet — the job stays queued instead of executing.
+Treat that as the backstop, not the control.
+
+### Two independent runner settings
+
+Switching a private repository over is **not** one change. The `runner` input
+only covers workflows this library defines; GitHub's own managed scanners have a
+separate setting that no workflow file can reach:
+
+| What runs | Where the runner is chosen | How to set it |
+| --- | --- | --- |
+| Reusable workflows from this library | `runner` input on the caller | `with: { runner: <label> }` |
+| CodeQL **default setup** (code scanning) | repository code-scanning settings | `PATCH /repos/{owner}/{repo}/code-scanning/default-setup` with `runner_type: labeled`, `runner_label: <label>` |
+| **Code Quality** scans | repository Code quality settings | UI only — *Runner type → Labeled runner*; there is no REST API |
+
+Miss either of the last two and the repository still burns metered minutes even
+though every caller says otherwise — the scans are scheduled by GitHub, not by a
+workflow file in the repository.
+
+### Caller shape
+
+```yaml
+# private repository — self-hosted label supplied by the caller
+jobs:
+  validate:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/private-static.yml@<full-sha>
+    with:
+      runner: <your-self-hosted-label>
+      command: "python3 scripts/validate_all.py"
+```
+
+Public callers simply omit `runner` and take the GitHub-hosted default.
+
+> **Capacity, not fallback.** GitHub Actions has **no** automatic spillover from
+> a self-hosted label to a hosted runner: a job whose label is busy queues until
+> a runner frees up. Size the fleet so queueing is rare rather than trying to
+> engineer a fallback — and note that a fallback to hosted runners on a *private*
+> repo would silently reintroduce the metered minutes you moved off.
+
 ---
-Last verified: 2026-07-10
+Last verified: 2026-08-01

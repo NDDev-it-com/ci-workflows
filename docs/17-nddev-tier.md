@@ -66,6 +66,12 @@ Security suite: [`examples/nddev/security.yml`](../examples/nddev/security.yml).
 It is the private-paid/GHAS suite plus `osv-scan.yml`, and it runs unchanged on
 public repositories.
 
+Private repositories take the same suite with every job pinned to the
+self-hosted fleet:
+[`examples/nddev/security-private-selfhosted.yml`](../examples/nddev/security-private-selfhosted.yml).
+The coverage is identical — only the `runner` inputs differ — so a repository
+changing visibility switches example, not posture.
+
 Release with provenance — on **private** repos too:
 
 ```yaml
@@ -92,11 +98,12 @@ The manifest records `slsa_build_level: 3` rather than the `null` that
   not include it.
 - **SAML SSO, IP allow list, SSH certificate authorities.** None configured at
   org or enterprise level.
-- **Enforced SHA pinning.** Both org and enterprise report
-  `sha_pinning_required: false`. This library enforces full-SHA pins on itself
-  through `scripts/check_pinned_actions.py`, but the platform does not enforce it
-  on other repositories in the estate. Turning it on org-wide would break any
-  repository still referencing actions by tag — audit before enabling.
+
+**Enforced SHA pinning is now on.** Both org and enterprise report
+`sha_pinning_required: true`, so the platform rejects tag-referenced actions
+estate-wide, not just in this library. `scripts/check_pinned_actions.py` remains
+the pre-merge gate; the platform setting is the backstop for repositories that
+do not run it.
 
 ## Cost note that governs tier choice
 
@@ -106,6 +113,52 @@ With a single active committer the estate pays the same whether one repository o
 all fifty are enabled. That is why `nddev-config` is attached to all 50 rather
 than a chosen subset: partial coverage would have cost exactly the same and
 protected less. Re-evaluate that reasoning the moment a second committer joins.
+
+<a id="cost-envelope"></a>
+## The $80/month envelope
+
+Unit prices read from the billing API on 2026-08-01, at one active committer:
+
+| Line | Rate | Monthly |
+| --- | --- | --- |
+| Enterprise Cloud | $21.00 / user | $21.00 |
+| Code Security | $30.00 / active committer | $30.00 |
+| Secret Protection | $19.00 / active committer | $19.00 |
+| Code Quality | $10.00 / active committer | $10.00 |
+| **Fixed total** | | **$80.00** |
+
+Everything else is metered and deliberately driven to zero:
+
+| Metered line | Control |
+| --- | --- |
+| Actions minutes | $0 hard-stop budget at **org and enterprise**; private jobs routed to self-hosted |
+| Actions **storage** | budgets do **not** block storage — controlled by 1-day artifact/log retention with the org maximum also pinned to 1 |
+| Code Quality **AI credits** | AI findings off on every repository; the $10 product budget is a backstop, not the control |
+| Codespaces, Packages, Git LFS, Models, Sandbox, Spark | $0 hard-stop budgets at both levels |
+
+Two facts worth carrying:
+
+- **A product budget cannot protect a metered line that accrues under the same
+  SKU as a licence.** The Code Quality budget has to leave $10 of headroom for
+  the licence itself, and AI credits accrue into that same headroom. The only
+  real control for AI credits is the per-repository toggle.
+- **Seat count is the one thing no budget bounds.** A second active committer
+  adds $59/month (Code Security + Secret Protection) before anyone writes a
+  workflow. Org membership, outside-collaborator invitation, and enterprise
+  member purchasing are all closed for that reason.
+
+<a id="runner-routing"></a>
+## Runner routing in this estate
+
+Private repositories run on the estate's self-hosted fleet; public repositories
+stay on GitHub-hosted runners, where minutes are free and self-hosted would be a
+security defect. Mechanics, the two settings that a workflow file cannot reach,
+and the reason this public repository never routes itself to self-hosted:
+[05 Runners → Routing by visibility](05-runners.md#visibility-routing).
+
+Current state: all 26 private repositories have CodeQL default setup on
+`runner_type: labeled` and Code Quality on *Labeled runner*; all 24 public
+repositories remain GitHub-hosted.
 
 ---
 Last verified: 2026-08-01

@@ -76,6 +76,44 @@ is why its catalog entry carries `workflow: null` and `example: null`.
 Prefer `Selected repositories` + `Enforce access`: `All repositories` silently
 pulls every public repo into a paid product.
 
+> The NDDev estate runs `All repositories` + `Enforce access` on purpose. That is
+> not a contradiction of the advice above — it follows from the same arithmetic:
+> the licence bills once per active committer, so at one committer the fiftieth
+> repository costs exactly what the first one did. Apply the cautious default
+> whenever the committer count is greater than one, or when "every public repo"
+> would mean repos you do not control. See
+> [17 NDDev tier](17-nddev-tier.md#cost-envelope).
+
+<a id="ai-findings"></a>
+## AI findings are a second, separately metered product
+
+The repository page carries **two** switches, and only the first is covered by
+the $10 licence:
+
+| Switch | Billing |
+| --- | --- |
+| **Code Quality analysis** — CodeQL quality queries | included in the per-committer licence; unmetered |
+| **AI findings** — AI-generated findings on push | **metered separately: AI credits, with no included allowance** |
+
+Every AI-credit line in the billing API shows `discountAmount: 0.00` — nothing is
+bundled. Observed rate: **$0.01 per credit**, and a single mid-sized repository
+burned **774.9 credits in roughly twelve days** — about **$19/month for one
+repository**, i.e. nearly twice the licence that covers the whole organization.
+
+Two consequences worth stating plainly:
+
+- **A product budget cannot fence this off.** A Code Quality budget must leave
+  at least $10 of headroom for the licence, and AI credits accrue into that same
+  headroom before any hard stop trips. The per-repository switch is the only
+  real control.
+- **The switch is absent where CodeQL finds no supported language.** Those
+  repositories render *"No CodeQL supported languages to scan in this
+  repository"* and cannot generate AI credits at all — a stronger guarantee than
+  the switch being off, and not something to "fix".
+
+Leave **AI findings off** unless the credit spend has been sized against the
+licence for that specific repository.
+
 ## Using it as a merge gate
 
 Enablement only produces findings. To make it block a bad merge, add the ruleset
