@@ -78,31 +78,31 @@ jobs:
 
       - name: Initialize CodeQL
         if: ${{ inputs.config_file == '' }}
-        uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a  # v4.37.1
+        uses: github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81  # v4.37.3
         with:
           languages: ${{ matrix.language }}
           queries: ${{ inputs.queries }}
 
       - name: Initialize CodeQL with config
         if: ${{ inputs.config_file != '' }}
-        uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a  # v4.37.1
+        uses: github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81  # v4.37.3
         with:
           languages: ${{ matrix.language }}
           config-file: ${{ inputs.config_file }}
 
       - name: Autobuild
         if: ${{ inputs.autobuild }}
-        uses: github/codeql-action/autobuild@7188fc363630916deb702c7fdcf4e481b751f97a  # v4.37.1
+        uses: github/codeql-action/autobuild@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81  # v4.37.3
 
       - name: Analyze
         if: ${{ inputs.output_directory == '' }}
-        uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a  # v4.37.1
+        uses: github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81  # v4.37.3
         with:
           category: "/language:${{ matrix.language }}"
 
       - name: Analyze with output directory
         if: ${{ inputs.output_directory != '' }}
-        uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a  # v4.37.1
+        uses: github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81  # v4.37.3
         with:
           category: "/language:${{ matrix.language }}"
           output: ${{ inputs.output_directory }}
