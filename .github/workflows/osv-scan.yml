@@ -59,8 +59,13 @@ jobs:
           curl -fsSL -o /tmp/osv-scanner \
             "https://github.com/google/osv-scanner/releases/download/v${OSV_VERSION}/osv-scanner_linux_amd64"
           echo "${OSV_SHA256}  /tmp/osv-scanner" | sha256sum -c -
-          install -m 0755 /tmp/osv-scanner /usr/local/bin/osv-scanner
-          osv-scanner --version
+          # Install into a runner-writable directory rather than /usr/local/bin:
+          # GitHub-hosted runners let the job user write there, self-hosted ones
+          # normally do not, and a correctly isolated self-hosted runner must not.
+          mkdir -p "${RUNNER_TEMP}/bin"
+          install -m 0755 /tmp/osv-scanner "${RUNNER_TEMP}/bin/osv-scanner"
+          echo "${RUNNER_TEMP}/bin" >> "$GITHUB_PATH"
+          "${RUNNER_TEMP}/bin/osv-scanner" --version
 
       - name: OSV scan
         env:

@@ -80,8 +80,13 @@ jobs:
             "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
           echo "${ACTIONLINT_SHA256}  /tmp/actionlint.tar.gz" | sha256sum -c -
           tar -xzf /tmp/actionlint.tar.gz -C /tmp actionlint
-          install -m 0755 /tmp/actionlint /usr/local/bin/actionlint
-          actionlint --version
+          # Install into a runner-writable directory rather than /usr/local/bin:
+          # GitHub-hosted runners let the job user write there, self-hosted ones
+          # normally do not, and a correctly isolated self-hosted runner must not.
+          mkdir -p "${RUNNER_TEMP}/bin"
+          install -m 0755 /tmp/actionlint "${RUNNER_TEMP}/bin/actionlint"
+          echo "${RUNNER_TEMP}/bin" >> "$GITHUB_PATH"
+          "${RUNNER_TEMP}/bin/actionlint" --version
 
       - name: Run actionlint
         run: actionlint -color
