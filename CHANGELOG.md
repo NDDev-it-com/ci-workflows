@@ -123,6 +123,49 @@
   the new self workflows as `MISSING` instead of `internal` — a green gate over
   wrong generated output.
 
+- **Pinned tools installed into `/usr/local/bin`, which no correctly isolated
+  self-hosted runner allows.** `actionlint.yml` and `osv-scan.yml` placed their
+  checksum-verified binaries in a system path. That works on GitHub-hosted
+  runners, where the job user may write there, and fails outright on a
+  self-hosted runner whose account is unprivileged:
+  `install: cannot create regular file '/usr/local/bin/actionlint': Permission denied`.
+  Found by routing a real private-repository job to a self-hosted runner. The
+  privilege is not incidental — a runner that *can* write to system paths shares
+  mutable state between jobs — so the destination moved rather than the runner's
+  permissions: both now install into `"${RUNNER_TEMP}/bin"` and prepend it to
+  `GITHUB_PATH`, which is writable on hosted and self-hosted alike and is torn
+  down with the job. Checksum verification is unchanged. `cpp-ci.yml` still uses
+  `sudo apt-get`; that is a different class (system packages, not one pinned
+  binary) and remains hosted-only.
+
+### Documentation
+
+- **No documented rule for which repositories run where.** Private-repository
+  minutes are metered and public ones are free, so the cost-optimal routing is
+  private → self-hosted, public → GitHub-hosted. `docs/05-runners.md` gains
+  `Routing by visibility` with that rule, the fork-PR reasoning that makes a
+  self-hosted runner on a public repository a security defect rather than a
+  saving, and an explicit statement that **this repository is public** and must
+  never route itself to self-hosted or ship a self-hosted default in
+  `examples/`.
+- **Two runner settings are invisible to workflow files.** CodeQL *default
+  setup* and *Code Quality* scans are scheduled by GitHub, not by a workflow,
+  and each carries its own runner control. Missing either leaves a repository
+  consuming metered minutes while every caller says otherwise. Both are now
+  documented with the exact API call and UI path.
+- **AI findings were undocumented.** `docs/16-code-quality.md` gains an
+  `AI findings` section: they are metered separately from the per-committer
+  licence with **no included allowance** (`discountAmount: 0.00` on every
+  billing line, $0.01/credit), and one repository burned 774.9 credits in about
+  twelve days — roughly twice the licence that covers a whole organization. Also
+  records why a product budget cannot fence this off, and that the switch is
+  absent entirely where CodeQL finds no supported language.
+- `docs/17-nddev-tier.md` gains the verified per-line cost envelope and a runner
+  routing summary, and corrects a stale claim: `sha_pinning_required` is now
+  **true** at both org and enterprise level, not false.
+- New caller example `examples/nddev/security-private-selfhosted.yml` — the
+  nddev suite with every job pinned to a self-hosted label.
+
 ## [0.12.0] - 2026-07-21
 
 ### Changed
