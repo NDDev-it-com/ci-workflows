@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+## [0.13.2] - 2026-08-01
+
+### Fixed
+
+- **`zizmor-sarif.yml` never declared the `actions: read` its SARIF upload
+  needs.** `github/codeql-action/upload-sarif` reads the workflow run, so it
+  requires `actions: read`; `public-codeql.yml` — the other SARIF uploader here —
+  declares it, and this one did not. The incomplete set had propagated into
+  `catalog/capabilities.yml` and all four examples that call it. Consumers saw
+  the scan succeed and the upload fail with `Resource not accessible by
+  integration`; observed on `github-device-sync`, red since adoption. Reusable,
+  catalog, examples and this repository's own `ci.yml` caller now declare the
+  same set.
+
+  A caller cannot grant a reusable less than the reusable declares, so the token
+  comes from the *called* workflow: a consumer cannot work around this by adding
+  the permission to its own caller — it needs a release carrying the fix.
+
+
 ### Added
 
 - **`public-scorecard.yml` was the only reusable without a copy-paste example.**
