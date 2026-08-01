@@ -6,10 +6,10 @@ license: AGPL-3.0-or-later
 compatibility: Codex and Agent Skills compatible; OpenCode discovers .agents/skills. Generate .claude/skills mirrors for Claude
   Code.
 metadata:
-  version: 1.0.0
+  version: 1.1.0
   owner: NDDev
   status: proposed
-  reviewed_at: '2026-07-11'
+  reviewed_at: '2026-08-01'
 ---
 
 # CI Cost, Throughput, and Resource Optimization
@@ -71,6 +71,15 @@ Cache keys include dependency lock digest, tool/runtime version, OS, architectur
 ### 6. Right-size runners
 
 Benchmark workload, not marketing vCPU count. Compare queue + runtime + multiplier + reliability. Larger runners can be more expensive even when faster and are billed on public repositories. For self-hosted capacity include idle time, autoscaling delay, image maintenance, security isolation, and incident operations.
+
+Route by visibility, and expect the answer to invert the usual instinct. Hosted minutes are unmetered on public repositories and metered on private ones, so moving *public* work onto your own hardware saves nothing and buys a remote-code-execution path — a forked pull request executes attacker-controlled code on that machine. Self-hosting pays only where the minutes are metered. See `docs/05-runners.md#visibility-routing` and the `ci-consumer-adoption` skill.
+
+Two corollaries that only surface on a real run:
+
+- Some managed scans are scheduled by the platform rather than by a workflow file, and carry their own runner control. Routing every caller changes nothing for those; find and set them separately, or the repository keeps consuming metered minutes while the workflow tree claims otherwise.
+- There is no automatic spillover from a busy self-hosted label to a hosted runner; jobs queue. Size the fleet instead of engineering a fallback, since a fallback onto hosted runners re-imports the metered minutes you moved off.
+
+A correctly isolated self-hosted runner is unprivileged. Steps that install tooling into system paths pass on hosted images and fail there; fix the destination rather than granting the runner account system write access, which would make every subsequent job share mutable state.
 
 ### 7. Bound retries and external dependencies
 
