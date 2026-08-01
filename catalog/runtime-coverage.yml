@@ -15,8 +15,8 @@ entries:
   - workflow: .github/workflows/actionlint.yml
     status: runtime-proven
     evidence: "Called by this repo's ci.yml on every run; Linux X64 default-input lane executed live."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/30243258297
-    proven_digest: 116c4af8c18861a7c94000e277c3a4e9f1d158bcfbda02a7e6510dfc9d9cf8ff
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/30701697106
+    proven_digest: f946862cfe522cb62920aa104716b331b9f35210a9181ce5954879ccb48ce1df
     waiver: null
   - workflow: .github/workflows/benchmark-compare.yml
     status: static-only
