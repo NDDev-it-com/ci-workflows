@@ -25,6 +25,9 @@ updates:
         # separately reviewable PR that must carry runtime consumer evidence.
         exclude-patterns:
           - swift-actions/setup-swift
+      github-actions-security:
+        applies-to: security-updates
+        patterns: ['*']
   - package-ecosystem: pip
     directory: "/"
     schedule:
@@ -46,3 +49,6 @@ updates:
         applies-to: version-updates
         patterns:
           - "*"
+      pip-security:
+        applies-to: security-updates
+        patterns: ['*']
