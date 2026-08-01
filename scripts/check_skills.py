@@ -26,6 +26,7 @@ EXPECTED_SKILLS = {
     "ci-inventory-audit", "github-actions-authoring", "github-actions-security",
     "ci-free-tier-planner", "ci-failure-triage", "ci-release-provenance",
     "ci-cost-performance", "ci-runtime-contract-testing",
+    "ci-consumer-adoption",
     # Repository-operation skills for agents working on this repo.
     "nddev-repo-orientation", "nddev-change-flow", "nddev-release-flow",
 }

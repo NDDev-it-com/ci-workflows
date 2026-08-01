@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+### Added
+
+- **New skill `ci-consumer-adoption`.** The skill set covered authoring and
+  operating the library but nothing about wiring a *consumer* repository onto
+  it, which is where the two observed failure shapes live: a repository that
+  looks configured but still bills, and a repository routed to hardware its jobs
+  cannot use. Covers tier selection from entitlements rather than visibility
+  alone, pinning to a released tag by full SHA, runner routing by visibility,
+  the two managed scans no workflow file can reach, and proving the routing from
+  a completed run's `runner_name` instead of a saved setting.
+
+### Changed
+
+- `ci-cost-performance` gains the visibility-routing rule and its corollaries:
+  self-hosting pays only where minutes are metered, moving public work onto own
+  hardware buys a fork-PR execution path rather than a saving, platform-scheduled
+  scans carry their own runner control, there is no spillover from a busy
+  self-hosted label to a hosted runner, and an isolated self-hosted runner is
+  unprivileged so system-path installs fail there.
+
 ## [0.13.0] - 2026-08-01
 
 ### Added
