@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.13.1] - 2026-08-01
+
 ### Fixed
 
 - **Five reusables were self-applied but still recorded as `unverified`.** When
