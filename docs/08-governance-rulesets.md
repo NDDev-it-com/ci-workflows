@@ -79,7 +79,7 @@ version-controlled and reviewable.
 | Block deletion | Protect the branch |
 
 This is the recommended multi-maintainer baseline. This repository's live
-solo-maintainer variant still requires a pull request, squash-only merge,
+solo-maintainer variant still requires a pull request, merge-commit-only merge,
 resolved review threads, signed commits, linear history, no
 force-push/deletion, and the strict `ci-gate` check, but sets approvals to zero
 because GitHub does not allow an author to approve their own pull request.

@@ -295,7 +295,7 @@ has `pre` and `post` entry points that GitHub can execute even when a step-level
 ## Governance
 
 `main` and release tags are protected by **rulesets** in
-[`.github/rulesets/`](.github/rulesets/) (pull-request-only squash merges,
+[`.github/rulesets/`](.github/rulesets/) (pull-request-only merge commits,
 resolved review threads, signed commits, linear history, the strict `ci-gate`
 status check, and tag protection). The repository's solo-maintainer rule does
 not require an impossible self-approval; reusable projects with independent

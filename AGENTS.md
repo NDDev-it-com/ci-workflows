@@ -113,7 +113,8 @@ variants, and runner-guard programs run against OS/architecture matrices.
 - Conventional Commits, subject under 100 chars; DCO sign-off (`-s`);
   cryptographic signature (`-S` — this checkout is configured for SSH
   signing); no `Co-Authored-By` trailers.
-- `main` is PR-only: squash merges, required `ci-gate` status check, signed
+- `main` is PR-only: merge commits only (squash and rebase are disabled),
+  required `ci-gate` status check, signed
   commits, linear history. Fill `.github/PULL_REQUEST_TEMPLATE.md`
   completely (threat-model note and permissions diff for workflow changes).
 - Releases are tag-driven and immutable: `VERSION` must equal the tag as one

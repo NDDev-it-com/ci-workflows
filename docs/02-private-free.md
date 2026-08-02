@@ -101,6 +101,24 @@ jobs:
       timeout_minutes: 10
 ```
 
+### `checkout_ref` and privileged events
+
+`private-static.yml` and `cross-platform-smoke.yml` are the only two reusables
+that let the caller choose the checked-out commit via `checkout_ref`. Both open
+with a **fail-closed guard**: because a reusable workflow inherits the caller's
+`github` context, the workflow can see the event that triggered the *calling*
+run, and it refuses to start when a privileged event —
+`pull_request_target`, `workflow_run`, `issue_comment`, `issues`, `discussion`,
+`discussion_comment` — supplies a non-empty `checkout_ref`.
+
+That combination would run caller-chosen code with the base repository's write
+token and secrets. Pass `checkout_ref` from a `pull_request` wrapper instead,
+where the token is read-only. A privileged caller that supplies no
+`checkout_ref` is unaffected — checking out the base repository stays
+legitimate. There is no opt-out input; the guard is enforced by
+`scripts/check_privileged_ref_guard.py`, which executes it against the full
+event matrix on every gate run.
+
 ## Release supply chain without attestations (`release-supply-chain-free.yml`)
 
 GitHub Artifact Attestations are **not available to private or internal
@@ -131,6 +149,9 @@ minutes are billed at higher multipliers than Linux** (see
 to stay free-minimal, or accept the multiplier cost intentionally. Use
 `linux_command`, `macos_command`, or `windows_command` when one platform needs a
 lighter smoke than the default `command`.
+
+It carries the same `checkout_ref` privileged-event guard as `private-static.yml`
+(see [`checkout_ref` and privileged events](#checkout_ref-and-privileged-events)).
 
 ## Self-hosted caveats
 

@@ -21,8 +21,8 @@ prose docs as the source of truth.
 5. If you touched a skill, `python3 scripts/sync_skills.py` to regenerate the
    `.claude/skills` mirror from `.agents/skills`.
 6. Add a `CHANGELOG.md` entry under `[Unreleased]`.
-7. Validate (below), then PR — `main` is squash-merge-only behind the
-   `ci-gate` check.
+7. Validate (below), then PR — `main` takes merge commits only (squash and
+   rebase are disabled) behind the `ci-gate` check.
 
 ## CI skills
 
@@ -95,8 +95,8 @@ programs), so a failure message usually names the exact broken contract.
 - Conventional Commits (<100-char subject), `git commit -s` (DCO) and `-S`
   (SSH signing is configured in this checkout), no `Co-Authored-By`.
 - PRs fill `.github/PULL_REQUEST_TEMPLATE.md` (permissions diff +
-  threat-model note for workflow changes); merge is squash-only after
-  `ci-gate` is green.
+  threat-model note for workflow changes); merge is a merge commit after
+  `ci-gate` is green — squash and rebase are disabled.
 - Release = maintainer pushes SemVer tag; `release.yml` validates
   byte-exact `VERSION`, a single matching `CHANGELOG.md` heading, then
   publishes five immutable checksummed assets in one create call. Never

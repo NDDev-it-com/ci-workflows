@@ -38,7 +38,7 @@ A mistake ships in the next version, never as an edit to a published one.
    version, not the date, but keep it honest.
 3. Choose the number: this is `0.x`, so a **breaking or fail-closed contract
    change lands as a minor bump**; pure fixes/docs are a patch.
-4. Confirm consistency and gate, then PR + squash-merge:
+4. Confirm consistency and gate, then PR + merge commit:
 
 ```bash
 cat VERSION
