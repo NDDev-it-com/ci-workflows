@@ -52,6 +52,16 @@ For `pull_request_target`:
 
 GitHub’s 2026 checkout hardening blocks common fork-head patterns, but it does not make arbitrary `git`, `gh`, curl, artifact, or script ingestion safe.
 
+For a reusable workflow that accepts a caller-chosen ref (`checkout_ref` or equivalent), the safety rule belongs **inside the reusable**, not in its docs. A reusable inherits the caller's `github` context, so `github.event_name` is the event that triggered the calling run — the reusable can therefore detect a privileged caller itself:
+
+- make the refusal the **first step**, before any checkout or setup;
+- fail closed when a privileged event supplies a non-empty ref, and leave the empty-ref case alone (checking out the base repository stays legitimate);
+- give it no opt-out input — a boolean that disables a security control is the control failing open;
+- read the event and the ref through `env:`, never `${{ }}` inside `run:`;
+- enforce it with a validator that *executes* the guard across the event matrix, so a new ref-accepting workflow cannot ship without it.
+
+A rule that lives only in a risk note or a dismissed scanner alert is not a control. Treat "consumers must not call this from `pull_request_target`" as unenforced until a job step fails on it.
+
 ### 2. Token and permission audit
 
 - Require top-level deny-all and minimum job scopes.

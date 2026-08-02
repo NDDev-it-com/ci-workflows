@@ -62,6 +62,28 @@ jobs:
       matrix:
         os: ${{ fromJSON(inputs.os_list) }}
     steps:
+      - name: Reject caller-supplied ref on a privileged event
+        shell: bash
+        env:
+          CALLER_EVENT: ${{ github.event_name }}
+          CHECKOUT_REF: ${{ inputs.checkout_ref }}
+        run: |
+          set -euo pipefail
+          # A reusable workflow inherits the caller's github context, so
+          # CALLER_EVENT is the event that triggered the calling run. On a
+          # privileged event the job holds the caller's write token and
+          # secrets, and checking out a caller-supplied ref would execute
+          # untrusted code with them. Fail closed instead.
+          case "$CALLER_EVENT" in
+            pull_request_target|workflow_run|issue_comment|issues|discussion|discussion_comment)
+              if [ -n "$CHECKOUT_REF" ]; then
+                echo "::error::cross-platform-smoke refuses checkout_ref='${CHECKOUT_REF}' on privileged event '${CALLER_EVENT}'; call it from pull_request instead" >&2
+                exit 1
+              fi
+              ;;
+          esac
+          echo "caller event '${CALLER_EVENT}' accepted for checkout_ref='${CHECKOUT_REF:-<default>}'"
+
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:

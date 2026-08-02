@@ -288,8 +288,9 @@ capabilities:
       - "Use OS-specific command overrides when a smoke command is not portable across Linux, macOS, and Windows"
       - "macOS and Windows runner minutes are billed at a multiplier on private repos"
       - "Cross-tier contract intentionally contains no paid runtime-hardening action"
+      - "checkout_ref lets the caller pick the checked-out code; the workflow fails closed when a privileged caller event (pull_request_target, workflow_run, issue_comment, issues, discussion, discussion_comment) supplies one"
     deprecations: null
-    last_verified: "2026-07-04"
+    last_verified: "2026-08-02"
     sources:
       - "https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners"
 
@@ -752,8 +753,9 @@ capabilities:
     required_settings: []
     risks:
       - "Runs an arbitrary caller-supplied command; keep the command trusted and least-privilege"
+      - "checkout_ref lets the caller pick the checked-out code; the workflow fails closed when a privileged caller event (pull_request_target, workflow_run, issue_comment, issues, discussion, discussion_comment) supplies one"
     deprecations: null
-    last_verified: "2026-07-04"
+    last_verified: "2026-08-02"
     sources:
       - "https://docs.github.com/en/actions/using-workflows/reusing-workflows"
 

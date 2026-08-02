@@ -35,6 +35,7 @@ import check_examples
 import check_harden_runner_contract
 import check_merge_group
 import check_monorepo_routing
+import check_privileged_ref_guard
 import check_rulesets
 import check_skills
 import check_workflow_contracts
@@ -49,6 +50,7 @@ CHECKS = [
     ("permissions", check_permissions.check),
     ("workflow-contracts", check_workflow_contracts.check),
     ("harden-runner-contract", check_harden_runner_contract.check),
+    ("privileged-ref-guard", check_privileged_ref_guard.check),
     ("release-supply-chain", check_release_supply_chain.check),
     ("monorepo-routing", check_monorepo_routing.check),
     ("benchmark-contract", check_benchmark_contract.check),
