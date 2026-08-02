@@ -28,6 +28,15 @@ on:
         description: 'actions/checkout submodules input: false, true, or recursive.'
         type: string
         default: 'false'
+      install_command:
+        description: >-
+          Optional dependency install command, run before the smoke command on
+          every OS in the matrix. Kept separate from `command` so a caller does
+          not have to prefix its install step onto each per-OS override, and so
+          a failed install is reported as an install failure rather than as a
+          smoke failure. Empty skips the step. Matches `private-static.yml`.
+        type: string
+        default: ''
       command:
         description: 'Shell command to run on each OS (bash shell).'
         type: string
@@ -97,6 +106,13 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: ${{ inputs.python_version }}
+
+      - name: Install dependencies
+        if: ${{ inputs.install_command != '' }}
+        shell: bash
+        env:
+          INSTALL_COMMAND: ${{ inputs.install_command }}
+        run: bash -c "$INSTALL_COMMAND"
 
       - name: Run smoke command
         shell: bash

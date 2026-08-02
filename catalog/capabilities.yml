@@ -289,8 +289,9 @@ capabilities:
       - "macOS and Windows runner minutes are billed at a multiplier on private repos"
       - "Cross-tier contract intentionally contains no paid runtime-hardening action"
       - "checkout_ref lets the caller pick the checked-out code; the workflow fails closed when a privileged caller event (pull_request_target, workflow_run, issue_comment, issues, discussion, discussion_comment) supplies one"
+      - "install_command runs on every OS in the matrix before the smoke command; it is not a per-OS override, so a caller needing different install steps per OS must branch inside the command it passes"
     deprecations: null
-    last_verified: "2026-08-02"
+    last_verified: "2026-08-03"
     sources:
       - "https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners"
 

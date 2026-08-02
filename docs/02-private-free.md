@@ -150,6 +150,13 @@ to stay free-minimal, or accept the multiplier cost intentionally. Use
 `linux_command`, `macos_command`, or `windows_command` when one platform needs a
 lighter smoke than the default `command`.
 
+`install_command` runs on every OS before the smoke command, so a caller whose
+smoke needs dependencies does not have to prefix the same install onto each
+per-OS override — and a broken install is reported as an install failure rather
+than as a smoke failure. It is deliberately not a per-OS input: a caller that
+needs genuinely different install steps per platform should branch inside the
+command it passes.
+
 It carries the same `checkout_ref` privileged-event guard as `private-static.yml`
 (see [`checkout_ref` and privileged events](#checkout_ref-and-privileged-events)).
 
@@ -162,4 +169,4 @@ auto-scale (e.g. Actions Runner Controller), and treat egress carefully — see
 [05 Runners](05-runners.md#self-hosted).
 
 ---
-Last verified: 2026-07-11
+Last verified: 2026-08-03
