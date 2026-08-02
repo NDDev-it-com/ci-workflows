@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [0.13.3] - 2026-08-03
+
+### Added
+
+- **`cross-platform-smoke.yml` grew an `install_command` input.** It was the
+  only reusable that runs a caller command across an OS matrix without any way
+  to install that command's dependencies first — `private-static.yml` has had
+  `install_command` all along. Callers worked around it by chaining the
+  installer onto `linux_command` and `macos_command` separately, which
+  duplicates the install in every override and reports a broken install as a
+  smoke failure. The new step runs before the smoke command on every OS in the
+  matrix, is skipped when empty, and takes its value through `env` like every
+  other caller-supplied string here. It is deliberately not per-OS: a caller
+  needing genuinely different install steps should branch inside its command.
+
 ### Fixed
 
 - **`pr-hygiene.yml`'s `pr-title` job never declared the `pull-requests: read`
