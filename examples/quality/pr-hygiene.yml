@@ -1,7 +1,8 @@
 # PR-hygiene caller. Replace @<sha> with a pinned full commit SHA.
-# Defaults run commitlint + PR-title (contents: read). To enable labeler/stale,
-# turn them on and widen the caller job permissions (pull-requests: write, and
-# issues: write for stale).
+# Defaults run commitlint + PR-title, which need contents: read plus
+# pull-requests: read — the PR-title action fetches the pull request it
+# validates. To enable labeler/stale, turn them on and widen the caller job
+# permissions (pull-requests: write, and issues: write for stale).
 name: pr-hygiene
 on:
   pull_request:
@@ -10,5 +11,7 @@ on:
 permissions: {}
 jobs:
   pr-hygiene:
-    permissions: { contents: read }
+    permissions:
+      contents: read
+      pull-requests: read
     uses: NDDev-it-com/ci-workflows/.github/workflows/pr-hygiene.yml@<sha>

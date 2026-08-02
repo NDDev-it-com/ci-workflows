@@ -1282,12 +1282,14 @@ capabilities:
     example: examples/quality/pr-hygiene.yml
     required_permissions:
       - "contents: read"
+      - "pull-requests: read (pr-title job reads the pull request it validates)"
       - "pull-requests: write (labeler and stale jobs)"
       - "issues: write (stale job)"
     required_settings: []
     risks:
       - "labeler on fork PRs needs pull_request_target, which this library intentionally avoids; use it for same-repo PRs"
       - "Callers must grant the union of the enabled jobs' permissions"
+      - "A caller cannot grant a reusable more than the reusable declares, so a missing scope here needs a library fix, not a caller change"
     deprecations: null
     last_verified: "2026-07-08"
     sources:

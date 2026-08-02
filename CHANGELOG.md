@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **`pr-hygiene.yml`'s `pr-title` job never declared the `pull-requests: read`
+  it needs.** `amannn/action-semantic-pull-request` fetches the pull request it
+  validates through `GET /repos/{owner}/{repo}/pulls/{number}`, so the job needs
+  `pull-requests: read`; the neighbouring `labeler` job correctly declares
+  `pull-requests: write` and this one was missed. Every run failed with
+  `Resource not accessible by integration`, observed on `github-device-sync`.
+
+  A caller cannot grant a reusable more than the reusable declares, so no
+  consumer could work around it — the caller in `github-device-sync` already
+  declared `pull-requests: write` and still failed. This is the same defect
+  class as the `zizmor-sarif.yml` `actions: read` fix in `0.13.2`.
+
+  The failure had previously been read as a Dependabot-token problem and worked
+  around by skipping Dependabot pull requests; that workaround hid a bug that
+  affected every pull request. Reusable, catalog, and the caller example now
+  declare the scope.
+
 ### Security
 
 - **`checkout_ref` delegated its own safety rule to prose.**
