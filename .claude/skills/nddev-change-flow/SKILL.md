@@ -28,8 +28,8 @@ New to the repo? Read `nddev-repo-orientation` first.
 5. **If you touched a skill** under `.agents/skills/`, run
    `python3 scripts/sync_skills.py` to regenerate the `.claude/skills` mirror.
 6. **Add a `CHANGELOG.md` entry** under `[Unreleased]`.
-7. **Validate** (below), then open a PR. `main` is squash-merge-only behind the
-   required `ci-gate` check.
+7. **Validate** (below), then open a PR. `main` takes merge commits only
+   (squash and rebase are disabled) behind the required `ci-gate` check.
 
 ## Editing a workflow — the security invariants
 
@@ -150,4 +150,5 @@ git diff --check
   (`-S`, SSH is configured in this checkout); no `Co-Authored-By`.
 - Fill `.github/PULL_REQUEST_TEMPLATE.md` — the permissions diff and
   threat-model note are required for any workflow or permission change.
-- Merge is squash-only after `ci-gate` is green.
+- Merge is a merge commit after `ci-gate` is green; squash and rebase are
+  disabled on this repository.

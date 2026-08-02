@@ -30,7 +30,7 @@ response as soon as reasonably possible.
 - `check_harden_runner_contract.py` rejects conditional Harden-Runner steps and
   any paid runtime-hardening reference in cross-tier/private-free workflows.
 - `main` is protected by a repository ruleset (`.github/rulesets/branch-main.json`):
-  pull-request-only squash merges, resolved review threads, signed commits,
+  pull-request-only merge commits, resolved review threads, signed commits,
   linear history, no force-push or deletion, and the strict `ci-gate` status
   check. The solo-maintainer repository does not require self-approval. Release
   tags are

@@ -2,6 +2,49 @@
 
 ## [Unreleased]
 
+### Security
+
+- **`checkout_ref` delegated its own safety rule to prose.**
+  `private-static.yml` and `cross-platform-smoke.yml` are the only two
+  reusables that let the caller choose the checked-out commit. That is correct
+  on `pull_request`, where the job runs with a read-only token and no secrets,
+  and unsafe on a privileged event such as `pull_request_target` or
+  `workflow_run`, where the job holds the caller's write token and secrets and
+  the checkout would execute untrusted code with them. The rule existed only as
+  a sentence in the risk notes and in three dismissed code-scanning alerts —
+  nothing enforced it, and nothing stopped a consumer from getting it wrong.
+
+  Both workflows now open with a fail-closed guard step. A reusable workflow
+  inherits the caller's `github` context, so `github.event_name` is the event
+  that triggered the *calling* run; the guard refuses to proceed when a
+  privileged event (`pull_request_target`, `workflow_run`, `issue_comment`,
+  `issues`, `discussion`, `discussion_comment`) supplies a non-empty
+  `checkout_ref`. It is the first step in the job, has no opt-out input, and
+  reads both values through the environment, so no step runs before the
+  refusal. A privileged caller that supplies no `checkout_ref` is untouched —
+  the default checkout of the base repository stays legitimate.
+
+  New `scripts/check_privileged_ref_guard.py` (wired into `validate_all` as
+  `privileged-ref-guard`) discovers every workflow exposing `checkout_ref`,
+  asserts the guard is the first step of every checking-out job, and then
+  **executes** the extracted guard body against the full privileged/safe event
+  matrix — so the contract is proven by behaviour, not by pattern matching. A
+  future reusable that adds `checkout_ref` without the guard fails the gate.
+
+### Documentation
+
+- **Eight files told agents `main` was squash-merge-only; it has not been.**
+  The declared ruleset `.github/rulesets/branch-main.json` sets
+  `"allowed_merge_methods": ["merge"]`, and the live repository settings agree
+  (`allow_squash_merge: false`, `allow_rebase_merge: false`,
+  `allow_merge_commit: true`) — merge commits are the only permitted method,
+  matching the estate-wide atomic-commit policy. `README.md`, `SECURITY.md`,
+  `AGENTS.md`, `.claude/CLAUDE.md`, `docs/08-governance-rulesets.md`, and the
+  `nddev-change-flow` / `nddev-release-flow` skills all still described the
+  opposite, sending every agent that read them toward a merge method the
+  repository rejects. Corrected in the authored sources and remirrored into
+  `.claude/skills/`.
+
 ## [0.13.2] - 2026-08-01
 
 ### Fixed
