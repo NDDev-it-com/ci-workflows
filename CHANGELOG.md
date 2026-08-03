@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Personal-account consumer tier.** A repository owned by a *personal* GitHub
+  account (not an organization) inherits the private-free posture but cannot
+  reach an org-level self-hosted runner group — it needs a **repo-level**
+  runner registration and a caller that routes every job to that label. New
+  [docs/18-personal-account-tier.md](docs/18-personal-account-tier.md) records
+  the runner-registration procedure (org-runner vs repo-runner reachability is a
+  platform gate, not a setting) and the inversion against [02 private-free],
+  and new [examples/personal/security-selfhosted.yml](examples/personal/security-selfhosted.yml)
+  is the private-free stack (gitleaks, actionlint, zizmor-no-SARIF) with a
+  `runner:` input on every call. No catalog or workflow file changed — the
+  capability set is identical to private-free; only the runner differs.
+
 ## [0.13.3] - 2026-08-03
 
 ### Added

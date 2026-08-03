@@ -1,0 +1,47 @@
+# Personal-account tier — PRIVATE repository variant.
+#
+# A repository owned by a *personal* GitHub account (e.g. `rldyourmnd/*`) takes
+# the **private-free** posture regardless of visibility: even when private, it
+# has no GitHub Advanced Security, no native secret scanning, no CodeQL, no
+# dependency review — exactly the same exclusions as [02 private-free]. The
+# difference from `examples/private-free/security.yml` is only the **runner**:
+# a personal account has a 2 000 min/month Actions quota with no org pool to
+# draw on, so every job is routed to a self-hosted runner to keep the meter at
+# zero. See [docs/18-personal-account-tier.md].
+#
+# Do NOT copy this file into a public repository. A forked pull request against
+# a public repo executes attacker-controlled code, so pointing a public repo at
+# a self-hosted runner is a remote-code-execution path into your own hardware.
+# If the repository is or may become public, use `examples/private-free/security.yml`
+# (GitHub-hosted) or the public-OSS suite instead.
+#
+# Replace @<sha> with a pinned full commit SHA of ci-workflows, and <label>
+# with the self-hosted runner label registered on the repository (e.g.
+# `server-nddev-amsterdam`). Repo-level runner registration is required because
+# a self-hosted runner registered on an *organization* is not reachable from a
+# repository owned by a personal account — see
+# [docs/05-runners.md#visibility-routing].
+name: security
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+permissions: {}
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  secret-scan:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/secret-scan.yml@<sha>
+    with:
+      runner: <label>
+  actionlint:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/actionlint.yml@<sha>
+    with:
+      runner: <label>
+  zizmor:
+    permissions: { contents: read }   # least privilege: no security-events: write
+    uses: NDDev-it-com/ci-workflows/.github/workflows/zizmor-no-sarif.yml@<sha>
+    with:
+      runner: <label>
