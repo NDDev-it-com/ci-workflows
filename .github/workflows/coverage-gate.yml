@@ -18,6 +18,10 @@ on:
         description: 'Command (bash) that produces a coverage report. Empty to skip.'
         type: string
         default: ''
+      install_command:
+        description: 'Command (bash) that installs the coverage tool, e.g. `cargo install cargo-llvm-cov`. Empty to skip; runs before the coverage command.'
+        type: string
+        default: ''
       files:
         description: 'Coverage file(s) to upload (comma-separated). Empty lets Codecov search.'
         type: string
@@ -41,6 +45,18 @@ on:
       timeout_minutes:
         type: number
         default: 20
+      upload_artifact:
+        description: 'When true, uploads the coverage report file as a workflow artifact.'
+        type: boolean
+        default: false
+      artifact_name:
+        description: 'Name of the workflow artifact to upload.'
+        type: string
+        default: 'coverage-report'
+      artifact_path:
+        description: 'Path (file or directory) of the report to upload. Required when upload_artifact is true.'
+        type: string
+        default: ''
     secrets:
       codecov_token:
         required: false
@@ -67,11 +83,17 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Run install command
+        if: ${{ inputs.install_command != '' }}
+        env:
+          INSTALL_COMMAND: ${{ inputs.install_command }}
+        run: bash -euo pipefail -c "$INSTALL_COMMAND"
+
       - name: Produce coverage
         if: ${{ inputs.coverage_command != '' }}
         env:
           COVERAGE_COMMAND: ${{ inputs.coverage_command }}
-        run: bash -c "$COVERAGE_COMMAND"
+        run: bash -euo pipefail -c "$COVERAGE_COMMAND"
 
       - name: Upload to Codecov
         if: ${{ inputs.use_codecov }}
@@ -88,3 +110,12 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ inputs.coveralls_file }}
+
+      - name: Upload coverage report artifact
+        if: ${{ inputs.upload_artifact }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: ${{ inputs.artifact_path }}
+          if-no-files-found: error
+          retention-days: 14

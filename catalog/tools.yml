@@ -163,7 +163,8 @@ tools:
     pin: "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
     used_by:
       - .github/workflows/release-supply-chain.yml
-    last_verified: "2026-07-04"
+      - .github/workflows/coverage-gate.yml
+    last_verified: "2026-08-04"
 
   - id: flutter-action
     name: subosito/flutter-action
