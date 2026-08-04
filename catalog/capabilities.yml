@@ -1578,7 +1578,7 @@ capabilities:
 
   - id: clusterfuzzlite-fuzzing
     name: ClusterFuzzLite fuzzing (PR code-change + batch)
-    cluster: testing-quality
+    cluster: security-scanning
     status: ga
     public_oss: free
     private_free: free

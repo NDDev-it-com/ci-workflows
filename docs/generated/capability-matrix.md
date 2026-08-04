@@ -51,6 +51,7 @@
 | RHEL 9/10 larger-runner images (`rhel-larger-runner-images`) | runners | preview | paid | unavailable | conditional | `-` | `-` |
 | Self-hosted runners (`self-hosted-runners`) | runners | ga | conditional | free | available | `-` | `-` |
 | Standard GitHub-hosted runners (`standard-hosted-runners`) | runners | ga | free | conditional | available | `-` | `-` |
+| ClusterFuzzLite fuzzing (PR code-change + batch) (`clusterfuzzlite-fuzzing`) | security-scanning | ga | free | free | available | `.github/workflows/clusterfuzzlite.yml` | `-` |
 | CodeQL code scanning (`codeql-code-scanning`) | security-scanning | ga | free | unavailable | available | `.github/workflows/public-codeql.yml` | `-` |
 | Container build and Trivy scan (`container-scan-trivy`) | security-scanning | ga | free | free | available | `.github/workflows/container-ci.yml` | `examples/infra/container.yml` |
 | Copilot Autofix for code scanning (`copilot-autofix`) | security-scanning | ga | free | unavailable | available | `-` | `-` |
@@ -75,7 +76,6 @@
 | OSV-Scanner SCA (`osv-scanner-sca`) | supply-chain | ga | free | free | available | `.github/workflows/osv-scan.yml` | `examples/security/osv-scan.yml` |
 | SBOM generation (`sbom-generation`) | supply-chain | ga | free | free | available | `.github/workflows/release-supply-chain.yml` | `-` |
 | SLSA build provenance (`slsa-build-provenance`) | supply-chain | ga | free | paid | conditional | `.github/workflows/release-supply-chain.yml` | `-` |
-| ClusterFuzzLite fuzzing (PR code-change + batch) (`clusterfuzzlite-fuzzing`) | testing-quality | ga | free | free | available | `.github/workflows/clusterfuzzlite.yml` | `-` |
 
 ---
 Last generated: 2026-07-11
