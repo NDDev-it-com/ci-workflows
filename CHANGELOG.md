@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **`rust-ci.yml` gained 5 new inputs for full Rust CI coverage.**
+  `test_matrix_os` (JSON array for OS matrix testing), `fmt_command` (dedicated
+  rustfmt job), `clippy_command` (dedicated clippy lint job), `msrv_toolchain`
+  + `msrv_command` (minimum supported Rust version check). All default to
+  empty — existing callers are unaffected.
+
 ### Added
 
 - **`clusterfuzzlite.yml` — ClusterFuzzLite PR (code-change) and batch fuzzing.**
