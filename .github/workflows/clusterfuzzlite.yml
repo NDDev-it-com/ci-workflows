@@ -49,10 +49,6 @@ on:
         description: 'Output SARIF results for code scanning upload.'
         type: boolean
         default: true
-      cflite_action_ref:
-        description: 'SHA-pinned google/clusterfuzzlite/actions reference.'
-        type: string
-        default: '52ecc61cb587ee99c26825a112a21abf19c7448c'  # 2024-09-19
       timeout_minutes:
         description: 'Job timeout in minutes.'
         type: number
@@ -79,14 +75,14 @@ jobs:
           persist-credentials: false
 
       - name: Build fuzzers (${{ matrix.sanitizer }})
-        uses: google/clusterfuzzlite/actions/build_fuzzers@${{ inputs.cflite_action_ref }}
+        uses: google/clusterfuzzlite/actions/build_fuzzers@52ecc61cb587ee99c26825a112a21abf19c7448c  # 2024-09-19
         with:
           language: ${{ inputs.language }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           sanitizer: ${{ matrix.sanitizer }}
 
       - name: Run fuzzers (${{ matrix.sanitizer }})
-        uses: google/clusterfuzzlite/actions/run_fuzzers@${{ inputs.cflite_action_ref }}
+        uses: google/clusterfuzzlite/actions/run_fuzzers@52ecc61cb587ee99c26825a112a21abf19c7448c  # 2024-09-19
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           fuzz-seconds: ${{ inputs.fuzz_seconds }}

@@ -43,14 +43,6 @@ on:
         description: 'cargo-deny check arguments.'
         type: string
         default: 'check bans licenses advisories sources'
-      cargo_deny_action:
-        description: 'SHA-pinned EmbarkStudios/cargo-deny-action reference.'
-        type: string
-        default: '3fd3802e88374d3fe9159b834c7714ec57d6c979'  # v2.0.11
-      install_action:
-        description: 'SHA-pinned taiki-e/install-action reference (for cargo-audit and cargo-machete).'
-        type: string
-        default: '64c5c20c872907b6f7cd50994ac189e7274160f2'  # v2.68.26
       cargo_audit_version:
         description: 'cargo-audit version to install via taiki-e/install-action.'
         type: string
@@ -79,7 +71,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Run cargo-deny
-        uses: EmbarkStudios/cargo-deny-action@${{ inputs.cargo_deny_action }}
+        uses: EmbarkStudios/cargo-deny-action@3fd3802e88374d3fe9159b834c7714ec57d6c979  # v2.0.11
         with:
           command: ${{ inputs.deny_command }}
 
@@ -95,7 +87,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install cargo-audit
-        uses: taiki-e/install-action@${{ inputs.install_action }}
+        uses: taiki-e/install-action@64c5c20c872907b6f7cd50994ac189e7274160f2  # v2.68.26
         with:
           tool: cargo-audit@${{ inputs.cargo_audit_version }}
       - name: Run cargo-audit
@@ -114,7 +106,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install cargo-machete
-        uses: taiki-e/install-action@${{ inputs.install_action }}
+        uses: taiki-e/install-action@64c5c20c872907b6f7cd50994ac189e7274160f2  # v2.68.26
         with:
           tool: cargo-machete@${{ inputs.cargo_machete_version }}
       - name: Run cargo-machete
