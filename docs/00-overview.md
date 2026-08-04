@@ -47,6 +47,16 @@ most consequential correction: Artifact Attestations are gated on Enterprise
 Cloud for private repos, and this estate **has** it, so private repositories
 release with full provenance instead of the `-free` variant.
 
+### Personal-account repositories
+
+A repository owned by a **personal** account (not an organization) takes the
+[private-free](02-private-free.md) posture regardless of visibility — it has no
+GHAS, no Enterprise Cloud, and a 2 000 min/month Actions quota with no org pool.
+Its runner strategy differs from a generic private-free repo: every job is
+routed to a **repo-level** self-hosted runner, because an org-level runner is
+not reachable from a personal-account namespace. See
+[18 Personal-account tier](18-personal-account-tier.md).
+
 ## How to consume a reusable workflow
 
 Reference by `owner/repo/.github/workflows/<name>.yml@<full-sha>` from a caller
@@ -106,7 +116,8 @@ For end-to-end caller examples per tier, see the tier docs and the repository
   [02 Private free](02-private-free.md) ·
   [03 Private paid / GHAS](03-private-paid-ghas.md) ·
   [16 Code Quality](16-code-quality.md) ·
-  [17 NDDev estate](17-nddev-tier.md)
+  [17 NDDev estate](17-nddev-tier.md) ·
+  [18 Personal account](18-personal-account-tier.md)
 - Platform: [04 Actions core](04-actions-core.md) · [05 Runners](05-runners.md)
 - Security: [06 Security scanning](06-security-scanning.md) ·
   [07 Supply chain / SLSA / SBOM / attestations](07-supply-chain-slsa-sbom-attestations.md)
