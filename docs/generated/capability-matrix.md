@@ -75,6 +75,7 @@
 | OSV-Scanner SCA (`osv-scanner-sca`) | supply-chain | ga | free | free | available | `.github/workflows/osv-scan.yml` | `examples/security/osv-scan.yml` |
 | SBOM generation (`sbom-generation`) | supply-chain | ga | free | free | available | `.github/workflows/release-supply-chain.yml` | `-` |
 | SLSA build provenance (`slsa-build-provenance`) | supply-chain | ga | free | paid | conditional | `.github/workflows/release-supply-chain.yml` | `-` |
+| ClusterFuzzLite fuzzing (PR code-change + batch) (`clusterfuzzlite-fuzzing`) | testing-quality | ga | free | free | available | `.github/workflows/clusterfuzzlite.yml` | `-` |
 
 ---
 Last generated: 2026-07-11

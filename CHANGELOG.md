@@ -4,6 +4,10 @@
 
 ### Added
 
+- **`clusterfuzzlite.yml` — ClusterFuzzLite PR (code-change) and batch fuzzing.**
+  Reusable CFLite workflow with sanitizer matrix, configurable mode, fuzz
+  duration, and SARIF output. Distinct from `fuzzing.yml` (cargo-fuzz).
+
 - **`rust-supply-chain.yml` — cargo-deny + cargo-audit + cargo-machete.** Three
   independently-toggleable jobs for Rust supply-chain health: deny
   (bans/licenses/advisories/sources), audit (RustSec vulnerability database),

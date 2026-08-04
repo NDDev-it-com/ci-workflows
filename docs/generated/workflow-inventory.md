@@ -7,6 +7,7 @@
 | `.github/workflows/benchmark-compare.yml` | `benchmark-compare` | ga |
 | `.github/workflows/benchmark.yml` | `benchmark` | ga |
 | `.github/workflows/ci.yml` | internal | internal |
+| `.github/workflows/clusterfuzzlite.yml` | `clusterfuzzlite-fuzzing` | ga |
 | `.github/workflows/codeql.yml` | internal | internal |
 | `.github/workflows/container-ci.yml` | `container-scan-trivy` | ga |
 | `.github/workflows/coverage-gate.yml` | `coverage-gate` | ga |
