@@ -4,6 +4,14 @@
 
 ### Added
 
+- **`pr-hygiene.yml` grew pr-title and stale options.** The `pr-title` job now
+  accepts `pr_title_types` (comma-separated conventional-commit types, converted
+  to the newline-delimited `types:` the action expects; empty keeps the action
+  defaults), `pr_title_require_scope`, and `pr_title_subject_pattern`. The
+  `stale` job now accepts `stale_operations_per_run`,
+  `stale_exempt_issue_labels`, and `stale_exempt_pr_labels`. All default to the
+  prior behaviour, so existing callers are unaffected.
+
 - **`clusterfuzzlite.yml` — ClusterFuzzLite PR (code-change) and batch fuzzing.**
   Reusable CFLite workflow with sanitizer matrix, configurable mode, fuzz
   duration, and SARIF output. Distinct from `fuzzing.yml` (cargo-fuzz).
