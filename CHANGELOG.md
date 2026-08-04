@@ -4,6 +4,16 @@
 
 ### Changed
 
+- **`public-codeql.yml` gained `build_command` and `post_analyze_command` inputs.**
+  `build_command` runs a custom build (e.g. `cargo build --workspace --locked`)
+  instead of autobuild. `post_analyze_command` runs a hook after analysis with
+  `if: always()`, enabling repo-local extraction-diagnostics collection.
+- **`public-scorecard.yml` gained `filter_rule_ids`,
+  `normalize_placeholder_uris`, and `upload_sarif_on_forks` inputs.**
+  `filter_rule_ids` drops non-actionable checks (MaintainedID, CodeReviewID,
+  CIIBestPracticesID). `normalize_placeholder_uris` fixes non-URI-safe
+  artifact locations. `upload_sarif_on_forks` gates fork-PR uploads.
+
 - **`rust-ci.yml` gained 5 new inputs for full Rust CI coverage.**
   `test_matrix_os` (JSON array for OS matrix testing), `fmt_command` (dedicated
   rustfmt job), `clippy_command` (dedicated clippy lint job), `msrv_toolchain`

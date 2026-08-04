@@ -19,13 +19,13 @@ entries:
     proven_digest: f946862cfe522cb62920aa104716b331b9f35210a9181ce5954879ccb48ce1df
     waiver: null
   - workflow: .github/workflows/benchmark-compare.yml
-    status: static-only
+    status: unverified
     validator: scripts/check_benchmark_contract.py
     evidence: 'Executable contract validator exercises the embedded program(s); no live workflow_call run.'
     last_run: null
     waiver: null
   - workflow: .github/workflows/benchmark.yml
-    status: static-only
+    status: unverified
     validator: scripts/check_benchmark_contract.py
     evidence: 'Executable contract validator exercises the embedded program(s); no live workflow_call run.'
     last_run: null
@@ -106,7 +106,7 @@ entries:
     last_run: null
     waiver: null
   - workflow: .github/workflows/monorepo-changed-paths.yml
-    status: static-only
+    status: unverified
     validator: scripts/check_monorepo_routing.py
     evidence: 'Executable contract validator exercises the embedded program(s); no live workflow_call run.'
     last_run: null
@@ -137,10 +137,10 @@ entries:
     last_run: null
     waiver: null
   - workflow: .github/workflows/public-codeql.yml
-    status: runtime-proven
-    evidence: "Called by this repository's own codeql.yml through a relative ref; language matrix executed live on main."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/30702998427
-    proven_digest: d7de98164001dad988a6c4ccc059a012f92c5e90c82de1198604f8f85c23d125
+    status: unverified
+    evidence: 'Workflow inputs changed; awaiting re-validation via a live workflow_call run.'
+    last_run: null
+    proven_digest: b43ec65a54f8430885c589c4c296920c946c3880b2088a8cd60e4ddf536cb8f8
     waiver: null
   - workflow: .github/workflows/public-dependency-review.yml
     status: runtime-proven
@@ -175,13 +175,13 @@ entries:
     last_run: null
     waiver: null
   - workflow: .github/workflows/release-supply-chain-free.yml
-    status: static-only
+    status: unverified
     validator: scripts/check_release_supply_chain.py
     evidence: 'Executable contract validator exercises the embedded program(s); no live workflow_call run.'
     last_run: null
     waiver: null
   - workflow: .github/workflows/release-supply-chain.yml
-    status: static-only
+    status: unverified
     validator: scripts/check_release_supply_chain.py
     evidence: 'Executable contract validator exercises the embedded program(s). The
       runtime proof lapsed when actions/attest and actions/checkout were bumped: this
