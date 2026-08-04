@@ -9,27 +9,29 @@ name: gate
 # runs `if: always()`, and validates that every declared upstream job result
 # is "success" (with an optional allow-list for "skipped").
 #
-# Usage from a caller workflow:
+# IMPORTANT: reusable workflows cannot access the caller's `needs` context.
+# The caller MUST pass the needs results as a JSON string via the
+# `needs_json` input, using `toJSON(needs)` in the caller workflow:
 #
-#   jobs:
-#     # ... fan-out jobs (check, test, clippy, fmt, ...) ...
-#
-#     ci-gate:
-#       needs: [check, test, clippy, fmt]
-#       uses: NDDev-it-com/ci-workflows/.github/workflows/gate.yml@<sha>
-#       with:
-#         check_name: CI
-#         required_jobs: "check,test,clippy,fmt"
-#         allow_skipped: "coverage"  # coverage may be skipped if CODECOV_ENABLED is false
-#
-# The gate job name in the GitHub UI / branch-protection context will be exactly
-# "CI", matching the required-check entry.
+#   ci-gate:
+#     needs: [check, test, clippy, fmt]
+#     if: always()
+#     uses: NDDev-it-com/ci-workflows/.github/workflows/gate.yml@<sha>
+#     with:
+#       check_name: CI
+#       needs_json: ${{ toJSON(needs) }}
+#       required_jobs: "check,test,clippy,fmt"
+#       allow_skipped: "coverage"
 
 on:
   workflow_call:
     inputs:
       check_name:
         description: 'Exact branch-protection required-check context name. The gate job will be named this.'
+        type: string
+        required: true
+      needs_json:
+        description: 'JSON string of the caller needs context. Pass via toJSON(needs). Required — reusable workflows cannot read needs directly.'
         type: string
         required: true
       required_jobs:
@@ -59,17 +61,13 @@ jobs:
       - name: Validate required job results
         shell: bash
         env:
+          CHECK_NAME: ${{ inputs.check_name }}
+          NEEDS_JSON: ${{ inputs.needs_json }}
           REQUIRED_JOBS: ${{ inputs.required_jobs }}
           ALLOW_SKIPPED: ${{ inputs.allow_skipped }}
-          # Each upstream job result is passed via toJSON(needs) — the caller
-          # must pass this as a secret/env because reusable workflows cannot
-          # access the caller's `needs` context directly.
-          NEEDS_JSON: ${{ toJson(needs) }}
         run: |
           set -euo pipefail
 
-          # Parse the needs JSON to extract each job's result.
-          # needs.<job_id>.result is the field we care about.
           python3 -I <<'PY'
           import json
           import os
@@ -78,6 +76,7 @@ jobs:
           needs = json.loads(os.environ["NEEDS_JSON"])
           required = [j.strip() for j in os.environ["REQUIRED_JOBS"].split(",") if j.strip()]
           allow_skipped = {j.strip() for j in os.environ["ALLOW_SKIPPED"].split(",") if j.strip()}
+          check_name = os.environ["CHECK_NAME"]
 
           failures = []
           for job_id in required:
@@ -93,10 +92,10 @@ jobs:
               failures.append(f"  {job_id}: {result}")
 
           if failures:
-              print(f"gate '{os.environ.get('CHECK_NAME', '?')}' FAILED — required jobs did not all succeed:", file=sys.stderr)
+              print(f"gate '{check_name}' FAILED — required jobs did not all succeed:", file=sys.stderr)
               for f in failures:
                   print(f, file=sys.stderr)
               sys.exit(1)
 
-          print(f"gate '{os.environ.get('CHECK_NAME', '?')}' PASSED — all required jobs succeeded.")
+          print(f"gate '{check_name}' PASSED — all required jobs succeeded.")
           PY
