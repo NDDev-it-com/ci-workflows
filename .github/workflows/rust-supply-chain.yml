@@ -67,11 +67,11 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v6
         with:
           persist-credentials: false
       - name: Run cargo-deny
-        uses: EmbarkStudios/cargo-deny-action@3fd3802e88374d3fe9159b834c7714ec57d6c979  # v2.0.11
+        uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25  # v2.0.11
         with:
           command: ${{ inputs.deny_command }}
 
@@ -83,11 +83,11 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v6
         with:
           persist-credentials: false
       - name: Install cargo-audit
-        uses: taiki-e/install-action@64c5c20c872907b6f7cd50994ac189e7274160f2  # v2.68.26
+        uses: taiki-e/install-action@18b1216eba7f8039b0f8d131d5473787f0edce68  # v2.85.3
         with:
           tool: cargo-audit@${{ inputs.cargo_audit_version }}
       - name: Run cargo-audit
@@ -102,11 +102,11 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v6
         with:
           persist-credentials: false
       - name: Install cargo-machete
-        uses: taiki-e/install-action@64c5c20c872907b6f7cd50994ac189e7274160f2  # v2.68.26
+        uses: taiki-e/install-action@18b1216eba7f8039b0f8d131d5473787f0edce68  # v2.85.3
         with:
           tool: cargo-machete@${{ inputs.cargo_machete_version }}
       - name: Run cargo-machete
