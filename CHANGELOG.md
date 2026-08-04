@@ -22,6 +22,15 @@
 
 ### Added
 
+- **`coverage-gate.yml` gained an install command and artifact upload.** Four
+  new inputs: `install_command` (string, default `''` — runs before the coverage
+  command to install the coverage tool, e.g. `cargo install cargo-llvm-cov`;
+  skipped when empty), `upload_artifact` (boolean, default false),
+  `artifact_name` (string, default `coverage-report`), and `artifact_path`
+  (string, default `''` — required when `upload_artifact` is true). When
+  `upload_artifact` is true, the report is uploaded as a workflow artifact via
+  `actions/upload-artifact`. Off by default, so existing callers are unaffected.
+
 - **`actionlint.yml` grew optional shellcheck support.** Three new inputs —
   `enable_shellcheck` (boolean, default false), `shellcheck_version` (default
   `0.11.0`), and `shellcheck_sha256` (SHA256 of

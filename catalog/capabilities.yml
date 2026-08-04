@@ -1247,8 +1247,10 @@ capabilities:
     risks:
       - "Coverage thresholds are enforced by the caller's codecov.yml, not this workflow"
       - "Private-repo runner minutes are metered beyond the included free allotment"
+      - "install_command runs arbitrary caller-supplied bash before the coverage command; keep it trusted and least-privilege"
+      - "upload_artifact (default off) uploads artifact_path via actions/upload-artifact using the job token; it needs artifact_path set and fails closed if no files match"
     deprecations: null
-    last_verified: "2026-07-08"
+    last_verified: "2026-08-04"
     sources:
       - "https://docs.codecov.com/docs"
       - "https://github.com/codecov/codecov-action"
