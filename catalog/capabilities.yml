@@ -1528,3 +1528,23 @@ capabilities:
     sources:
       - "https://github.com/googleapis/release-please-action"
       - "https://github.com/changesets/action"
+
+  - id: gate
+    name: Caller-named gate job for branch-protection contexts
+    cluster: actions-core
+    status: ga
+    public_oss: free
+    private_free: free
+    private_paid: available
+    workflow: .github/workflows/gate.yml
+    example: null
+    required_permissions:
+      - "contents: read"
+    required_settings: []
+    risks:
+      - "The gate validates needs.<job_id>.result; a typo in required_jobs will fail the gate with a NOT FOUND error"
+      - "allow_skipped only tolerates 'skipped' — it does NOT tolerate 'failure' or 'cancelled'"
+    deprecations: null
+    last_verified: "2026-08-04"
+    sources:
+      - "https://docs.github.com/actions/using-jobs/using-jobs-in-a-workflow#defining-prerequisite-jobs"

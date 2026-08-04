@@ -236,3 +236,8 @@ entries:
     last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/30706690921
     proven_digest: 4f355439c4bcb5ffb1c4c3d3e4b2e2bc1b9ffa5c0d95d1355281a9ed60c88ab0
     waiver: null
+  - workflow: .github/workflows/gate.yml
+    status: unverified
+    evidence: 'New reusable workflow; awaiting first live workflow_call run from a consumer.'
+    last_run: null
+    waiver: null
