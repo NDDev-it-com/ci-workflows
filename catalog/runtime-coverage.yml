@@ -13,10 +13,10 @@ repository: NDDev-it-com/ci-workflows
 baseline_ref: 218f63feb6be020e71ff8ac8e18146a12fa23a38
 entries:
   - workflow: .github/workflows/actionlint.yml
-    status: runtime-proven
-    evidence: "Called by this repo's ci.yml on every run; Linux X64 default-input lane executed live."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/30701697106
-    proven_digest: f946862cfe522cb62920aa104716b331b9f35210a9181ce5954879ccb48ce1df
+    status: static-only
+    validator: scripts/check_actionlint_contract.py
+    evidence: "Was runtime-proven at the prior digest; extended with optional shellcheck inputs/steps, so downgraded to static-only (check_actionlint_contract.py still enforces the first-step Linux X64 runner guard) until a fresh observed workflow_call run re-proves it."
+    last_run: null
     waiver: null
   - workflow: .github/workflows/benchmark-compare.yml
     status: static-only

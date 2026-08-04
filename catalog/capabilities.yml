@@ -199,8 +199,9 @@ capabilities:
     risks:
       - "Downloaded tarball is checksum-verified; bumping the version requires updating the SHA256"
       - "A first-step guard rejects non-Linux-X64 runners before the download instead of failing mid-install"
+      - "Optional shellcheck (enable_shellcheck, default off) downloads the linux_x86_64 tarball and verifies it with sha256; it runs on tracked *.sh files only and needs shellcheck_sha256 set when enabled"
     deprecations: null
-    last_verified: "2026-07-11"
+    last_verified: "2026-08-04"
     sources:
       - "https://github.com/rhysd/actionlint"
 

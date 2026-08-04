@@ -12,6 +12,14 @@
 
 ### Added
 
+- **`actionlint.yml` grew optional shellcheck support.** Three new inputs —
+  `enable_shellcheck` (boolean, default false), `shellcheck_version` (default
+  `0.11.0`), and `shellcheck_sha256` (SHA256 of
+  `shellcheck-v<ver>.linux.x86_64.tar.xz`, required when enabled). When
+  `enable_shellcheck` is true, the workflow downloads the checksum-verified
+  shellcheck tarball (verifying with sha256sum) and runs it on tracked `*.sh`
+  files after actionlint. Off by default, so existing callers are unaffected.
+
 - **`pr-hygiene.yml` grew pr-title and stale options.** The `pr-title` job now
   accepts `pr_title_types` (comma-separated conventional-commit types, converted
   to the newline-delimited `types:` the action expects; empty keeps the action
