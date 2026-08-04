@@ -27,6 +27,14 @@ on:
         description: 'Run github/codeql-action/autobuild before analyze.'
         type: boolean
         default: false
+      build_command:
+        description: 'Custom build command (bash) instead of autobuild. Empty = use autobuild setting. E.g. "cargo build --workspace --locked".'
+        type: string
+        default: ''
+      post_analyze_command:
+        description: 'Optional command (bash) to run AFTER analyze, e.g. extraction-diagnostics collection. Runs with always() so it captures failures too.'
+        type: string
+        default: ''
       output_directory:
         description: 'Optional CodeQL analyze output directory for SARIF artifacts.'
         type: string
@@ -91,8 +99,14 @@ jobs:
           config-file: ${{ inputs.config_file }}
 
       - name: Autobuild
-        if: ${{ inputs.autobuild }}
+        if: ${{ inputs.autobuild && inputs.build_command == '' }}
         uses: github/codeql-action/autobuild@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81  # v4.37.3
+
+      - name: Custom build
+        if: ${{ inputs.build_command != '' }}
+        env:
+          BUILD_COMMAND: ${{ inputs.build_command }}
+        run: bash -c "$BUILD_COMMAND"
 
       - name: Analyze
         if: ${{ inputs.output_directory == '' }}
@@ -115,3 +129,9 @@ jobs:
           path: ${{ inputs.output_directory }}
           if-no-files-found: error
           retention-days: ${{ inputs.retention_days }}
+
+      - name: Post-analyze command
+        if: ${{ always() && inputs.post_analyze_command != '' }}
+        env:
+          POST_ANALYZE_COMMAND: ${{ inputs.post_analyze_command }}
+        run: bash -c "$POST_ANALYZE_COMMAND"
