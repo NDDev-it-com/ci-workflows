@@ -18,6 +18,18 @@ on:
       pr_title:
         type: boolean
         default: true
+      pr_title_types:
+        description: 'Comma-separated allowed conventional-commit types (e.g. feat,fix). Empty uses the action defaults.'
+        type: string
+        default: ''
+      pr_title_require_scope:
+        description: 'Require a scope in every PR title.'
+        type: boolean
+        default: false
+      pr_title_subject_pattern:
+        description: 'Regex constraining the PR title subject. Empty applies no extra subject validation.'
+        type: string
+        default: ''
       labeler:
         type: boolean
         default: false
@@ -33,6 +45,18 @@ on:
       days_before_close:
         type: number
         default: 14
+      stale_operations_per_run:
+        description: 'Maximum number of operations per run for the stale job.'
+        type: number
+        default: 30
+      stale_exempt_issue_labels:
+        description: 'Comma-separated issue labels that exempt an issue from stale processing. Empty disables the exemption.'
+        type: string
+        default: ''
+      stale_exempt_pr_labels:
+        description: 'Comma-separated PR labels that exempt a pull request from stale processing. Empty disables the exemption.'
+        type: string
+        default: ''
       timeout_minutes:
         type: number
         default: 10
@@ -67,8 +91,29 @@ jobs:
       contents: read
       pull-requests: read # the action reads the pull request it validates
     steps:
+      - name: Normalize PR-title options
+        id: pr_title_opts
+        shell: bash
+        env:
+          PR_TITLE_TYPES: ${{ inputs.pr_title_types }}
+        run: |
+          set -euo pipefail
+          # amannn/action-semantic-pull-request expects newline-delimited types;
+          # callers pass a comma-separated list. Convert commas to newlines and
+          # trim, leaving the output empty when no types were supplied (the action
+          # then falls back to its Conventional Commits defaults).
+          types_newline="$(printf '%s' "$PR_TITLE_TYPES" | tr ',' '\n' | sed '/^[[:space:]]*$/d')"
+          {
+            printf 'pr_title_types<<EOF_PR_TITLE_TYPES\n'
+            printf '%s\n' "$types_newline"
+            printf 'EOF_PR_TITLE_TYPES\n'
+          } >> "$GITHUB_OUTPUT"
       - name: Validate PR title (Conventional Commits)
         uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50  # v6.1.1
+        with:
+          types: ${{ steps.pr_title_opts.outputs.pr_title_types }}
+          requireScope: ${{ inputs.pr_title_require_scope }}
+          subjectPattern: ${{ inputs.pr_title_subject_pattern }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -101,3 +146,6 @@ jobs:
         with:
           days-before-stale: ${{ inputs.days_before_stale }}
           days-before-close: ${{ inputs.days_before_close }}
+          operations-per-run: ${{ inputs.stale_operations_per_run }}
+          exempt-issue-labels: ${{ inputs.stale_exempt_issue_labels }}
+          exempt-pr-labels: ${{ inputs.stale_exempt_pr_labels }}
