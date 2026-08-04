@@ -4,6 +4,15 @@
 
 ### Added
 
+- **`gate.yml` — caller-named gate job for branch-protection required-check contexts.**
+  Reusable workflows produce job names like `rust (1.94.0)` or `CodeQL (rust)`
+  that don't match the short, exact context names branch protection expects
+  (`CI`, `CodeQL`, `Scorecard`). This workflow emits a single job whose `name:`
+  is the caller-supplied `check_name`, runs `if: always()`, and validates that
+  every declared upstream job result is `success` (with an `allow_skipped`
+  allow-list for jobs like coverage that may be toggled off). Enables migration
+  of repos with branch-protection required checks to reusable workflows.
+
 - **Personal-account consumer tier.** A repository owned by a *personal* GitHub
   account (not an organization) inherits the private-free posture but cannot
   reach an org-level self-hosted runner group — it needs a **repo-level**
