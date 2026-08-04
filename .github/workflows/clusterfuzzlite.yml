@@ -1,0 +1,95 @@
+name: clusterfuzzlite
+
+# Reusable ClusterFuzzLite fuzzing workflow (build_fuzzers + run_fuzzers) with
+# sanitizer matrix, PR (code-change) and batch modes, and optional SARIF output.
+# Distinct from fuzzing.yml (which uses cargo-fuzz/libFuzzer on nightly).
+#
+# Usage (PR fuzzing):
+#   pr-fuzz:
+#     uses: NDDev-it-com/ci-workflows/.github/workflows/clusterfuzzlite.yml@<sha>
+#     with:
+#       mode: code-change
+#       language: rust
+#       fuzz_seconds: 300
+#       sanitizer_matrix: '["address"]'
+#       output_sarif: true
+#
+# Usage (batch/scheduled):
+#   batch-fuzz:
+#     uses: NDDev-it-com/ci-workflows/.github/workflows/clusterfuzzlite.yml@<sha>
+#     with:
+#       mode: batch
+#       language: rust
+#       fuzz_seconds: 1800
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: 'Runner label.'
+        type: string
+        default: 'ubuntu-latest'
+      mode:
+        description: 'CFLite mode: code-change (PR) or batch (scheduled).'
+        type: string
+        default: 'code-change'
+      language:
+        description: 'Fuzzing language (rust, go, python, c, c++, jvm, swift, etc.).'
+        type: string
+        default: 'rust'
+      sanitizer_matrix:
+        description: 'JSON array of sanitizers (address, thread, memory, undefined).'
+        type: string
+        default: '["address"]'
+      fuzz_seconds:
+        description: 'Fuzzing duration in seconds.'
+        type: number
+        default: 300
+      output_sarif:
+        description: 'Output SARIF results for code scanning upload.'
+        type: boolean
+        default: true
+      cflite_action_ref:
+        description: 'SHA-pinned google/clusterfuzzlite/actions reference.'
+        type: string
+        default: '52ecc61cb587ee99c26825a112a21abf19c7448c'  # 2024-09-19
+      timeout_minutes:
+        description: 'Job timeout in minutes.'
+        type: number
+        default: 35
+
+permissions: {}
+
+jobs:
+  fuzz:
+    name: Fuzz (${{ matrix.sanitizer }})
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: ${{ fromJSON(inputs.sanitizer_matrix) }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        with:
+          persist-credentials: false
+
+      - name: Build fuzzers (${{ matrix.sanitizer }})
+        uses: google/clusterfuzzlite/actions/build_fuzzers@${{ inputs.cflite_action_ref }}
+        with:
+          language: ${{ inputs.language }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          sanitizer: ${{ matrix.sanitizer }}
+
+      - name: Run fuzzers (${{ matrix.sanitizer }})
+        uses: google/clusterfuzzlite/actions/run_fuzzers@${{ inputs.cflite_action_ref }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          fuzz-seconds: ${{ inputs.fuzz_seconds }}
+          mode: ${{ inputs.mode }}
+          sanitizer: ${{ matrix.sanitizer }}
+          output-sarif: ${{ inputs.output_sarif }}

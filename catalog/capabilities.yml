@@ -1571,3 +1571,26 @@ capabilities:
       - "https://github.com/EmbarkStudios/cargo-deny"
       - "https://github.com/rustsec/rustsec"
       - "https://github.com/bnjbvr/cargo-machete"
+
+  - id: clusterfuzzlite-fuzzing
+    name: ClusterFuzzLite fuzzing (PR code-change + batch)
+    cluster: testing-quality
+    status: ga
+    public_oss: free
+    private_free: free
+    private_paid: available
+    workflow: .github/workflows/clusterfuzzlite.yml
+    example: null
+    required_permissions:
+      - "actions: read"
+      - "contents: read"
+      - "security-events: write"
+    required_settings:
+      - "Fuzz targets in the repository (oss-fuzz compatible)"
+    risks:
+      - "Fuzzing consumes significant CI time; tune fuzz_seconds for PR vs batch"
+      - "SARIF upload requires code scanning enabled (free on public repos)"
+    deprecations: null
+    last_verified: "2026-08-04"
+    sources:
+      - "https://github.com/google/clusterfuzzlite"
