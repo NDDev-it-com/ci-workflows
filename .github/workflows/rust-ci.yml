@@ -1,7 +1,11 @@
 name: rust-ci
 
-# Reusable Rust CI for BOTH tiers: pinned Rust toolchain (with
-# built-in cargo cache), and caller-provided build/test commands passed via env.
+# Reusable Rust CI for BOTH tiers: pinned Rust toolchain (with built-in cargo
+# cache), caller-provided build/test commands, optional MSRV (minimum supported
+# Rust version) check, optional OS matrix for tests, and optional dedicated
+# rustfmt/clippy lint jobs.
+#
+# All new inputs default to empty/false so existing callers are unaffected.
 
 on:
   workflow_call:
@@ -27,6 +31,26 @@ on:
         description: 'Test/verify command (bash).'
         type: string
         default: 'cargo test --locked'
+      test_matrix_os:
+        description: 'JSON array of OS labels for the test job matrix. Empty string = single runner (no matrix).'
+        type: string
+        default: ''
+      fmt_command:
+        description: 'rustfmt check command (bash). Empty to skip the fmt job entirely.'
+        type: string
+        default: ''
+      clippy_command:
+        description: 'clippy lint command (bash). Empty to skip the clippy job entirely.'
+        type: string
+        default: ''
+      msrv_toolchain:
+        description: 'Minimum Supported Rust Version toolchain. Empty to skip the MSRV job.'
+        type: string
+        default: ''
+      msrv_command:
+        description: 'MSRV check command (bash). Defaults to cargo check --locked.'
+        type: string
+        default: 'cargo check --locked --all-targets'
       timeout_minutes:
         type: number
         default: 30
@@ -65,10 +89,121 @@ jobs:
           BUILD_COMMAND: ${{ inputs.build_command }}
         run: bash -c "$BUILD_COMMAND"
 
-      - name: Run tests
+      - name: Run tests (single OS)
+        if: ${{ inputs.test_matrix_os == '' }}
         env:
           TEST_COMMAND: ${{ inputs.test_command }}
           RUST_TOOLCHAIN: ${{ inputs.toolchain }}
         run: |
           bash -c "$TEST_COMMAND"
           echo "Rust ${RUST_TOOLCHAIN} build + tests passed." >> "$GITHUB_STEP_SUMMARY"
+
+  test-matrix:
+    name: test (${{ matrix.os }})
+    if: ${{ inputs.test_matrix_os != '' }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(inputs.test_matrix_os) }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659  # v1.17.0
+        with:
+          toolchain: ${{ inputs.toolchain }}
+
+      - name: Run tests
+        env:
+          TEST_COMMAND: ${{ inputs.test_command }}
+        run: bash -c "$TEST_COMMAND"
+
+  fmt:
+    name: rustfmt
+    if: ${{ inputs.fmt_command != '' }}
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659  # v1.17.0
+        with:
+          toolchain: ${{ inputs.toolchain }}
+          components: rustfmt
+
+      - name: Check formatting
+        env:
+          FMT_COMMAND: ${{ inputs.fmt_command }}
+        run: bash -c "$FMT_COMMAND"
+
+  clippy:
+    name: clippy
+    if: ${{ inputs.clippy_command != '' }}
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659  # v1.17.0
+        with:
+          toolchain: ${{ inputs.toolchain }}
+          components: clippy
+
+      - name: Run clippy
+        env:
+          CLIPPY_COMMAND: ${{ inputs.clippy_command }}
+        run: bash -c "$CLIPPY_COMMAND"
+
+  msrv:
+    name: msrv (${{ inputs.msrv_toolchain }})
+    if: ${{ inputs.msrv_toolchain != '' }}
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up MSRV toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659  # v1.17.0
+        with:
+          toolchain: ${{ inputs.msrv_toolchain }}
+
+      - name: MSRV check
+        env:
+          MSRV_COMMAND: ${{ inputs.msrv_command }}
+        run: bash -c "$MSRV_COMMAND"
