@@ -4,6 +4,12 @@
 
 ### Added
 
+- **`rust-supply-chain.yml` — cargo-deny + cargo-audit + cargo-machete.** Three
+  independently-toggleable jobs for Rust supply-chain health: deny
+  (bans/licenses/advisories/sources), audit (RustSec vulnerability database),
+  and machete (unused dependency detection). All tool versions are
+  caller-overridable with estate-verified SHA-pinned defaults.
+
 - **`gate.yml` — caller-named gate job for branch-protection required-check contexts.**
   Reusable workflows produce job names like `rust (1.94.0)` or `CodeQL (rust)`
   that don't match the short, exact context names branch protection expects

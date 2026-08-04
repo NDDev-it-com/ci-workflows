@@ -241,3 +241,8 @@ entries:
     evidence: 'New reusable workflow; awaiting first live workflow_call run from a consumer.'
     last_run: null
     waiver: null
+  - workflow: .github/workflows/rust-supply-chain.yml
+    status: unverified
+    evidence: 'New reusable workflow; awaiting first live workflow_call run from a consumer.'
+    last_run: null
+    waiver: null
