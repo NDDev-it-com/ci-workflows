@@ -238,7 +238,7 @@ entries:
     waiver: null
   - workflow: .github/workflows/gate.yml
     status: unverified
-    evidence: 'New reusable workflow; awaiting first live workflow_call run from a consumer.'
+    evidence: 'Redesigned to accept needs_json input (reusable workflows cannot read caller needs context). Awaiting first live run.'
     last_run: null
     waiver: null
   - workflow: .github/workflows/rust-supply-chain.yml
