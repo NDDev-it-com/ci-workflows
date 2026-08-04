@@ -22,9 +22,13 @@
 # repository owned by a personal account — see
 # [docs/05-runners.md#visibility-routing].
 name: security
+# Trigger note: pull_request + workflow_dispatch only, NOT push. Cross-owner
+# reusable workflows do not resolve jobs for push events to the default branch
+# of a personal-account repo (verified — see docs/18-personal-account-tier.md
+# "Trigger caveat"). Branch protection gates direct merges via PR CI.
 on:
-  push: { branches: [main] }
   pull_request: { branches: [main] }
+  workflow_dispatch:
 permissions: {}
 concurrency:
   group: security-${{ github.workflow }}-${{ github.ref }}

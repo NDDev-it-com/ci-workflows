@@ -10,11 +10,15 @@
   runner registration and a caller that routes every job to that label. New
   [docs/18-personal-account-tier.md](docs/18-personal-account-tier.md) records
   the runner-registration procedure (org-runner vs repo-runner reachability is a
-  platform gate, not a setting) and the inversion against [02 private-free],
-  and new [examples/personal/security-selfhosted.yml](examples/personal/security-selfhosted.yml)
+  platform gate, not a setting), the inversion against [02 private-free], and
+  the **trigger caveat**: cross-owner reusable workflows do not resolve jobs for
+  `push` events to the default branch of a personal-account repo (verified
+  empirically — `pull_request` works, `push` hangs in `pending` with zero jobs).
+  New [examples/personal/security-selfhosted.yml](examples/personal/security-selfhosted.yml)
   is the private-free stack (gitleaks, actionlint, zizmor-no-SARIF) with a
-  `runner:` input on every call. No catalog or workflow file changed — the
-  capability set is identical to private-free; only the runner differs.
+  `runner:` input on every call and `pull_request`-only triggers. No catalog or
+  workflow file changed — the capability set is identical to private-free; only
+  the runner and trigger differ.
 
 ## [0.13.3] - 2026-08-03
 

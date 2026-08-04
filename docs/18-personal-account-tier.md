@@ -83,6 +83,23 @@ routed to the repository's self-hosted runner. It is
 `examples/private-free/security.yml` plus a `runner:` input on each call; the
 capability set is identical because the tier posture is identical.
 
+## Trigger caveat: `pull_request` only, not `push`
+
+A reusable workflow owned by a **different account** (e.g. this library,
+`NDDev-it-com/ci-workflows`, called from a personal-account repository) does
+**not** resolve jobs for `push` events to the default branch. The run is
+created but hangs in `pending` with zero jobs — indefinitely. This was
+verified empirically on `rldyourmnd/declaro-platform`: the same workflow file
+succeeded instantly on `pull_request` (run completed in seconds) while `push`
+runs to `main` hung for 8+ hours with no jobs spawned. The mechanism is a
+GitHub-side cross-owner workflow resolution gate, not a misconfiguration —
+`allowed_actions: all` and full admin access do not unblock it.
+
+**Use `pull_request` + `workflow_dispatch` as the only triggers.** Do not add
+`push: branches: [main]`. Direct pushes to the default branch are gated by
+branch protection requiring this CI to pass on the PR first, which is the
+intended flow anyway. The example caller reflects this.
+
 ## What is deliberately not here
 
 - **No CodeQL, no SARIF upload, no dependency review, no native secret
