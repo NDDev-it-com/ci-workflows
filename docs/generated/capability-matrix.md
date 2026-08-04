@@ -62,6 +62,7 @@
 | GitHub native secret scanning (`native-secret-scanning`) | security-scanning | ga | free | unavailable | available | `-` | `-` |
 | OpenSSF Scorecard SARIF (`ossf-scorecard`) | security-scanning | ga | free | unavailable | conditional | `.github/workflows/public-scorecard.yml` | `examples/public-oss/scorecard-sarif.yml` |
 | OpenSSF Scorecard JSON artifact (`ossf-scorecard-json`) | security-scanning | ga | free | unavailable | conditional | `.github/workflows/public-scorecard-json.yml` | `examples/public-oss/scorecard.yml` |
+| Rust supply-chain checks (cargo-deny + cargo-audit + cargo-machete) (`rust-supply-chain`) | security-scanning | ga | free | free | available | `.github/workflows/rust-supply-chain.yml` | `-` |
 | Semgrep OSS SAST (`semgrep-sast`) | security-scanning | ga | free | free | available | `.github/workflows/semgrep-ci.yml` | `examples/security/semgrep.yml` |
 | zizmor workflow security scanner (`zizmor`) | security-scanning | ga | free | free | available | `.github/workflows/zizmor-sarif.yml` | `-` |
 | zizmor workflow security scanner (no SARIF) (`zizmor-no-sarif`) | security-scanning | ga | free | free | available | `.github/workflows/zizmor-no-sarif.yml` | `examples/private-free/security.yml` |

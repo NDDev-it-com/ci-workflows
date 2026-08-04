@@ -1548,3 +1548,26 @@ capabilities:
     last_verified: "2026-08-04"
     sources:
       - "https://docs.github.com/actions/using-jobs/using-jobs-in-a-workflow#defining-prerequisite-jobs"
+
+  - id: rust-supply-chain
+    name: Rust supply-chain checks (cargo-deny + cargo-audit + cargo-machete)
+    cluster: security-scanning
+    status: ga
+    public_oss: free
+    private_free: free
+    private_paid: available
+    workflow: .github/workflows/rust-supply-chain.yml
+    example: null
+    required_permissions:
+      - "contents: read"
+    required_settings: []
+    risks:
+      - "cargo-deny requires a deny.toml in the repo root (or XDG config); without it, a default config applies"
+      - "cargo-audit reads Cargo.lock; repos without a lockfile will fail"
+      - "cargo-machete output is advisory (exits 0 with warnings, not failures)"
+    deprecations: null
+    last_verified: "2026-08-04"
+    sources:
+      - "https://github.com/EmbarkStudios/cargo-deny"
+      - "https://github.com/rustsec/rustsec"
+      - "https://github.com/bnjbvr/cargo-machete"

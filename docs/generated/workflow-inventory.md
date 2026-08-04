@@ -43,6 +43,7 @@
 | `.github/workflows/release-supply-chain.yml` | `artifact-attestations`, `sbom-generation`, `slsa-build-provenance`, `release-supply-chain` | ga |
 | `.github/workflows/release.yml` | internal | internal |
 | `.github/workflows/rust-ci.yml` | `rust-ci` | ga |
+| `.github/workflows/rust-supply-chain.yml` | `rust-supply-chain` | ga |
 | `.github/workflows/scorecard.yml` | internal | internal |
 | `.github/workflows/secret-scan.yml` | `gitleaks-secret-scan` | ga |
 | `.github/workflows/semgrep-ci.yml` | `semgrep-sast` | ga |
