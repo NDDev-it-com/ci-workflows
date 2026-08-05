@@ -97,6 +97,14 @@ def _record() -> dict[str, Any]:
 
 
 def _payload(record: dict[str, Any], *, verified: bool = True) -> tuple[dict[str, Any], dict[str, Any]]:
+    canonical = json.dumps(record, ensure_ascii=True, separators=(",", ":"), sort_keys=True)
+    signed_payload = (
+        f"object {PUBLIC_SHA}\n"
+        "type commit\n"
+        "tag 1.2.3\n"
+        "tagger Release Operator <release@example.invalid> 1785929400 +0000\n\n"
+        f"{canonical}\n"
+    )
     ref = {
         "node_id": "REF_fixture",
         "object": {
@@ -108,7 +116,7 @@ def _payload(record: dict[str, Any], *, verified: bool = True) -> tuple[dict[str
         "url": "https://api.github.invalid/git/ref/tags/1.2.3",
     }
     tag = {
-        "message": json.dumps(record, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
+        "message": canonical + "\n-----BEGIN SSH SIGNATURE-----\nfixture\n-----END SSH SIGNATURE-----\n",
         "node_id": "TAG_fixture",
         "object": {
             "sha": PUBLIC_SHA,
@@ -124,7 +132,7 @@ def _payload(record: dict[str, Any], *, verified: bool = True) -> tuple[dict[str
         },
         "url": f"https://api.github.invalid/git/tags/{TAG_SHA}",
         "verification": {
-            "payload": "fixture",
+            "payload": signed_payload,
             "reason": "valid" if verified else "unsigned",
             "signature": "fixture",
             "verified": verified,

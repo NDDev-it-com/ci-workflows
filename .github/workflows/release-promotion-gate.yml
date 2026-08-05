@@ -152,16 +152,34 @@ jobs:
           if verification.get("verified") is not True or verification.get("reason") != "valid":
               fail("annotated tag signature is not GitHub-verified and valid")
 
-          message = tag["message"]
-          if not isinstance(message, str):
-              fail("annotated tag message must be text")
+          payload = verification.get("payload")
+          if not isinstance(payload, str):
+              fail("GitHub verification did not return the signed tag payload")
           try:
-              record = json.loads(message)
+              signed_headers, signed_body = payload.split("\n\n", 1)
+          except ValueError:
+              fail("signed tag payload has no annotation boundary")
+          header_lines = signed_headers.splitlines()
+          if len(header_lines) != 4:
+              fail("signed tag payload must contain exactly four tag-object headers")
+          if header_lines[:3] != [
+              f"object {public_sha}",
+              "type commit",
+              f"tag {os.environ['RELEASE_VERSION']}",
+          ]:
+              fail("signed tag payload headers do not match the API tag target")
+          if not header_lines[3].startswith("tagger ") or " <" not in header_lines[3]:
+              fail("signed tag payload has a malformed tagger header")
+          if not signed_body.endswith("\n"):
+              fail("signed promotion annotation must end in exactly one LF")
+          record_text = signed_body[:-1]
+          try:
+              record = json.loads(record_text)
           except json.JSONDecodeError as exc:
-              fail(f"annotated tag message is not JSON: {exc}")
+              fail(f"signed promotion annotation is not JSON: {exc}")
           canonical = json.dumps(record, ensure_ascii=True, separators=(",", ":"), sort_keys=True)
-          if message != canonical:
-              fail("promotion record must be canonical compact sorted-key JSON")
+          if signed_body != canonical + "\n":
+              fail("promotion record must be canonical compact sorted-key JSON plus one LF")
           exact_keys(
               record,
               {
@@ -250,7 +268,7 @@ jobs:
               else:
                   fail(f"evidence {role} has an unsupported kind")
 
-          record_digest = "sha256:" + hashlib.sha256(message.encode("utf-8")).hexdigest()
+          record_digest = "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
           print(
               f"promotion gate: verified {record['public_repository']}@{public_sha} "
               f"for {record['version']} via {control['repository']}@{control['commit']} "
