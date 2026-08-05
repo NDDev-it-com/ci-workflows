@@ -30,6 +30,7 @@ import check_permissions
 import check_pinned_actions
 import check_tool_pinning
 import check_release_supply_chain
+import check_release_promotion_gate
 import check_docs_links
 import check_examples
 import check_harden_runner_contract
@@ -52,6 +53,7 @@ CHECKS = [
     ("harden-runner-contract", check_harden_runner_contract.check),
     ("privileged-ref-guard", check_privileged_ref_guard.check),
     ("release-supply-chain", check_release_supply_chain.check),
+    ("release-promotion-gate", check_release_promotion_gate.check),
     ("monorepo-routing", check_monorepo_routing.check),
     ("benchmark-contract", check_benchmark_contract.check),
     ("actionlint-contract", check_actionlint_contract.check),

@@ -4,6 +4,13 @@
 
 ### Changed
 
+- **The tool catalog now matches the already-merged Coveralls 2.3.8 and
+  actions/stale 11.0.0 workflow pins.** Dependabot advanced the executable
+  refs without updating their catalog-owned versions and SHA records, which
+  made the catalog validator correctly fail. Runtime evidence for
+  `secret-scan.yml` and `zizmor-sarif.yml` is also honestly downgraded after
+  their checkout-byte change instead of retaining stale proof digests.
+
 - **`public-codeql.yml` gained `build_command` and `post_analyze_command` inputs.**
   `build_command` runs a custom build (e.g. `cargo build --workspace --locked`)
   instead of autobuild. `post_analyze_command` runs a hook after analysis with
@@ -21,6 +28,18 @@
   empty — existing callers are unaffected.
 
 ### Added
+
+- **`release-promotion-gate.yml` binds public publication to exact private
+  promotion evidence.** The read-only reusable accepts only a GitHub-verified
+  signed annotated numeric tag whose canonical `nddev-release-promotion/v1`
+  JSON names the exact public commit, module version, private control-plane
+  commit, registry digest, and a complete non-expired evidence set. It rejects
+  unsigned, lightweight, stale, wrong-repository/SHA/version, failed,
+  incomplete, malformed, and unauthorized-substitute records. A macOS x64
+  artifact-validation substitute is accepted only when it states its residual
+  limitations. The publish job remains separate and must declare
+  `needs: promotion`, so it receives no write permissions until this gate
+  succeeds.
 
 - **`coverage-gate.yml` gained an install command and artifact upload.** Four
   new inputs: `install_command` (string, default `''` — runs before the coverage

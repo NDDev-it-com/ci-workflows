@@ -251,11 +251,11 @@ tools:
     name: coverallsapp/github-action
     homepage: "https://github.com/coverallsapp/github-action"
     kind: action
-    current_version: "v2.3.6"
-    pin: "coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b"
+    current_version: "v2.3.8"
+    pin: "coverallsapp/github-action@8d6379e14d29928660c4ba802d8e85393440b329"
     used_by:
       - .github/workflows/coverage-gate.yml
-    last_verified: "2026-07-08"
+    last_verified: "2026-08-05"
 
   - id: lychee-action
     name: lycheeverse/lychee-action
@@ -321,11 +321,11 @@ tools:
     name: actions/stale
     homepage: "https://github.com/actions/stale"
     kind: action
-    current_version: "v10.4.0"
-    pin: "actions/stale@1e223db275d687790206a7acac4d1a11bd6fe629"
+    current_version: "v11.0.0"
+    pin: "actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93"
     used_by:
       - .github/workflows/pr-hygiene.yml
-    last_verified: "2026-07-12"
+    last_verified: "2026-08-05"
 
   - id: osv-scanner
     name: osv-scanner

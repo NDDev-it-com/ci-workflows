@@ -44,6 +44,7 @@
 | npm trusted publishing (`npm-trusted-publishing`) | releases-packages | ga | free | free | available | `-` | `examples/release/npm-trusted-publishing.yml` |
 | PyPI trusted publishing (`pypi-trusted-publishing`) | releases-packages | ga | free | free | available | `-` | `examples/release/pypi-trusted-publishing.yml` |
 | Release automation (release-please / changesets) (`release-automation`) | releases-packages | ga | free | free | available | `-` | `examples/level3/release-please.yml` |
+| Exact-SHA release promotion gate (`release-promotion-gate`) | releases-packages | preview | free | free | available | `.github/workflows/release-promotion-gate.yml` | `examples/public-oss/release-with-promotion.yml` |
 | Release supply chain (SBOM + attest + publish) (`release-supply-chain`) | releases-packages | ga | free | paid | conditional | `.github/workflows/release-supply-chain.yml` | `examples/public-oss/release.yml` |
 | Release supply chain without attestations (private-free) (`release-supply-chain-free`) | releases-packages | ga | free | free | available | `.github/workflows/release-supply-chain-free.yml` | `examples/release/private-free-release.yml` |
 | GitHub-hosted runner governance controls (`hosted-runner-governance-controls`) | runners | preview | conditional | conditional | conditional | `-` | `-` |

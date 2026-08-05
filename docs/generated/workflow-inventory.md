@@ -40,6 +40,7 @@
 | `.github/workflows/python-ci.yml` | `python-ci` | ga |
 | `.github/workflows/qt-ci.yml` | `qt-ci` | ga |
 | `.github/workflows/r-ci.yml` | `r-ci` | ga |
+| `.github/workflows/release-promotion-gate.yml` | `release-promotion-gate` | preview |
 | `.github/workflows/release-supply-chain-free.yml` | `release-supply-chain-free` | ga |
 | `.github/workflows/release-supply-chain.yml` | `artifact-attestations`, `sbom-generation`, `slsa-build-provenance`, `release-supply-chain` | ga |
 | `.github/workflows/release.yml` | internal | internal |

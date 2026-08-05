@@ -761,6 +761,33 @@ capabilities:
     sources:
       - "https://docs.github.com/en/actions/using-workflows/reusing-workflows"
 
+  - id: release-promotion-gate
+    name: Exact-SHA release promotion gate
+    cluster: releases-packages
+    status: preview
+    public_oss: free
+    private_free: free
+    private_paid: available
+    workflow: .github/workflows/release-promotion-gate.yml
+    example: examples/public-oss/release-with-promotion.yml
+    required_permissions:
+      - "contents: read"
+    required_settings:
+      - "Numeric release-tag creation restricted to audited release operators"
+      - "Release tags are signed annotated tags that GitHub reports as verified and valid"
+      - "Tag annotation contains canonical nddev-release-promotion/v1 JSON generated from exact-candidate evidence"
+      - "Publish job declares needs: promotion and receives write permissions only after this read-only gate succeeds"
+    risks:
+      - "The signed promotion record is an authorization assertion; its trust depends on restricting numeric tag creation to audited release operators"
+      - "The gate validates exact identities, evidence roles, freshness, and the GitHub tag-signature result, but it cannot read private control-plane artifacts with the caller-scoped token"
+      - "macOS x64 may use an explicitly limited artifact-validation substitute; that does not constitute Darwin x64 runtime execution"
+    deprecations: null
+    last_verified: "2026-08-05"
+    sources:
+      - "https://docs.github.com/en/rest/git/tags#get-a-tag"
+      - "https://docs.github.com/en/rest/git/refs#get-a-reference"
+      - "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets"
+
   - id: release-supply-chain
     name: Release supply chain (SBOM + attest + publish)
     product_facts:

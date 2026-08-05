@@ -13,7 +13,8 @@ supply-chain reusable.
 ```text
 push tag X.Y.Z
   └─ release.yml (resolve + validate)
-      └─ release-supply-chain.yml
+      ├─ release-promotion-gate.yml (NDDev exact-SHA eligibility)
+      └─ release-supply-chain.yml (needs: promotion)
           ├─ tracked-source archive
           ├─ exact-payload SPDX SBOM
           ├─ canonical release notes
@@ -38,6 +39,19 @@ after checkout, the reusable revalidates the exact tag's `VERSION`, tag context,
 and exactly one tracked `CHANGELOG.md` heading when that file is present.
 
 ### Consumer caller
+
+For the NDDev harness estate, use
+[`examples/public-oss/release-with-promotion.yml`](../examples/public-oss/release-with-promotion.yml).
+Its first job is read-only and verifies that the signed annotated tag contains
+a canonical `nddev-release-promotion/v1` record for the exact public commit,
+private control-plane commit, registry digest, and complete current evidence.
+The publication job declares `needs: promotion`; therefore none of its write
+permissions are usable until eligibility succeeds. Numeric tag creation must
+also be restricted to audited release operators—signature verification does
+not by itself authorize a signer.
+
+The generic supply-chain-only caller remains available for estates that bind
+promotion outside GitHub Actions:
 
 ```yaml
 # .github/workflows/release.yml
