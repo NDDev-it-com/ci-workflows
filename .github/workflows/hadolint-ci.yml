@@ -7,7 +7,7 @@ on:
     inputs:
       runner:
         type: string
-        default: 'ubuntu-latest'
+        default: 'amsterdam'
       dockerfile:
         type: string
         default: 'Dockerfile'

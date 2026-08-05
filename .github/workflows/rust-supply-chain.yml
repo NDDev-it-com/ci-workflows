@@ -22,7 +22,7 @@ on:
       runner:
         description: 'Runner label.'
         type: string
-        default: 'ubuntu-latest'
+        default: 'amsterdam'
       toolchain:
         description: 'Rust toolchain version for cargo-audit/machete (not needed for deny which uses the action).'
         type: string

@@ -8,7 +8,7 @@ on:
     inputs:
       runner:
         type: string
-        default: 'ubuntu-latest'
+        default: 'amsterdam'
       terraform_version:
         description: 'Terraform version constraint for setup-terraform. Pin an exact version or range for reproducible CI (see setup-terraform docs); "latest" always resolves to the newest release.'
         type: string

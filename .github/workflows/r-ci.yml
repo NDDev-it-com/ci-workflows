@@ -8,7 +8,7 @@ on:
     inputs:
       runner:
         type: string
-        default: 'ubuntu-latest'
+        default: 'amsterdam'
       r_version:
         type: string
         default: 'release'

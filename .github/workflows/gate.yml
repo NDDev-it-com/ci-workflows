@@ -43,9 +43,9 @@ on:
         type: string
         default: ''
       runner:
-        description: 'Runner label. Defaults to ubuntu-latest.'
+        description: 'Runner label. Defaults to amsterdam (self-hosted).'
         type: string
-        default: 'ubuntu-latest'
+        default: 'amsterdam'
 
 permissions: {}
 

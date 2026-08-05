@@ -8,7 +8,7 @@ on:
     inputs:
       runner:
         type: string
-        default: 'ubuntu-latest'
+        default: 'amsterdam'
       working_directory:
         type: string
         default: '.'

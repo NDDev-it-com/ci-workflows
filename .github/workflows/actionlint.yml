@@ -14,7 +14,7 @@ on:
       runner:
         description: 'Linux X64 runner label; other platforms are rejected by the runner-contract guard.'
         type: string
-        default: 'ubuntu-latest'
+        default: 'amsterdam'
       actionlint_version:
         type: string
         default: '1.7.12'

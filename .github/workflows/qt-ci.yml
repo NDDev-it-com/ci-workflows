@@ -9,7 +9,7 @@ on:
     inputs:
       runner:
         type: string
-        default: 'ubuntu-latest'
+        default: 'amsterdam'
       qt_version:
         description: 'Qt version spec for aqtinstall, e.g. 6.8.* or 6.8.3.'
         type: string

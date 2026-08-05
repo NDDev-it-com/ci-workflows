@@ -8,7 +8,7 @@ on:
     inputs:
       runner:
         type: string
-        default: 'ubuntu-latest'
+        default: 'amsterdam'
       java_version:
         type: string
         default: '21'

@@ -14,7 +14,7 @@ on:
     inputs:
       runner:
         type: string
-        default: 'ubuntu-latest'
+        default: 'amsterdam'
       zizmor_version:
         type: string
         default: '1.26.1'

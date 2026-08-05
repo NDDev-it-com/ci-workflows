@@ -9,7 +9,7 @@ on:
     inputs:
       runner:
         type: string
-        default: 'ubuntu-latest'
+        default: 'amsterdam'
       flutter_channel:
         description: 'flutter-action channel: stable, beta, or master.'
         type: string

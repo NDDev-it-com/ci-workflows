@@ -49,7 +49,7 @@ on:
         default: ''
       runner:
         type: string
-        default: 'ubuntu-latest'
+        default: 'amsterdam'
       notes_file:
         description: >-
           Optional tracked UTF-8 notes path; a matching non-empty CHANGELOG

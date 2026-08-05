@@ -10,7 +10,7 @@ on:
     inputs:
       runner:
         type: string
-        default: 'ubuntu-latest'
+        default: 'amsterdam'
       scan_type:
         description: 'Trivy scan type: fs or image.'
         type: string

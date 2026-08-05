@@ -10,7 +10,7 @@ on:
     inputs:
       runner:
         type: string
-        default: 'ubuntu-latest'
+        default: 'amsterdam'
       bun_version:
         description: 'Exact oven-sh/bun version to pin.'
         type: string
