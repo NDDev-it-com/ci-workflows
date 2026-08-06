@@ -32,6 +32,7 @@ def check() -> list[str]:
         "actionlint.yml",
         "cross-platform-smoke.yml",
         "private-static.yml",
+        "public-codeql.yml",
         "secret-scan.yml",
         "zizmor-no-sarif.yml",
     }
