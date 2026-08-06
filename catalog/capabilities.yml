@@ -171,13 +171,14 @@ capabilities:
     private_free: free
     private_paid: available
     workflow: .github/workflows/secret-scan.yml
-    example: null
+    example: examples/private-free/security.yml
     required_permissions:
       - "contents: read"
     required_settings: []
     risks:
       - "Digest-pinned container image must be bumped by Dependabot to stay current"
       - "Private-free contract intentionally contains no paid runtime-hardening action"
+      - "Checkout ignores persistent runner global Git config so ambient Authorization headers cannot combine with the job token"
     deprecations: null
     last_verified: "2026-07-04"
     sources:
@@ -191,7 +192,7 @@ capabilities:
     private_free: free
     private_paid: available
     workflow: .github/workflows/actionlint.yml
-    example: null
+    example: examples/private-free/security.yml
     required_permissions:
       - "contents: read"
     required_settings:
@@ -200,6 +201,7 @@ capabilities:
       - "Downloaded tarball is checksum-verified; bumping the version requires updating the SHA256"
       - "A first-step guard rejects non-Linux-X64 runners before the download instead of failing mid-install"
       - "Optional shellcheck (enable_shellcheck, default off) downloads the linux_x86_64 tarball and verifies it with sha256; it runs on tracked *.sh files only and needs shellcheck_sha256 set when enabled"
+      - "Checkout ignores persistent runner global Git config so ambient Authorization headers cannot combine with the job token"
     deprecations: null
     last_verified: "2026-08-04"
     sources:
@@ -245,6 +247,7 @@ capabilities:
     risks:
       - "Findings are enforced in logs but not uploaded to code scanning"
       - "Use zizmor-sarif.yml when code scanning SARIF upload is available"
+      - "Checkout ignores persistent runner global Git config so ambient Authorization headers cannot combine with the job token"
     deprecations: null
     last_verified: "2026-07-04"
     sources:
@@ -287,6 +290,7 @@ capabilities:
     required_settings: []
     risks:
       - "Use OS-specific command overrides when a smoke command is not portable across Linux, macOS, and Windows"
+      - "Checkout ignores persistent runner global Git config so ambient Authorization headers cannot combine with the job token"
       - "macOS and Windows runner minutes are billed at a multiplier on private repos"
       - "Cross-tier contract intentionally contains no paid runtime-hardening action"
       - "checkout_ref lets the caller pick the checked-out code; the workflow fails closed when a privileged caller event (pull_request_target, workflow_run, issue_comment, issues, discussion, discussion_comment) supplies one"
@@ -749,12 +753,13 @@ capabilities:
     private_free: free
     private_paid: available
     workflow: .github/workflows/private-static.yml
-    example: null
+    example: examples/private-free/security.yml
     required_permissions:
       - "contents: read"
     required_settings: []
     risks:
       - "Runs an arbitrary caller-supplied command; keep the command trusted and least-privilege"
+      - "Checkout ignores persistent runner global Git config so ambient Authorization headers cannot combine with the job token"
       - "checkout_ref lets the caller pick the checked-out code; the workflow fails closed when a privileged caller event (pull_request_target, workflow_run, issue_comment, issues, discussion, discussion_comment) supplies one"
     deprecations: null
     last_verified: "2026-08-02"

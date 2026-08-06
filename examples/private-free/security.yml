@@ -1,6 +1,8 @@
 # Private free-minimal security suite (zero paid GitHub Advanced Security).
 # Harden-Runner and code scanning are paid on private repos, so this caller uses
 # workflows whose files contain neither paid capability.
+# Each callee isolates global Git config before checkout; callers do not need to
+# sanitize persistent self-hosted runner credentials.
 # Replace @<sha> with a pinned full commit SHA of ci-workflows.
 name: security
 on:

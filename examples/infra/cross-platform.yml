@@ -1,4 +1,5 @@
-# Cross-platform smoke test caller (any tier). Replace @<sha>.
+# Cross-platform smoke test caller (any tier). The callee isolates global Git
+# config independently on every runner lane. Replace @<sha>.
 name: cross-platform
 on:
   push: { branches: [main] }
