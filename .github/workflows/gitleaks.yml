@@ -19,3 +19,5 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/secret-scan.yml
+    with:
+      runner: ubuntu-latest

@@ -73,6 +73,39 @@ printf 'GIT_CONFIG_GLOBAL=%s\\n' "$isolated_config" >> "$GITHUB_ENV"
                     "Git-config isolation exactly once before checkout"
                 )
 
+    # This repository is public. Every local reusable call that exposes a
+    # runner selector must choose a hosted runner explicitly; relying on the
+    # reusable's private-consumer default can route public PR code to the
+    # private self-hosted fleet when that default changes or remains stale.
+    for filename in sorted(SELF_WORKFLOWS):
+        caller = load_yaml(workflow_root / filename)
+        for job_name, job in (caller.get("jobs", {}) or {}).items():
+            if not isinstance(job, dict):
+                continue
+            use = str(job.get("uses", ""))
+            prefix = "./.github/workflows/"
+            if not use.startswith(prefix):
+                continue
+            reusable_path = workflow_root / use.removeprefix(prefix)
+            reusable = load_yaml(reusable_path)
+            reusable_on = get_on(reusable)
+            call = (
+                reusable_on.get("workflow_call", {})
+                if isinstance(reusable_on, dict)
+                else {}
+            )
+            inputs = call.get("inputs", {}) if isinstance(call, dict) else {}
+            if not isinstance(inputs, dict) or "runner" not in inputs:
+                continue
+            with_values = job.get("with", {}) or {}
+            if not isinstance(with_values, dict) or with_values.get("runner") != (
+                "ubuntu-latest"
+            ):
+                problems.append(
+                    f"{filename}: public self-call job {job_name!r} must select "
+                    "runner: ubuntu-latest explicitly"
+                )
+
     ci = load_yaml((workflow_files()[0].parent / "ci.yml"))
     jobs = ci.get("jobs", {}) or {}
     if "ci-gate" not in jobs:

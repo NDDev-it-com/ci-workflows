@@ -14,4 +14,5 @@ jobs:
       pull-requests: write # post the dependency review summary on the PR
     uses: ./.github/workflows/public-dependency-review.yml
     with:
+      runner: ubuntu-latest
       fail_on_severity: moderate

@@ -17,3 +17,5 @@ jobs:
       contents: read
       actions: read # inspect workflow definitions for the scoring checks
     uses: ./.github/workflows/public-scorecard-json.yml
+    with:
+      runner: ubuntu-latest

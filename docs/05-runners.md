@@ -126,6 +126,11 @@ everywhere" would suggest:
 > self-hosted value is supplied **by the calling private repository**, never
 > baked in here.
 
+The repository's six self-workflows pass `runner: ubuntu-latest` explicitly on
+every local reusable call that exposes a runner selector. A validator resolves
+those callees and rejects an omitted, expression-based, or self-hosted value,
+so a private-consumer default cannot silently reroute this public repository.
+
 Defence in depth: the estate's runner group sets
 `allows_public_repositories: false`, so even a mistaken `runs-on` in a public
 repository cannot reach the fleet — the job stays queued instead of executing.

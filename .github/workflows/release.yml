@@ -108,6 +108,7 @@ jobs:
       artifact-metadata: write   # actions/attest artifact storage record (required at v4.1.1)
     uses: ./.github/workflows/release-supply-chain.yml
     with:
+      runner: ubuntu-latest
       version: ${{ needs.resolve.outputs.version }}
       package_name: ci-workflows
       archive_paths: >-
