@@ -5,13 +5,13 @@
 ### Changed
 
 - **Persistent self-hosted checkout jobs now isolate global Git config.**
-  `actionlint`, `cross-platform-smoke`, `private-static`, `secret-scan`, and
-  `zizmor-no-sarif` point `GIT_CONFIG_GLOBAL` at a job-unique file under
-  `runner.temp`, preventing ambient runner Authorization headers from being
-  combined with the scoped `actions/checkout` token. Caller inputs and
-  permissions are unchanged. All public `ci-workflows` self-callers now also
-  select `ubuntu-latest` explicitly, so private-consumer runner defaults can
-  never route this public repository to the self-hosted fleet.
+  `actionlint`, `cross-platform-smoke`, `private-static`, `public-codeql`,
+  `secret-scan`, and `zizmor-no-sarif` point `GIT_CONFIG_GLOBAL` at a
+  job-unique file under `runner.temp`, preventing ambient runner Authorization
+  headers from being combined with the scoped `actions/checkout` token. Caller
+  inputs and permissions are unchanged. All public `ci-workflows` self-callers
+  now also select `ubuntu-latest` explicitly, so private-consumer runner
+  defaults can never route this public repository to the self-hosted fleet.
 
 - **The tool catalog now matches the already-merged Coveralls 2.3.8 and
   actions/stale 11.0.0 workflow pins.** Dependabot advanced the executable
