@@ -6,6 +6,9 @@ branch protection requires as a status check. Caller-provided command runners
 must also fail on the first failing command instead of returning the status of
 only the final command. The Go pack's history-depth input remains a typed,
 backward-compatible pass-through to checkout.
+The private-free workflows used on persistent self-hosted fleets must also
+isolate ambient global Git configuration before checkout so runner-owned
+Authorization headers cannot combine with actions/checkout's scoped token.
 """
 from __future__ import annotations
 
@@ -24,6 +27,84 @@ def check() -> list[str]:
                 problems.append(f"{path.name}: self workflow must not be `on: workflow_call`")
         elif not reusable:
             problems.append(f"{path.name}: reusable workflow missing `on: workflow_call`")
+
+    isolated_checkout_workflows = {
+        "actionlint.yml",
+        "cross-platform-smoke.yml",
+        "private-static.yml",
+        "secret-scan.yml",
+        "zizmor-no-sarif.yml",
+    }
+    expected_isolation = """set -euo pipefail
+umask 077
+isolated_config="$RUNNER_TEMP/nddev-ci-global.gitconfig"
+: > "$isolated_config"
+printf 'GIT_CONFIG_GLOBAL=%s\\n' "$isolated_config" >> "$GITHUB_ENV"
+"""
+    workflow_root = workflow_files()[0].parent
+    for filename in sorted(isolated_checkout_workflows):
+        workflow = load_yaml(workflow_root / filename)
+        jobs = workflow.get("jobs", {}) or {}
+        for job_name, job in jobs.items():
+            if not isinstance(job, dict):
+                continue
+            steps = job.get("steps", []) or []
+            checkout_indexes = [
+                index
+                for index, step in enumerate(steps)
+                if isinstance(step, dict)
+                and str(step.get("uses", "")).startswith("actions/checkout@")
+            ]
+            if not checkout_indexes:
+                continue
+            isolation_indexes = [
+                index
+                for index, step in enumerate(steps)
+                if isinstance(step, dict)
+                and step.get("name") == "Isolate global Git config"
+                and step.get("shell") == "bash"
+                and step.get("run") == expected_isolation
+            ]
+            if len(isolation_indexes) != 1 or isolation_indexes[0] >= min(
+                checkout_indexes
+            ):
+                problems.append(
+                    f"{filename}: job {job_name!r} must run the canonical global "
+                    "Git-config isolation exactly once before checkout"
+                )
+
+    # This repository is public. Every local reusable call that exposes a
+    # runner selector must choose a hosted runner explicitly; relying on the
+    # reusable's private-consumer default can route public PR code to the
+    # private self-hosted fleet when that default changes or remains stale.
+    for filename in sorted(SELF_WORKFLOWS):
+        caller = load_yaml(workflow_root / filename)
+        for job_name, job in (caller.get("jobs", {}) or {}).items():
+            if not isinstance(job, dict):
+                continue
+            use = str(job.get("uses", ""))
+            prefix = "./.github/workflows/"
+            if not use.startswith(prefix):
+                continue
+            reusable_path = workflow_root / use.removeprefix(prefix)
+            reusable = load_yaml(reusable_path)
+            reusable_on = get_on(reusable)
+            call = (
+                reusable_on.get("workflow_call", {})
+                if isinstance(reusable_on, dict)
+                else {}
+            )
+            inputs = call.get("inputs", {}) if isinstance(call, dict) else {}
+            if not isinstance(inputs, dict) or "runner" not in inputs:
+                continue
+            with_values = job.get("with", {}) or {}
+            if not isinstance(with_values, dict) or with_values.get("runner") != (
+                "ubuntu-latest"
+            ):
+                problems.append(
+                    f"{filename}: public self-call job {job_name!r} must select "
+                    "runner: ubuntu-latest explicitly"
+                )
 
     ci = load_yaml((workflow_files()[0].parent / "ci.yml"))
     jobs = ci.get("jobs", {}) or {}

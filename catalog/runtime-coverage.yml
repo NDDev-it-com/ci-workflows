@@ -15,7 +15,7 @@ entries:
   - workflow: .github/workflows/actionlint.yml
     status: static-only
     validator: scripts/check_actionlint_contract.py
-    evidence: "Was runtime-proven at the prior digest; extended with optional shellcheck inputs/steps, so downgraded to static-only (check_actionlint_contract.py still enforces the first-step Linux X64 runner guard) until a fresh observed workflow_call run re-proves it."
+    evidence: "Static validators enforce the runner guard and per-job Git-config isolation; a fresh observed workflow_call must prove the new checkout environment before runtime promotion."
     last_run: null
     waiver: null
   - workflow: .github/workflows/benchmark-compare.yml
@@ -47,7 +47,7 @@ entries:
     waiver: null
   - workflow: .github/workflows/cross-platform-smoke.yml
     status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    evidence: 'Per-job Git-config isolation is statically enforced; no observed consumer run yet proves checkout on every caller-selected runner lane.'
     last_run: null
     waiver: null
   - workflow: .github/workflows/dart-flutter-ci.yml
@@ -133,7 +133,7 @@ entries:
     waiver: null
   - workflow: .github/workflows/private-static.yml
     status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    evidence: 'Per-job Git-config isolation is statically enforced; no observed consumer run yet proves checkout on a persistent self-hosted runner.'
     last_run: null
     waiver: null
   - workflow: .github/workflows/public-codeql.yml
@@ -204,9 +204,8 @@ entries:
     waiver: null
   - workflow: .github/workflows/secret-scan.yml
     status: unverified
-    evidence: 'The prior runtime proof predates the actions/checkout 7.0.1 byte
-      change. Static checks pass, but a fresh workflow_call run has not proven
-      the current bytes.'
+    evidence: 'The prior runtime proof predates checkout 7.0.1 and per-job Git-config
+      isolation. A fresh workflow_call has not proven the current bytes.'
     last_run: null
     waiver: null
   - workflow: .github/workflows/semgrep-ci.yml
@@ -236,7 +235,7 @@ entries:
     waiver: null
   - workflow: .github/workflows/zizmor-no-sarif.yml
     status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    evidence: 'Per-job Git-config isolation is statically enforced; no observed consumer run yet proves the current private-free scanner bytes.'
     last_run: null
     waiver: null
   - workflow: .github/workflows/zizmor-sarif.yml

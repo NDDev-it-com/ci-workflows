@@ -65,6 +65,8 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/actionlint.yml
+    with:
+      runner: ubuntu-latest
 
   zizmor:
     permissions:
@@ -72,6 +74,8 @@ jobs:
       contents: read
       security-events: write
     uses: ./.github/workflows/zizmor-sarif.yml
+    with:
+      runner: ubuntu-latest
 
   ci-gate:
     name: ci-gate

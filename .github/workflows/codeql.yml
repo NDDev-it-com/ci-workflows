@@ -25,4 +25,5 @@ jobs:
       security-events: write # upload CodeQL SARIF to the Security tab
     uses: ./.github/workflows/public-codeql.yml
     with:
+      runner: ubuntu-latest
       languages: '["python","actions"]'

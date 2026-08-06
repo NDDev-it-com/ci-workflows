@@ -3,7 +3,7 @@
 
 | Capability | Cluster | Status | Public OSS | Private free | Private paid | Workflow | Example |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| actionlint workflow linter (`actionlint`) | actions-core | ga | free | free | available | `.github/workflows/actionlint.yml` | `-` |
+| actionlint workflow linter (`actionlint`) | actions-core | ga | free | free | available | `.github/workflows/actionlint.yml` | `examples/private-free/security.yml` |
 | Coverage gate (`coverage-gate`) | actions-core | ga | free | conditional | available | `.github/workflows/coverage-gate.yml` | `examples/quality/coverage-gate.yml` |
 | C/C++ CI (`cpp-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/cpp-ci.yml` | `examples/languages/cpp.yml` |
 | Cross-platform smoke test (`cross-platform-smoke`) | actions-core | ga | free | free | available | `.github/workflows/cross-platform-smoke.yml` | `examples/infra/cross-platform.yml` |
@@ -18,7 +18,7 @@
 | Monorepo changed-paths filter (`monorepo-changed-paths`) | actions-core | ga | free | conditional | available | `.github/workflows/monorepo-changed-paths.yml` | `examples/infra/monorepo.yml` |
 | Mutation testing (`mutation-testing`) | actions-core | ga | free | conditional | available | `.github/workflows/mutation-testing.yml` | `examples/testing/mutation-testing.yml` |
 | Node.js CI (`node-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/node-ci.yml` | `examples/languages/node.yml` |
-| Lightweight static validation (`private-static-validation`) | actions-core | ga | free | free | available | `.github/workflows/private-static.yml` | `-` |
+| Lightweight static validation (`private-static-validation`) | actions-core | ga | free | free | available | `.github/workflows/private-static.yml` | `examples/private-free/security.yml` |
 | Python CI (`python-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/python-ci.yml` | `examples/languages/python.yml` |
 | Qt CI (`qt-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/qt-ci.yml` | `examples/languages/qt.yml` |
 | R CI (`r-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/r-ci.yml` | `examples/languages/r.yml` |
@@ -58,7 +58,7 @@
 | Copilot Autofix for code scanning (`copilot-autofix`) | security-scanning | ga | free | unavailable | available | `-` | `-` |
 | Fuzzing (`fuzzing`) | security-scanning | ga | free | conditional | available | `.github/workflows/fuzzing.yml` | `examples/testing/fuzzing.yml` |
 | GitHub Code Quality (`github-code-quality`) | security-scanning | ga | paid | paid | conditional | `-` | `-` |
-| Gitleaks secret scan (`gitleaks-secret-scan`) | security-scanning | ga | free | free | available | `.github/workflows/secret-scan.yml` | `-` |
+| Gitleaks secret scan (`gitleaks-secret-scan`) | security-scanning | ga | free | free | available | `.github/workflows/secret-scan.yml` | `examples/private-free/security.yml` |
 | hadolint Dockerfile lint (`hadolint-dockerfile`) | security-scanning | ga | free | free | available | `.github/workflows/hadolint-ci.yml` | `examples/security/hadolint.yml` |
 | IaC scan (Checkov) (`iac-scan-checkov`) | security-scanning | ga | free | free | available | `.github/workflows/iac-scan.yml` | `examples/security/iac-scan.yml` |
 | GitHub native secret scanning (`native-secret-scanning`) | security-scanning | ga | free | unavailable | available | `-` | `-` |
