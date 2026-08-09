@@ -436,6 +436,7 @@ tools:
       - .github/workflows/benchmark.yml
       - .github/workflows/benchmark-compare.yml
       - .github/workflows/go-ci.yml
+      - .github/workflows/public-codeql.yml
     last_verified: "2026-07-12"
 
   - id: setup-rust-toolchain

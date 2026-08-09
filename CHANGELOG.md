@@ -4,6 +4,12 @@
 
 ### Changed
 
+- **`public-codeql.yml` now provisions the repository Go toolchain for Go
+  analysis.** The language matrix conditionally runs the digest-pinned
+  `actions/setup-go` against `go.mod` with cache writes disabled, so persistent
+  runners cannot fail CodeQL extraction merely because `go` is absent from
+  their ambient `PATH`.
+
 - **`go-ci.yml` now exposes a backward-compatible `cache` input.** It defaults
   to `true` for hosted and existing callers; warm self-hosted runners with
   independently owned Go caches can set `cache: false` to avoid redundant or
