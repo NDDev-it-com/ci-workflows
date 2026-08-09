@@ -124,6 +124,14 @@ printf 'GIT_CONFIG_GLOBAL=%s\\n' "$isolated_config" >> "$GITHUB_ENV"
             "go-ci.yml: fetch_depth must remain a number with the "
             "backward-compatible default 1"
         )
+    cache = go_inputs.get("cache", {}) if isinstance(go_inputs, dict) else {}
+    if not isinstance(cache, dict) or (
+        cache.get("type") != "boolean" or cache.get("default") is not True
+    ):
+        problems.append(
+            "go-ci.yml: cache must remain a boolean with the "
+            "backward-compatible default true"
+        )
     go_steps = go_ci.get("jobs", {}).get("go", {}).get("steps", [])
     checkout = next(
         (
@@ -142,6 +150,24 @@ printf 'GIT_CONFIG_GLOBAL=%s\\n' "$isolated_config" >> "$GITHUB_ENV"
     if actual_depth != "${{ inputs.fetch_depth }}":
         problems.append(
             "go-ci.yml: Checkout must pass fetch_depth through to actions/checkout"
+        )
+    setup_go = next(
+        (
+            step
+            for step in go_steps
+            if isinstance(step, dict) and step.get("name") == "Set up Go"
+        ),
+        {},
+    )
+    setup_go_with = setup_go.get("with", {})
+    actual_cache = (
+        setup_go_with.get("cache")
+        if isinstance(setup_go_with, dict)
+        else None
+    )
+    if actual_cache != "${{ inputs.cache }}":
+        problems.append(
+            "go-ci.yml: Set up Go must pass cache through to actions/setup-go"
         )
 
     private_static = load_yaml((workflow_files()[0].parent / "private-static.yml"))

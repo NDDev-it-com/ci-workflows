@@ -37,6 +37,9 @@ SwiftLint step runs on macOS only.
 The Go pack checks out one commit by default. Callers whose validation reads
 Git ancestry or pull-request merge parents must set `fetch_depth: 0`; the
 default remains `1` for backward compatibility and faster tree-only builds.
+`cache` likewise defaults to `true`. A warm self-hosted caller may set it to
+`false` when that runner independently owns its module/build caches, avoiding a
+second cache layer restoring archives over an already populated tree.
 
 ## Quality gates
 

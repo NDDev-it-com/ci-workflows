@@ -19,6 +19,10 @@ on:
         description: 'Number of commits to fetch. Use 0 when checks inspect ancestry or merge parents.'
         type: number
         default: 1
+      cache:
+        description: 'Restore/save the setup-go module/build cache. Disable when a warm self-hosted runner owns those caches.'
+        type: boolean
+        default: true
       build_command:
         description: 'Build command (bash). Empty to skip.'
         type: string
@@ -58,6 +62,7 @@ jobs:
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e  # v7.0.0
         with:
           go-version: ${{ inputs.go_version }}
+          cache: ${{ inputs.cache }}
 
       - name: Build
         if: ${{ inputs.build_command != '' }}

@@ -14,4 +14,7 @@ jobs:
     with:
       # Required when validation inspects commit ancestry or pull-request merge parents.
       fetch_depth: 0
+      # Keep true on hosted runners. Set false only when a warm self-hosted
+      # runner owns its Go caches outside actions/setup-go cache restore/save.
+      cache: true
       test_command: 'go test -race ./...'

@@ -948,6 +948,7 @@ capabilities:
     risks:
       - "Workflow is present on disk and validated by generated workflow inventory"
       - "Checkout is shallow by default; ancestry-aware checks must set fetch_depth to 0"
+      - "setup-go caching defaults on; warm self-hosted callers with independently owned caches should set cache to false"
     deprecations: null
     last_verified: "2026-07-13"
     sources:

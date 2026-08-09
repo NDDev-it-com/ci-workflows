@@ -4,6 +4,11 @@
 
 ### Changed
 
+- **`go-ci.yml` now exposes a backward-compatible `cache` input.** It defaults
+  to `true` for hosted and existing callers; warm self-hosted runners with
+  independently owned Go caches can set `cache: false` to avoid redundant or
+  conflicting `actions/setup-go` cache restore/save work.
+
 - **Persistent self-hosted checkout jobs now isolate global Git config.**
   `actionlint`, `cross-platform-smoke`, `private-static`, `public-codeql`,
   `secret-scan`, and `zizmor-no-sarif` point `GIT_CONFIG_GLOBAL` at a

@@ -84,6 +84,10 @@ run fails at startup — see [`docs/04-actions-core.md`](docs/04-actions-core.md
 `go-ci.yml` keeps checkout shallow by default (`fetch_depth: 1`). Set
 `fetch_depth: 0` when a validation command inspects commit ancestry or pull
 request merge parents; tree-only builds can retain the faster default.
+Its `cache` input defaults to `true` for backward compatibility and hosted
+runners. Set `cache: false` only on a warm self-hosted runner whose Go caches
+are owned independently; this prevents `actions/setup-go` from restoring an
+Actions cache over the runner's existing cache tree.
 
 ### Public repository
 
