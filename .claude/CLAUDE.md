@@ -49,7 +49,7 @@ mutable data is the catalogs (`ci-free-tier-planner` →
 python3 -m pip install --require-hashes -r requirements-ci.txt  # PyYAML only
 python3 scripts/validate_all.py                                 # full gate
 actionlint
-zizmor --persona regular --min-severity low .github/workflows
+uvx zizmor@1.26.1 --persona regular --min-severity low .github/workflows  # match zizmor-sarif.yml's pin
 python3 scripts/generate_docs.py --check                        # drift only
 ```
 
