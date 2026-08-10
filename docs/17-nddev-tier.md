@@ -15,7 +15,7 @@ Entitlements, verified 2026-08-01 against the enterprise licensing page:
 | **Code Quality** | 1 consumed | Maintainability scans + PR gate — see [16](16-code-quality.md) |
 
 Platform side is already applied: the org security configuration
-**`nddev-config`** (`enforcement: enforced`) is attached to all 50 repositories
+**`nddev-config`** (`enforcement: enforced`) is attached to all 51 repositories
 and is the default for new ones. It enables GHAS, secret scanning, validity
 checks, non-provider patterns, Dependabot security updates, and private
 vulnerability reporting.
@@ -32,9 +32,31 @@ Two settings are deliberately **not** in it, and both decisions are load-bearing
   exists fails the **whole** attachment, taking secret scanning down with it —
   observed exactly once, when the stock `GitHub recommended` configuration
   attached to 4 of 24 public repos and failed on the 20 running `codeql.yml`.
-  Code scanning is therefore enabled per repository instead, which is why
-  coverage is **50/50**: 30 repositories on default setup, 20 on their own
-  CodeQL workflow.
+  Code scanning is therefore enabled per repository instead.
+
+  **Coverage as of 2026-08-10: 36 repositories on default setup, 8 on their own
+  CodeQL workflow, 7 configured with an empty language list.** The last group is
+  not a gap — they are submodule parents holding only Shell and Dockerfile, so
+  CodeQL has nothing to analyse. Note that such a record still *reads* as "code
+  scanning on" while scanning nothing, so count languages, not state.
+
+  Four traps in the default-setup REST API, all learned by hitting them:
+
+  - **There is no `rust`.** The accepted set is `actions, c-cpp, csharp, go,
+    java-kotlin, javascript-typescript, python, ruby, swift`, so Rust code
+    cannot be CodeQL-scanned this way at all.
+  - **`GET` returns *available* languages when `not-configured` and *configured*
+    languages when `configured`**, and it echoes the legacy aliases `javascript`
+    and `typescript` which the `PATCH` enum then rejects. Filter the read-back
+    through the accepted set before writing it again.
+  - **The setup run is atomic**: one language that needs a build (`swift`,
+    `java-kotlin`, `ruby`) fails the run and GitHub silently reverts the whole
+    configuration. The `PATCH` still returned a `run_id`, so success has to be
+    read from the run's per-job conclusions, not the response.
+  - **Omitting `runner_type` resets it to `standard`.** A `PATCH` that only
+    changes languages will move a private repository off the fleet and onto
+    metered GitHub-hosted runners without saying so. Always send
+    `runner_type`/`runner_label` with every write.
 
 ## The correction this tier exists to make
 
@@ -133,15 +155,29 @@ Everything else is metered and deliberately driven to zero:
 | --- | --- |
 | Actions minutes | $0 hard-stop budget at **org and enterprise**; private jobs routed to self-hosted |
 | Actions **storage** | budgets do **not** block storage — controlled by 1-day artifact/log retention with the org maximum also pinned to 1 |
-| Code Quality **AI credits** | AI findings off on every repository; the $10 product budget is a backstop, not the control |
+| **AI credits** | dedicated **AI credits budget**, $0, stop-usage on — see below |
 | Codespaces, Packages, Git LFS, Models, Sandbox, Spark | $0 hard-stop budgets at both levels |
 
-Two facts worth carrying:
+Three facts worth carrying:
 
-- **A product budget cannot protect a metered line that accrues under the same
-  SKU as a licence.** The Code Quality budget has to leave $10 of headroom for
-  the licence itself, and AI credits accrue into that same headroom. The only
-  real control for AI credits is the per-repository toggle.
+- **A budget on a license-based product cannot stop anything.** The Code Quality
+  budget is scoped by *license count*, and the edit form says so outright:
+  "Stop usage when budget limit is reached — **Not available for license-based
+  products**". The budgets *list* still renders `Stop usage: Yes` for it, exactly
+  like the metered budgets where the stop does work. Set at 0 licences against 1
+  legitimately consumed, it also reads `Over budget` permanently, so its alert
+  carries no signal.
+- **AI credits have their own budget type, and that one works.** The "New budget"
+  flow offers **"AI credits budget — set a budget for all SKUs that consume AI
+  credits"** alongside product- and SKU-level. It is metered, so stop-usage
+  applies. Created at enterprise scope on 2026-08-10 at **$0 with stop-usage**,
+  it caps every AI-credit source at once — which matters, because
+  `ai_findings_option: disabled` on every repository did **not** stop the line:
+  $1.31 still accrued in August under product *Code Quality*, and Copilot Autofix
+  ("suggest fixes for CodeQL alerts using AI") remains `On` at repository level.
+  Do not treat the per-repository AI toggle as the control.
+  Budgets are not retroactive: "usage before budget creation isn't counted in the
+  current billing cycle".
 - **Seat count is the one thing no budget bounds.** A second active committer
   adds $59/month (Code Security + Secret Protection) before anyone writes a
   workflow. Org membership, outside-collaborator invitation, and enterprise
@@ -156,9 +192,33 @@ security defect. Mechanics, the two settings that a workflow file cannot reach,
 and the reason this public repository never routes itself to self-hosted:
 [05 Runners → Routing by visibility](05-runners.md#visibility-routing).
 
-Current state: all 26 private repositories have CodeQL default setup on
-`runner_type: labeled` and Code Quality on *Labeled runner*; all 24 public
-repositories remain GitHub-hosted.
+Current state, verified 2026-08-10: **all 25 private repositories with a
+configured default setup are on `runner_type: labeled` / `amsterdam`, and all 18
+public ones are on `standard`.** Re-verify this after any change to code-scanning
+setup — omitting `runner_type` from a `PATCH` silently resets it to `standard`,
+which moves private scanning onto metered runners.
+
+<a id="included-minutes"></a>
+### The included-minutes pool is the live risk to this envelope
+
+Routing private work to the fleet is what keeps Actions at $0, and the routing
+is only as good as its last write. Measured on 2026-08-10, ten days into the
+month:
+
+| Included meter | Used | Included |
+| --- | --- | --- |
+| Actions minutes | **30,689** | 50,000 |
+| Actions storage | 1.1 GB | 50 GB |
+| Actions custom image storage | 0 GiB | 150 GiB |
+
+At that rate the pool empties around **16–17 August**. What happens then is not
+an overspend — the Actions budget is $0 with stop-usage, so **Actions halt**.
+The envelope holds and CI stops. That is the intended trade, but it is worth
+stating plainly, because "the bill stayed at $80" and "CI ran all month" are not
+the same claim.
+
+Anything that adds a scheduled or per-PR job to a **private** repository draws on
+this pool. Check the meter before adding one.
 
 ---
-Last verified: 2026-08-01
+Last verified: 2026-08-10

@@ -140,10 +140,22 @@ repository**, i.e. nearly twice the licence that covers the whole organization.
 
 Two consequences worth stating plainly:
 
-- **A product budget cannot fence this off.** A Code Quality budget must leave
-  at least $10 of headroom for the licence, and AI credits accrue into that same
-  headroom before any hard stop trips. The per-repository switch is the only
-  real control.
+- **A Code Quality *product* budget cannot fence this off — but a dedicated AI
+  budget can.** A product budget must leave at least $10 of headroom for the
+  licence, and AI credits accrue into that same headroom; worse, a budget scoped
+  by *license count* cannot stop usage at all, which GitHub states in the edit
+  form ("Not available for license-based products") while the budgets list still
+  shows `Stop usage: Yes`. The control that works is the separate **"AI credits
+  budget — set a budget for all SKUs that consume AI credits"** offered by the
+  New budget flow: it is metered, so stop-usage applies, and it caps every
+  AI-credit source at once. Budgets are not retroactive — usage before creation
+  still bills for that cycle.
+- **The per-repository switch is not sufficient on its own.** Observed
+  2026-08-10: every repository reported `ai_findings_option: disabled` and the
+  line kept accruing anyway ($1.31 month-to-date under product *Code Quality*).
+  Copilot Autofix — "suggest fixes for CodeQL alerts using AI" — is a separate
+  repository setting that the Code Quality setup object does not cover. Size the
+  budget; do not rely on the toggle.
 - **The switch is absent where CodeQL finds no supported language.** Those
   repositories render *"No CodeQL supported languages to scan in this
   repository"* and cannot generate AI credits at all — a stronger guarantee than
