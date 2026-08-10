@@ -12,7 +12,10 @@ prose docs as the source of truth.
 2. Update `catalog/capabilities.yml` (and `catalog/tools.yml` `used_by` /
    pins) — the catalog is the source of truth. Volatile plan/price/quota facts
    live only in `catalog/product-facts.yml` (dated + expiring); runtime
-   evidence lives only in `catalog/runtime-coverage.yml`.
+   evidence lives only in `catalog/runtime-coverage.yml`. Refreshing a fact
+   means re-reading its `source_urls` and correcting it, not bumping the date —
+   and stagger `expires_after` so a batch of facts never expires on one day
+   (38 of 41 once shared `2026-08-10` and would have failed the gate together).
 3. `python3 scripts/generate_docs.py` — `docs/generated/*` (capability matrix,
    workflow inventory, free-tier matrix) is generated output; hand-edits fail
    the CI drift check.

@@ -18,6 +18,13 @@ repositories pin by full commit SHA. Docs under `docs/` are human mirrors;
   link their tier claims to facts via the optional `product_facts` field. A
   companion `scripts/check_skills.py` guard fails CI if any `SKILL.md` hard-codes
   a quota figure (comma-grouped allowance, `<n> minutes`, or a storage size).
+  **Stagger `expires_after`; never give a batch of facts the same one.** The
+  ledger was seeded in one sitting, so 38 of 41 facts shared
+  `expires_after: 2026-08-10` and would have failed the gate in a single
+  38-fact block the next morning. Refreshing means re-reading `source_urls` and
+  correcting the fact — bumping the dates alone is precisely what this validator
+  exists to prevent. Spread each refreshed fact's new expiry by how fast its
+  source actually moves.
 - `catalog/runtime-coverage.yml` is the honest runtime-evidence ledger for every
   reusable workflow (`runtime-proven` needs a repo-scoped `…/actions/runs/<id>`
   URL **and** a `proven_digest` = sha256 of the workflow file, which
@@ -33,12 +40,18 @@ repositories pin by full commit SHA. Docs under `docs/` are human mirrors;
   GitHub billing contract. Known plan gate: GitHub Artifact Attestations are
   public-only on Free/Pro/Team plans; private/internal repositories require
   GitHub Enterprise Cloud (GHAS/Code Security does not unlock them). Second
-  known gate: GitHub Code Quality (GA and billable since 2026-07-20) is **not**
-  sorted by visibility — it is billed per active committer on public repos too,
-  on a licence independent of GHAS, with committers counted once per
-  organization. It is a platform feature with no REST/GraphQL API, so it carries
-  `workflow: null` / `example: null` and lives in its own tier doc
-  (`docs/16-code-quality.md`); never fold it into the public tier.
+  known gate: GitHub Code Quality (GA and billable since 2026-07-20) is billed
+  per active committer on a licence independent of GHAS, with committers counted
+  once per organization. **Its public per-committer rate is disputed between
+  GitHub's own sources** — the product page says $0 for public repositories, the
+  billing docs grant no visibility exemption — so never compile a public cost
+  from it in either direction; the fact records the dispute and the rate stays
+  account-observed. It ships no Action and no `workflow_call` entrypoint, so it
+  carries `workflow: null` / `example: null` and lives in its own tier doc
+  (`docs/16-code-quality.md`); never fold it into the public tier. It *does*
+  have a REST API (`GET`/`PATCH /repos/{o}/{r}/code-quality/setup` plus
+  findings), so its state is drift-checkable — by the estate reconciler, not by
+  this library.
 
 ## CI skills
 

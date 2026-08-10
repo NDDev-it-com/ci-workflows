@@ -1,4 +1,4 @@
-# Code Quality tier — paid per active committer, at any visibility
+# Code Quality tier — paid per active committer; the public rate is disputed
 
 GitHub Code Quality is a **maintainability** product: it runs CodeQL quality
 queries (not only security queries) and reports findings, quality scores, and
@@ -17,13 +17,25 @@ that:
 
 | Assumption that holds for CodeQL / GHAS | What Code Quality actually does |
 | --- | --- |
-| Public repositories get it free | **No.** Public repos are billed the same per-active-committer rate as private |
+| Public repositories get it free | **Disputed — see below.** Do not compile a public per-committer cost either way |
 | A paid GHAS licence unlocks it | **No.** The licence is independent of Code Security and Secret Protection |
 | Cost scales with the repositories you enable | **No.** Committers are counted **once per organization** |
 
-The only thing being public saves is the **Actions-minutes** component: scans run
-as Actions workflows, and standard runners are unmetered on public repositories.
-The per-committer licence is unchanged.
+Being public certainly saves the **Actions-minutes** component: scans run as
+Actions workflows, and standard runners are unmetered on public repositories.
+
+<a id="public-rate-dispute"></a>
+> **The public per-committer rate is unresolved between GitHub's own sources.**
+> [github.com/features/code-quality](https://github.com/features/code-quality)
+> states "Public repositories: $0 per committer + usage-based billing for
+> AI-powered work". The
+> [billing documentation](https://docs.github.com/en/billing/concepts/product-billing/github-code-quality)
+> states only that "each active committer uses one Code Quality license", with no
+> visibility exemption and no rate. Neither reading may be hard-coded: the
+> `github-code-quality-transition` fact carries the dispute explicitly and the
+> public rate stays **account-observed** until NDDev Licensing/Billing or an
+> invoice settles it. What is *not* disputed: the $10 private rate, the
+> Team/Enterprise plan gate, and the once-per-organization committer count.
 
 The consequence for cost control is blunt: **enabling Code Quality on one
 repository already bills your entire active-committer set.** Splitting an estate
@@ -55,10 +67,36 @@ genuinely free.
 ## Enabling the tier
 
 Code Quality is a **platform feature, not a reusable workflow.** This library
-ships no caller for it, and there is nothing to pin by SHA: it has no Action, no
-`workflow_call` entrypoint, and **no REST or GraphQL API**. Enablement is UI-only
-and therefore cannot be asserted, drift-checked, or rolled back from CI — which
-is why its catalog entry carries `workflow: null` and `example: null`.
+ships no caller for it, and there is nothing to pin by SHA: it has no Action and
+no `workflow_call` entrypoint, which is why its catalog entry carries
+`workflow: null` and `example: null`.
+
+**It does, however, have a REST API**, so its state *is* assertable and
+drift-checkable — just not from this library. That belongs to the estate
+reconciler (GDS), not to a reusable-workflow catalogue:
+
+| Endpoint | Use |
+| --- | --- |
+| `GET /repos/{owner}/{repo}/code-quality/setup` | read desired-vs-observed setup |
+| `PATCH /repos/{owner}/{repo}/code-quality/setup` | enable/disable, change languages or runner |
+| `GET /repos/{owner}/{repo}/code-quality/findings` | list findings |
+| `GET /repos/{owner}/{repo}/code-quality/findings/{finding_number}` | one finding |
+
+The setup object carries `state` (`configured` / `not-configured`), `runner_type`
+(`standard` / `labeled`), `runner_label`, `languages` (csharp, go, java-kotlin,
+javascript-typescript, python, ruby) and `ai_findings_option` (`disabled` /
+`on_push`). A plain `repo`-scoped token reads it. See
+[docs.github.com REST — Code Quality](https://docs.github.com/en/rest/code-quality/code-quality).
+
+> Check-name warning: Code Quality and CodeQL **default setup** both execute as
+> `dynamic/github-code-scanning/codeql` and both emit check runs named
+> `Analyze (<language>)`. Only the *run* name distinguishes them — `Code Quality:
+> Push on main` versus `Push on main`. A repository with both enabled for the same
+> language produces two check runs with an identical name, so a required status
+> check on `Analyze (<language>)` cannot tell maintainability from security.
+> Resolve the owner through the two setup endpoints, never through the name.
+
+The UI path below is still the fastest way to do it by hand.
 
 1. **Enterprise** — an enterprise owner must allow Code Quality at the
    enterprise level, or the org setting has no effect.
