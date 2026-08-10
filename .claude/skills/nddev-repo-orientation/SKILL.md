@@ -58,6 +58,11 @@ CI drift check rejects hand edits). The catalog files:
   profile and prints the run / conditional / unavailable split plus the free
   substitutes.
 - `deprecations.yml` — deprecation records.
+
+`docs/adr/` holds the decision records: why the catalog is authoritative, why
+modes are compiled, why blocking workflows owe evidence, and why a caller
+chooses its own runner. Read the relevant ADR before changing a contract — it
+tells you what the contract is defending against.
 - `schema/capability.schema.yaml` — the machine-readable capability schema.
 
 ## Mental model
