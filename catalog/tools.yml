@@ -109,8 +109,8 @@ tools:
     name: actions/attest
     homepage: "https://github.com/actions/attest"
     kind: action
-    current_version: "v4.2.0"
-    pin: "actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6"
+    current_version: v4.2.1
+    pin: "actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d"
     used_by:
       - .github/workflows/release-supply-chain.yml
     last_verified: "2026-07-08"
@@ -271,8 +271,8 @@ tools:
     name: crate-ci/typos
     homepage: "https://github.com/crate-ci/typos"
     kind: action
-    current_version: "v1.48.0"
-    pin: "crate-ci/typos@bee27e3a4fd1ea2111cf90ab89cd076c870fce14"
+    current_version: v1.49.0
+    pin: "crate-ci/typos@8a48f81b6c64dcfea44b3633223084c4be58ac5f"
     used_by:
       - .github/workflows/docs-quality.yml
     last_verified: "2026-07-08"
@@ -281,8 +281,8 @@ tools:
     name: DavidAnson/markdownlint-cli2-action
     homepage: "https://github.com/DavidAnson/markdownlint-cli2-action"
     kind: action
-    current_version: "v24.1.0"
-    pin: "DavidAnson/markdownlint-cli2-action@6bf21b07787794f89a243495939cd651942aeabe"
+    current_version: v24.2.0
+    pin: "DavidAnson/markdownlint-cli2-action@21c1be1b93ad9ed58fa840aacc3f279cde2a72ff"
     used_by:
       - .github/workflows/docs-quality.yml
     last_verified: "2026-07-08"
@@ -371,8 +371,8 @@ tools:
     name: bridgecrewio/checkov-action
     homepage: "https://github.com/bridgecrewio/checkov-action"
     kind: action
-    current_version: v12.3114.0
-    pin: bridgecrewio/checkov-action@7b972723c44fb3d256283fac96fae5d7c1894bb7
+    current_version: v12.3115.0
+    pin: bridgecrewio/checkov-action@9b70310bcd306d11740313070b940167d6b23085
     used_by:
       - .github/workflows/iac-scan.yml
     last_verified: 2026-07-25
@@ -467,8 +467,8 @@ tools:
     name: actions/setup-java
     homepage: "https://github.com/actions/setup-java"
     kind: action
-    current_version: v5.6.0
-    pin: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
+    current_version: v5.7.0
+    pin: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
     used_by:
       - .github/workflows/java-ci.yml
       - .github/workflows/kotlin-android-ci.yml
