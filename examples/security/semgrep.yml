@@ -12,4 +12,5 @@ jobs:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/semgrep-ci.yml@<sha>
     with:
+      runner: ubuntu-latest
       config: p/ci

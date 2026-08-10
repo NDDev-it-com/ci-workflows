@@ -26,10 +26,40 @@ from _workflow_yaml import SELF_WORKFLOWS, WORKFLOWS_DIR
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 COVERAGE = REPO_ROOT / "catalog" / "runtime-coverage.yml"
-SCHEMA = "nddev-ci-runtime-contract-coverage/v1"
+SCHEMA = "nddev-ci-runtime-contract-coverage/v2"
 VALID_STATUS = {
     "runtime-proven", "static-only", "unverified", "waived", "unsupported",
     "blocked",
+}
+# What the workflow is load-bearing for. This is the half the ledger was
+# missing: without it every record carried the same (absent) evidence
+# obligation, so a benchmark helper and the release publisher were equally
+# allowed to sit at `unverified` forever while ci-gate stayed green.
+VALID_CRITICALITY = {"release", "security-blocking", "required-gate", "supporting"}
+# For these tiers, absence of evidence is itself a failure. `unverified` — the
+# default, and the honest label for "nobody has run this" — is not an accepted
+# resting state: prove it, name the executable contract validator that stands
+# in for a run, or take a dated waiver that someone owns and that expires.
+PROOF_REQUIRED_CRITICALITY = {"release", "security-blocking"}
+# Without this, the obligation above is trivially dodged: relabel the workflow
+# `supporting` and the requirement evaporates, with nothing but review to catch
+# it. Pinning the classification makes a downgrade a visible, deliberate edit
+# to this file — the same shape as EXPECTED_SKILLS in check_skills.py. Adding
+# a new reusable workflow to a blocking family means adding it here too.
+PINNED_CRITICALITY = {
+    "release-supply-chain.yml": "release",
+    "release-supply-chain-free.yml": "release",
+    "release-promotion-gate.yml": "release",
+    "public-codeql.yml": "security-blocking",
+    "public-dependency-review.yml": "security-blocking",
+    "secret-scan.yml": "security-blocking",
+    "semgrep-ci.yml": "security-blocking",
+    "osv-scan.yml": "security-blocking",
+    "grype-scan.yml": "security-blocking",
+    "iac-scan.yml": "security-blocking",
+    "zizmor-sarif.yml": "security-blocking",
+    "zizmor-no-sarif.yml": "security-blocking",
+    "rust-supply-chain.yml": "security-blocking",
 }
 # A runtime-proven record must cite a real Actions run in THIS repository — not
 # an arbitrary https URL (the previous check accepted example.invalid, a docs
@@ -85,6 +115,27 @@ def validate_coverage(data: object, reusables: set[str], as_of: dt.date,
         status = entry.get("status")
         if status not in VALID_STATUS:
             problems.append(f"{where}: invalid status {status!r}")
+        criticality = entry.get("criticality")
+        pinned = PINNED_CRITICALITY.get(str(workflow).rsplit("/", 1)[-1])
+        if criticality not in VALID_CRITICALITY:
+            problems.append(
+                f"{where}: criticality must be one of "
+                f"{sorted(VALID_CRITICALITY)}, got {criticality!r}"
+            )
+        elif pinned is not None and criticality != pinned:
+            problems.append(
+                f"{where}: criticality is pinned to {pinned!r} in "
+                "PINNED_CRITICALITY and may not be relabelled here — change "
+                "the pin deliberately if the workflow genuinely stopped being "
+                f"load-bearing, got {criticality!r}"
+            )
+        elif criticality in PROOF_REQUIRED_CRITICALITY and status == "unverified":
+            problems.append(
+                f"{where}: criticality {criticality!r} may not sit at "
+                "'unverified' — run it and record the run, downgrade to "
+                "'static-only' naming the executable contract validator, or "
+                "add a waiver with an owner and an expiry"
+            )
         if status == "runtime-proven":
             run = entry.get("last_run")
             if not isinstance(run, str) or not REPO_RUN_RE.match(run):
@@ -173,9 +224,10 @@ def _fixture_tests() -> list[str]:
         return validate_coverage(cov_doc, reusables, as_of, digest_for=stub)
 
     proven = {"workflow": ".github/workflows/a.yml", "status": "runtime-proven",
+              "criticality": "security-blocking",
               "last_run": good_url, "proven_digest": digest_a, "waiver": None}
     unverified_b = {"workflow": ".github/workflows/b.yml", "status": "unverified",
-                    "last_run": None, "waiver": None}
+                    "criticality": "supporting", "last_run": None, "waiver": None}
 
     if run(cov(proven, unverified_b)):
         problems.append("runtime-coverage fixture valid should pass")
@@ -199,6 +251,29 @@ def _fixture_tests() -> list[str]:
                                  "expires_after": "2026-01-01"}}
     if not run(cov(proven, expired_waiver)):
         problems.append("runtime-coverage fixture expired-waiver should fail")
+    missing_crit = {k: v for k, v in proven.items() if k != "criticality"}
+    if not run(cov(missing_crit, unverified_b)):
+        problems.append("runtime-coverage fixture missing-criticality should fail")
+    bad_crit = {**proven, "criticality": "nice-to-have"}
+    if not run(cov(bad_crit, unverified_b)):
+        problems.append("runtime-coverage fixture invalid-criticality should fail")
+    # The v2 obligation: a blocking tier may not rest at `unverified`.
+    unproven_critical = {**unverified_b, "criticality": "release"}
+    if not run(cov(proven, unproven_critical)):
+        problems.append(
+            "runtime-coverage fixture unverified-release should fail")
+    waived_critical = {**unverified_b, "status": "waived", "criticality": "release",
+                       "waiver": {"owner": "o", "reason": "r",
+                                  "expires_after": "2026-12-31"}}
+    if run(cov(proven, waived_critical)):
+        problems.append(
+            "runtime-coverage fixture waived-release should pass")
+    static_critical = {**unverified_b, "status": "static-only",
+                       "criticality": "release",
+                       "validator": "scripts/validate_runtime_coverage.py"}
+    if run(cov(proven, static_critical)):
+        problems.append(
+            "runtime-coverage fixture static-only-release should pass")
     extra = {"workflow": ".github/workflows/ghost.yml", "status": "unverified"}
     if not run(cov(proven, unverified_b, extra)):
         problems.append("runtime-coverage fixture orphan-record should fail")

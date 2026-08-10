@@ -4,6 +4,107 @@
 
 ### Added
 
+- **`catalog/profiles.yml` makes the mode model machine-readable**, with
+  `scripts/validate_profiles.py` in `validate_all` and
+  `docs/generated/profile-matrix.md` rendered from it.
+
+  The tier model previously existed twice: three columns per capability in
+  `capabilities.yml`, and prose in `docs/00`, `docs/16` and `docs/17` describing
+  modes the catalog could not express. The prose drifted silently and more than
+  once — the $80 envelope named a control that cannot stop anything, and its
+  coverage figures had moved on.
+
+  The model declares the axes as **independent** — visibility, base plan, the
+  three add-on entitlements, and seven operational controls — rather than as a
+  line from free to paid. It carries all eight Code Security / Secret Protection
+  / Code Quality combinations so no repository is unplaceable, and four
+  operating profiles: `public-free-standalone`, `private-free-max`,
+  `public-enterprise-max` and `enterprise-full-private-fixed80`.
+
+  The validator encodes failures that actually happened rather than generic
+  schema rules: itemised fixed lines must sum to the declared total; a
+  fixed-cost profile may not permit AI credits or Actions overage, nor set
+  `code_quality_ai: on_push`; attestations on private repositories require
+  Enterprise Cloud and Code Quality requires Team or Enterprise (plan gates, not
+  visibility gates); a public profile may not use persistent self-hosted
+  runners; private CodeQL requires Code Security. Each rule has a regression
+  fixture, and all four headline rules were also verified live by breaking the
+  catalog and watching the gate fail.
+
+  Tier prose now references profiles instead of restating them, and `docs/00`
+  says outright that where it and the generated matrix disagree, the matrix
+  wins — it is validated and the prose is not. `nddev-repo-orientation` and
+  `nddev-change-flow` carry the new catalog and the failure it produces, so the
+  golden path teaches it rather than leaving it to be discovered.
+
+- **`catalog/runtime-coverage.yml` records `criticality`, and the ledger now
+  carries a proof obligation** (schema `nddev-ci-runtime-contract-coverage/v2`).
+  It policed whether a *claimed* status was honest but never required a claim,
+  so `unverified` — the default — was an unlimited resting state and `ci-gate`
+  stayed green over 42 of 46 unproven reusables. Every record now declares
+  `release`, `security-blocking`, `required-gate` or `supporting`, and for the
+  first two `unverified` is rejected: prove it, mark `static-only` behind an
+  executable validator, or take a waiver with an owner and an expiry.
+  Classified all 46 — 3 release, 10 security-blocking, 6 required-gate,
+  27 supporting. `release-supply-chain.yml` and `release-supply-chain-free.yml`
+  became `static-only` behind `check_release_supply_chain.py`, which runs real
+  fixtures; the nine security scanners with no executable stand-in took dated
+  waivers, staggered one per date from 2026-09-15 to 2027-01-15 so renewals
+  never land as one cliff.
+
+  Two properties stop this being ceremony: `PINNED_CRITICALITY` fixes the
+  blocking families so the obligation cannot be dodged by relabelling a record
+  `supporting`, and the waiver dates are spread. Both directions are covered by
+  new fixtures, and verified by hand: expired waiver, security workflow demoted
+  to `unverified`, `static-only` naming a missing validator, and the relabel
+  dodge each produce exactly one failure.
+
+### Fixed
+
+- **`.claude/CLAUDE.md` named the wrong runtime-proven workflows.** It listed
+  `release-supply-chain.yml`, `actionlint.yml` and `zizmor-sarif.yml`; the
+  ledger's proven records are `public-dependency-review.yml` and
+  `public-scorecard-json.yml`.
+
+- **Every example outside `examples/nddev/` now names its runner, and
+  `check_examples.py` enforces it.** 36 example jobs across 37 files inherited
+  `runner: amsterdam` from the reusable they call. These are copy-paste
+  templates: outside this estate the label never resolves and the job queues
+  forever; inside it, on a public repository, inheriting the default puts
+  untrusted fork-PR code on trusted private infrastructure. The default is a
+  property of the pinned commit, not of the caller, so the caller states it.
+  `check_workflow_contracts.py` already enforced this for this repository's own
+  self-calls; the rule now reaches the surface we publish to consumers.
+  `examples/nddev/` is exempt — it is estate-specific by name.
+
+- **`docs/16-code-quality.md` no longer claims Code Quality has no API.** It
+  documents four REST endpoints (`GET`/`PATCH …/code-quality/setup`, findings
+  list and detail) and the setup object's fields, so the product's state is
+  assertable and drift-checkable by the estate reconciler. Reconciling it is
+  still explicitly out of scope for this library — the catalog entry keeps
+  `workflow: null` / `example: null`.
+
+- **The Code Quality corrections now reach the catalog, not only the tier doc.**
+  `catalog/capabilities.yml` is the source of truth and still carried the
+  no-API claim and the undisputed-public-rate claim, as did
+  `docs/05-runners.md` (labeled-runner selection), `docs/02-private-free.md`
+  and the `ci-consumer-adoption` skill. The capability's `risks` now state the
+  dispute, name the REST API, and record that its check runs collide with
+  CodeQL default setup on `Analyze (<language>)`. Historical CHANGELOG entries
+  are left as written — they record what was believed at the time.
+
+- **The disputed public Code Quality rate is now recorded as disputed.**
+  GitHub's product page states "$0 per committer" for public repositories while
+  the billing documentation states every active committer consumes a licence
+  with no visibility exemption. `github-code-quality-transition` previously
+  asserted one side of this. Neither reading may be compiled into a cost; the
+  public rate is account-observed until licensing or an invoice settles it. The
+  $10 private rate, the Team/Enterprise gate and the once-per-organization
+  committer count are unaffected.
+
+- **`teamcity-professional` claimed unlimited build configurations.** The free
+  Professional licence caps them at 100 configurations and 10 pipelines
+  (+10 per additional agent); only build *time* is unlimited.
 - **`pr-hygiene.yml` accepts a `runner` input**, so a caller can move its four
   jobs onto a self-hosted fleet instead of being pinned to `ubuntu-latest`.
 
@@ -19,6 +120,31 @@
 
 ### Changed
 
+- **All 38 product facts dated 2026-07-11 re-verified against their sources and
+  re-stamped 2026-08-10.** They shared a single `expires_after: 2026-08-10`, so
+  the ledger would have failed `validate_all` in one 38-fact block from
+  2026-08-11. New expiries are staggered across 2026-09-04…2026-11-06 by how
+  fast each source actually moves, so the largest future refresh is 9 facts.
+
+- **Dead and imprecise fact sources replaced.** `semaphoreci.com` 301s to
+  `semaphore.io`; `ubicloud.com/pricing` returns 404. Added the sources that
+  actually carry the claim: the artifact-attestations plan gate, the
+  self-hosted-runner untrusted-fork warning, and the Harness credit figure.
+
+- **`github-actions-security` gained an inherited-runner rule.** The runner
+  audit now covers the runner a caller *inherits* rather than declares: a
+  reusable's `runner` default belongs to the pinned commit, so a library that
+  defaults it to a private self-hosted label makes every pin bump a silent
+  re-routing of untrusted fork code, invisible in the calling repository's diff.
+  Public callers must select the runner explicitly; generic reusables must
+  require it or default to a hosted label.
+
+- **`azure-pipelines-private` records two newly material conditions:** the
+  Microsoft-hosted free tier is not automatic and must be enabled by linking an
+  Azure subscription, and public projects are retired and convert to private in
+  2027. **`gitlab-open-source-program`** records the annual renewal requirement
+  and that the program page does not state the compute-minute accrual period
+  unambiguously.
 - **`hadolint-ci.yml` now runs a checksum-verified hadolint binary instead of
   `hadolint/hadolint-action`.** The action is a Docker *container action*, and
   the runner starts those itself with a hardcoded `-v /var/run/docker.sock`. A

@@ -76,7 +76,7 @@ schedules them itself:
 | Scan | Where the runner is chosen |
 | --- | --- |
 | CodeQL *default setup* | `PATCH /repos/{owner}/{repo}/code-scanning/default-setup` with `runner_type: labeled` |
-| Code Quality | repository settings → Code quality → *Labeled runner* (UI only; no REST API) |
+| Code Quality | `PATCH /repos/{owner}/{repo}/code-quality/setup` with `runner_type: labeled`, `runner_label` — or repository settings → Code quality → *Labeled runner* |
 
 Miss either and the repository keeps consuming metered minutes while every
 caller in the tree claims otherwise. Full mechanics:

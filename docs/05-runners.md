@@ -146,11 +146,32 @@ separate setting that no workflow file can reach:
 | --- | --- | --- |
 | Reusable workflows from this library | `runner` input on the caller | `with: { runner: <label> }` |
 | CodeQL **default setup** (code scanning) | repository code-scanning settings | `PATCH /repos/{owner}/{repo}/code-scanning/default-setup` with `runner_type: labeled`, `runner_label: <label>` |
-| **Code Quality** scans | repository Code quality settings | UI only — *Runner type → Labeled runner*; there is no REST API |
+| **Code Quality** scans | repository Code quality settings | `PATCH /repos/{owner}/{repo}/code-quality/setup` with `runner_type: labeled`, `runner_label: <label>` — or the UI, *Runner type → Labeled runner* |
 
 Miss either of the last two and the repository still burns metered minutes even
 though every caller says otherwise — the scans are scheduled by GitHub, not by a
 workflow file in the repository.
+
+<a id="always-name-the-runner"></a>
+### Always name the runner — the default belongs to the pin
+
+Most reusables here default `runner` to `amsterdam`, the NDDev self-hosted
+label. That default is a property of **the commit you pinned**, not of your
+caller, so a caller that omits `runner` silently adopts whatever the next pin
+says. Two ways that bites:
+
+- **Outside this estate** the label does not resolve, so the job queues
+  forever against a runner that will never appear.
+- **Inside this estate, on a public repository**, `pull_request` executes
+  untrusted fork code — and inheriting the default puts it on trusted private
+  infrastructure. GitHub's own guidance is blunt about this: "forks of your
+  public repository can potentially run dangerous code on your self-hosted
+  runner machine."
+
+So every caller states its runner, even when the pinned default already looks
+right. `scripts/check_examples.py` enforces this for every example outside
+`examples/nddev/`, which is estate-specific by name. When you move a pin,
+diff `inputs.runner.default` between the old and new commit before merging.
 
 ### Caller shape
 

@@ -12,6 +12,7 @@ jobs:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/cpp-ci.yml@<sha>
     with:
+      runner: ubuntu-latest
       apt_packages: 'cppcheck ninja-build'
       format_check: true
       cppcheck: true

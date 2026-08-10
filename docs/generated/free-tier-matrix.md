@@ -7,47 +7,47 @@ past its expiry, so a stale tier claim cannot silently mislead adopters.
 
 | Fact | Provider | Product | Visibility | Plans | Model | Allowance | Status | Verified | Expires |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `aws-codebuild-free` | AWS | CodeBuild free tier | public, private | AWS Free Tier | recurring-quota | 100 ec2-build-minutes/month | official | 2026-07-11 | 2026-08-10 |
-| `appveyor-public` | AppVeyor | Free open-source plan | public | Free OSS | public-unmetered | unmetered (projects) | official | 2026-07-11 | 2026-08-10 |
-| `appcircle-always-free` | Appcircle | Always Free | public, private | Free | build-count-quota | 20 builds/month | vendor-verified | 2026-07-11 | 2026-08-10 |
-| `bitbucket-free` | Atlassian | Bitbucket Cloud Free + Pipelines | public, private | Free | recurring-quota | 50 build-minutes/month | official | 2026-07-11 | 2026-08-10 |
-| `bitrise-hobby` | Bitrise | Hobby plan | private | Hobby | credit-quota | 300 credits/month | vendor-verified | 2026-07-11 | 2026-08-10 |
-| `blacksmith-free` | Blacksmith | Free GitHub Actions runner pool | public, private | Free | recurring-quota | 3000 runner-minutes/month | vendor-verified | 2026-07-11 | 2026-08-10 |
-| `buddy-free` | Buddy | Free plan | public, private | Free | resource-quota | 300 pipeline-gb-minutes/month | vendor-verified | 2026-07-11 | 2026-08-10 |
-| `buildkite-personal` | Buildkite | Personal plan hosted agents | public, private | Personal | recurring-quota | 500 linux-vcpu-minutes/month | official | 2026-07-11 | 2026-08-10 |
-| `circleci-free` | CircleCI | Free plan | public, private | Free | credit-quota | 30000 credits/month | official | 2026-07-11 | 2026-08-10 |
-| `circleci-open-source` | CircleCI | Open Source plan credits | public | Approved OSS | application-grant | 400000 credits/month | official | 2026-07-11 | 2026-08-10 |
+| `aws-codebuild-free` | AWS | CodeBuild free tier | public, private | AWS Free Tier | recurring-quota | 100 ec2-build-minutes/month | official | 2026-08-10 | 2026-10-16 |
+| `appveyor-public` | AppVeyor | Free open-source plan | public | Free OSS | public-unmetered | unmetered (projects) | official | 2026-08-10 | 2026-09-25 |
+| `appcircle-always-free` | Appcircle | Always Free | public, private | Free | build-count-quota | 20 builds/month | vendor-verified | 2026-08-10 | 2026-10-02 |
+| `bitbucket-free` | Atlassian | Bitbucket Cloud Free + Pipelines | public, private | Free | recurring-quota | 50 build-minutes/month | official | 2026-08-10 | 2026-09-25 |
+| `bitrise-hobby` | Bitrise | Hobby plan | private | Hobby | credit-quota | 300 credits/month | vendor-verified | 2026-08-10 | 2026-10-02 |
+| `blacksmith-free` | Blacksmith | Free GitHub Actions runner pool | public, private | Free | recurring-quota | 3000 runner-minutes/month | vendor-verified | 2026-08-10 | 2026-09-04 |
+| `buddy-free` | Buddy | Free plan | public, private | Free | resource-quota | 300 pipeline-gb-minutes/month | vendor-verified | 2026-08-10 | 2026-09-04 |
+| `buildkite-personal` | Buildkite | Personal plan hosted agents | public, private | Personal | recurring-quota | 500 linux-vcpu-minutes/month | official | 2026-08-10 | 2026-09-25 |
+| `circleci-free` | CircleCI | Free plan | public, private | Free | credit-quota | 30000 credits/month | official | 2026-08-10 | 2026-09-18 |
+| `circleci-open-source` | CircleCI | Open Source plan credits | public | Approved OSS | application-grant | 400000 credits/month | official | 2026-08-10 | 2026-09-18 |
 | `cirrus-ci-shutdown` | Cirrus Labs | Cirrus CI hosted service | public, private | All | shutdown | 0 available-builds/feature | deprecated | 2026-07-11 | — |
-| `codemagic-personal` | Codemagic | Personal plan | public, private | Personal | recurring-quota | 500 macos-build-minutes/month | vendor-verified | 2026-07-11 | 2026-08-10 |
-| `github-actions-larger-runners` | GitHub | Actions larger runners | public, private, internal | Team, Enterprise Cloud, eligible plans | paid-only | 0 included-minutes/month | official | 2026-07-11 | 2026-08-10 |
-| `github-actions-private-free-org` | GitHub | Actions included usage | private | Free organization | recurring-quota | 2000 runner-minutes/month | official | 2026-07-11 | 2026-08-10 |
-| `github-actions-private-free-personal` | GitHub | Actions included usage | private | Free personal | recurring-quota | 2000 runner-minutes/month | official | 2026-07-11 | 2026-08-10 |
-| `github-actions-private-ghec` | GitHub | Actions included usage | private, internal | Enterprise Cloud | recurring-quota | 50000 runner-minutes/month | official | 2026-07-11 | 2026-08-10 |
-| `github-actions-private-pro` | GitHub | Actions included usage | private | Pro | recurring-quota | 3000 runner-minutes/month | official | 2026-07-11 | 2026-08-10 |
-| `github-actions-private-team` | GitHub | Actions included usage | private | Team | recurring-quota | 3000 runner-minutes/month | official | 2026-07-11 | 2026-08-10 |
-| `github-actions-public-standard` | GitHub | Actions standard GitHub-hosted runners | public | Free, Pro, Team, Enterprise Cloud | public-unmetered | unmetered (standard-runner-minutes) | official | 2026-07-11 | 2026-08-10 |
-| `github-actions-self-hosted-control-plane` | GitHub | Actions self-hosted runners | public, private, internal | All eligible GitHub plans | zero-license-control-plane | unmetered (github-actions-control-plane-minutes) | official | 2026-07-11 | 2026-08-10 |
-| `github-attestations-private` | GitHub | Artifact attestations | private, internal | Enterprise Cloud | plan-gated | attestations | official | 2026-07-11 | 2026-08-10 |
-| `github-attestations-public` | GitHub | Artifact attestations | public | Free, Pro, Team, Enterprise Cloud | included-feature | attestations | official | 2026-07-11 | 2026-08-10 |
+| `codemagic-personal` | Codemagic | Personal plan | public, private | Personal | recurring-quota | 500 macos-build-minutes/month | vendor-verified | 2026-08-10 | 2026-10-02 |
+| `github-actions-larger-runners` | GitHub | Actions larger runners | public, private, internal | Team, Enterprise Cloud, eligible plans | paid-only | 0 included-minutes/month | official | 2026-08-10 | 2026-10-09 |
+| `github-actions-private-free-org` | GitHub | Actions included usage | private | Free organization | recurring-quota | 2000 runner-minutes/month | official | 2026-08-10 | 2026-10-09 |
+| `github-actions-private-free-personal` | GitHub | Actions included usage | private | Free personal | recurring-quota | 2000 runner-minutes/month | official | 2026-08-10 | 2026-10-09 |
+| `github-actions-private-ghec` | GitHub | Actions included usage | private, internal | Enterprise Cloud | recurring-quota | 50000 runner-minutes/month | official | 2026-08-10 | 2026-10-09 |
+| `github-actions-private-pro` | GitHub | Actions included usage | private | Pro | recurring-quota | 3000 runner-minutes/month | official | 2026-08-10 | 2026-10-09 |
+| `github-actions-private-team` | GitHub | Actions included usage | private | Team | recurring-quota | 3000 runner-minutes/month | official | 2026-08-10 | 2026-10-09 |
+| `github-actions-public-standard` | GitHub | Actions standard GitHub-hosted runners | public | Free, Pro, Team, Enterprise Cloud | public-unmetered | unmetered (standard-runner-minutes) | official | 2026-08-10 | 2026-10-09 |
+| `github-actions-self-hosted-control-plane` | GitHub | Actions self-hosted runners | public, private, internal | All eligible GitHub plans | zero-license-control-plane | unmetered (github-actions-control-plane-minutes) | official | 2026-08-10 | 2026-10-09 |
+| `github-attestations-private` | GitHub | Artifact attestations | private, internal | Enterprise Cloud | plan-gated | attestations | official | 2026-08-10 | 2026-11-06 |
+| `github-attestations-public` | GitHub | Artifact attestations | public | Free, Pro, Team, Enterprise Cloud | included-feature | attestations | official | 2026-08-10 | 2026-11-06 |
 | `github-code-quality-transition` | GitHub | Code Quality | public, private, internal | Team, Enterprise Cloud | scheduled-paid-transition | 10 usd-per-active-committer/month | official | 2026-08-01 | 2026-10-21 |
-| `github-dependabot-private` | GitHub | Dependabot alerts and security updates | private | All eligible plans | included-feature | repository-feature | official | 2026-07-11 | 2026-08-10 |
-| `github-dependency-review-private` | GitHub | Dependency review | private | Team, Enterprise Cloud | add-on-gated | repository-feature | official | 2026-07-11 | 2026-08-10 |
-| `github-dependency-review-public` | GitHub | Dependency review | public | All current plans | included-feature | repository-feature | official | 2026-07-11 | 2026-08-10 |
-| `github-environments-private` | GitHub | Actions environments | private, internal | Pro, Team, Enterprise Cloud | plan-gated | repository-feature | official | 2026-07-11 | 2026-08-10 |
-| `github-environments-public` | GitHub | Actions environments | public | Free, Pro, Team, Enterprise Cloud | included-feature | repository-feature | official | 2026-07-11 | 2026-08-10 |
-| `github-secret-scanning-private-org` | GitHub | Secret scanning / Secret Protection | private, internal | Team, Enterprise Cloud | add-on-gated | repository-feature | official | 2026-07-11 | 2026-08-10 |
-| `github-secret-scanning-public` | GitHub | Secret scanning | public | All current plans | included-feature | repository-feature | official | 2026-07-11 | 2026-08-10 |
-| `gitlab-free-hosted` | GitLab | GitLab.com Free compute | public, private | Free | recurring-quota | 400 compute-minutes/month | official | 2026-07-11 | 2026-08-10 |
-| `gitlab-open-source-program` | GitLab | GitLab for Open Source | public | Ultimate for qualifying OSS | application-grant | 50000 compute-minutes/month | official | 2026-07-11 | 2026-08-10 |
-| `google-cloud-build-free` | Google Cloud | Cloud Build free tier | public, private | Google Cloud Free Tier | recurring-quota | 2500 e2-standard-2-build-minutes/month | official | 2026-07-11 | 2026-08-10 |
-| `harness-free` | Harness | Continuous Delivery & Git Experience Free | public, private | Free | credit-quota | 2000 credits/month | vendor-verified | 2026-07-11 | 2026-08-10 |
-| `teamcity-professional` | JetBrains | TeamCity Professional | public, private, internal | Professional | zero-license-self-hosted | unmetered (build-minutes) | official | 2026-07-11 | 2026-08-10 |
-| `azure-pipelines-private` | Microsoft Azure DevOps | Azure Pipelines private projects | private | Free included parallel job | recurring-quota | 1800 hosted-minutes/month | official | 2026-07-11 | 2026-08-10 |
+| `github-dependabot-private` | GitHub | Dependabot alerts and security updates | private | All eligible plans | included-feature | repository-feature | official | 2026-08-10 | 2026-11-06 |
+| `github-dependency-review-private` | GitHub | Dependency review | private | Team, Enterprise Cloud | add-on-gated | repository-feature | official | 2026-08-10 | 2026-11-06 |
+| `github-dependency-review-public` | GitHub | Dependency review | public | All current plans | included-feature | repository-feature | official | 2026-08-10 | 2026-11-06 |
+| `github-environments-private` | GitHub | Actions environments | private, internal | Pro, Team, Enterprise Cloud | plan-gated | repository-feature | official | 2026-08-10 | 2026-11-06 |
+| `github-environments-public` | GitHub | Actions environments | public | Free, Pro, Team, Enterprise Cloud | included-feature | repository-feature | official | 2026-08-10 | 2026-11-06 |
+| `github-secret-scanning-private-org` | GitHub | Secret scanning / Secret Protection | private, internal | Team, Enterprise Cloud | add-on-gated | repository-feature | official | 2026-08-10 | 2026-11-06 |
+| `github-secret-scanning-public` | GitHub | Secret scanning | public | All current plans | included-feature | repository-feature | official | 2026-08-10 | 2026-11-06 |
+| `gitlab-free-hosted` | GitLab | GitLab.com Free compute | public, private | Free | recurring-quota | 400 compute-minutes/month | official | 2026-08-10 | 2026-09-11 |
+| `gitlab-open-source-program` | GitLab | GitLab for Open Source | public | Ultimate for qualifying OSS | application-grant | 50000 compute-minutes/month | official | 2026-08-10 | 2026-09-11 |
+| `google-cloud-build-free` | Google Cloud | Cloud Build free tier | public, private | Google Cloud Free Tier | recurring-quota | 2500 e2-standard-2-build-minutes/month | official | 2026-08-10 | 2026-10-16 |
+| `harness-free` | Harness | Continuous Delivery & Git Experience Free | public, private | Free | credit-quota | 2000 credits/month | vendor-verified | 2026-08-10 | 2026-09-04 |
+| `teamcity-professional` | JetBrains | TeamCity Professional | public, private, internal | Professional | zero-license-self-hosted | unmetered (build-minutes) | official | 2026-08-10 | 2026-10-23 |
+| `azure-pipelines-private` | Microsoft Azure DevOps | Azure Pipelines private projects | private | Free included parallel job | recurring-quota | 1800 hosted-minutes/month | official | 2026-08-10 | 2026-09-25 |
 | `azure-pipelines-public-retirement` | Microsoft Azure DevOps | Azure DevOps public projects | public | Legacy only | retiring | 0 new-public-projects/feature | deprecated | 2026-07-11 | 2027-01-01 |
-| `semaphore-cloud-free` | Semaphore | Cloud free recurring credit | public, private | Free | credit-quota | 15 usd-credits/month | official | 2026-07-11 | 2026-08-10 |
-| `semaphore-community` | Semaphore | Semaphore Community Edition | public, private, internal | Community | zero-license-self-hosted | unmetered (build-minutes) | official | 2026-07-11 | 2026-08-10 |
-| `travis-open-source-conditional` | Travis CI | Open source credits | public | OSS grant | application-grant | credits | conditional | 2026-07-11 | 2026-08-10 |
-| `ubicloud-free` | Ubicloud | GitHub Actions runners monthly credit | public, private | Pay-as-you-go with recurring credit | credit-quota | 2 usd-credits/month | vendor-verified | 2026-07-11 | 2026-08-10 |
+| `semaphore-cloud-free` | Semaphore | Cloud free recurring credit | public, private | Free | credit-quota | 15 usd-credits/month | official | 2026-08-10 | 2026-09-25 |
+| `semaphore-community` | Semaphore | Semaphore Community Edition | public, private, internal | Community | zero-license-self-hosted | unmetered (build-minutes) | official | 2026-08-10 | 2026-09-25 |
+| `travis-open-source-conditional` | Travis CI | Open source credits | public | OSS grant | application-grant | credits | conditional | 2026-08-10 | 2026-10-23 |
+| `ubicloud-free` | Ubicloud | GitHub Actions runners monthly credit | public, private | Pay-as-you-go with recurring credit | credit-quota | 2 usd-credits/month | vendor-verified | 2026-08-10 | 2026-09-04 |
 
 ---
 Generated from catalog/product-facts.yml.

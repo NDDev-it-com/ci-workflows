@@ -11,3 +11,5 @@ jobs:
   web:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/web-ci.yml@<sha>
+    with:
+      runner: ubuntu-latest

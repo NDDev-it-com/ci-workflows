@@ -15,6 +15,7 @@ jobs:
     permissions: { contents: write }
     uses: NDDev-it-com/ci-workflows/.github/workflows/release-supply-chain-free.yml@<sha>
     with:
+      runner: ubuntu-latest
       version: ${{ github.ref_name }}
       package_name: my-repo
       archive_paths: "README.md LICENSE VERSION CHANGELOG.md src"

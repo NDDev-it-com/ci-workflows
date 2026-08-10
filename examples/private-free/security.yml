@@ -16,14 +16,21 @@ jobs:
   secret-scan:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/secret-scan.yml@<sha>
+    with:
+      runner: ubuntu-latest
   actionlint:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/actionlint.yml@<sha>
+    with:
+      runner: ubuntu-latest
   zizmor:
     permissions: { contents: read }   # least privilege: no security-events: write
     uses: NDDev-it-com/ci-workflows/.github/workflows/zizmor-no-sarif.yml@<sha>
+    with:
+      runner: ubuntu-latest
   validate:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/private-static.yml@<sha>
     with:
+      runner: ubuntu-latest
       command: "python3 scripts/validate_all.py"

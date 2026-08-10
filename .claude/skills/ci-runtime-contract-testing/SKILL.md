@@ -37,6 +37,25 @@ waiver owner/reason/expiry
 
 Generate a coverage metric from the catalog. A GA capability without runtime evidence must be visible as debt.
 
+Visible is not the same as enforced. A ledger that only checks whether a claimed
+status is self-consistent answers "is what you claimed coherent?" and never
+"did anyone claim anything?" — so an entirely unproven surface renders exactly
+like a proven one, and the aggregate gate stays green. Give every record a
+**criticality** alongside its status, and make absence of evidence a failure for
+the tiers that gate a merge or ship a release:
+
+```text
+release | security-blocking   -> `unverified` is rejected; prove it, name an
+                                 executable contract validator, or take a
+                                 waiver with an owner and an expiry
+required-gate | supporting    -> `unverified` is an honest resting state
+```
+
+Two properties keep this from becoming ceremony. Pin the classification of the
+blocking families in the validator, or the obligation is dodged by relabelling
+one record `supporting`. And stagger waiver expiries: a renewal wave landing on
+a single date reproduces the cliff the rule exists to prevent.
+
 ## Test architecture
 
 ### Layer 1 — Static contract

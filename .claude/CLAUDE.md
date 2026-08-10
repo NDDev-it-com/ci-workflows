@@ -12,7 +12,12 @@ prose docs as the source of truth.
 2. Update `catalog/capabilities.yml` (and `catalog/tools.yml` `used_by` /
    pins) — the catalog is the source of truth. Volatile plan/price/quota facts
    live only in `catalog/product-facts.yml` (dated + expiring); runtime
-   evidence lives only in `catalog/runtime-coverage.yml`.
+   evidence lives only in `catalog/runtime-coverage.yml`; operating modes live
+   only in `catalog/profiles.yml` (tier prose references profiles, never
+   restates them). Refreshing a fact
+   means re-reading its `source_urls` and correcting it, not bumping the date —
+   and stagger `expires_after` so a batch of facts never expires on one day
+   (38 of 41 once shared `2026-08-10` and would have failed the gate together).
 3. `python3 scripts/generate_docs.py` — `docs/generated/*` (capability matrix,
    workflow inventory, free-tier matrix) is generated output; hand-edits fail
    the CI drift check.
@@ -73,11 +78,21 @@ programs), so a failure message usually names the exact broken contract.
 - **Runtime-coverage proof integrity.** In `catalog/runtime-coverage.yml` a
   `runtime-proven` record needs a repo-scoped `…/actions/runs/<id>` URL **and**
   a `proven_digest` (sha256 of the workflow file) that
-  `validate_runtime_coverage.py` recomputes and matches. Editing any proven
-  workflow (`release-supply-chain.yml`, `actionlint.yml`, `zizmor-sarif.yml`)
+  `validate_runtime_coverage.py` recomputes and matches. Editing a proven
+  workflow (currently `public-dependency-review.yml` and
+  `public-scorecard-json.yml` — check the ledger, do not trust this list)
   therefore fails the gate — the "static-only dance": re-run the reusable and
   update the digest, or drop the record to `static-only`, until the next run
   re-proves it. Never leave a stale run masquerading as proof.
+- **Runtime-coverage proof *obligation*.** Every record also declares
+  `criticality`. `release` and `security-blocking` may not sit at `unverified`:
+  prove them, mark `static-only` naming an executable validator that exists, or
+  `waived` with an owner and an unexpired date. `supporting` may stay
+  `unverified` forever — that is the honest state for a benchmark helper, and
+  the point of the tier. The blocking families are pinned in
+  `PINNED_CRITICALITY`, so relabelling one `supporting` to escape the rule is
+  itself a gate failure. Keep waiver expiries staggered; a renewal wave that
+  lands on one date recreates the cliff this rule exists to prevent.
 - **Runtime bundle ⊆ source archive.** `release-supply-chain*.yml` refuse a
   `runtime_paths` selection outside `archive_paths`, so the Syft-scanned source
   SBOM stays a superset of everything the release ships. `release.yml` never

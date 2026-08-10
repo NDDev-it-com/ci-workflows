@@ -12,5 +12,6 @@ jobs:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/node-ci.yml@<sha>
     with:
+      runner: ubuntu-latest
       install_command: 'bun install --frozen-lockfile'
       test_command: 'bun test'

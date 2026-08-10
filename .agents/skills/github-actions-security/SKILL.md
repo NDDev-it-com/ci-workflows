@@ -118,6 +118,21 @@ GitHub-hosted runners are ephemeral, but still require least privilege and egres
 
 Never route untrusted public pull requests to a persistent trusted runner.
 
+Audit the *inherited* runner, not just the declared one. A caller that omits a
+reusable workflow's `runner` input adopts whatever that reusable currently
+defaults to — and a default is a property of the pinned commit, not of the
+caller. A library that defaults `runner` to a private self-hosted label turns
+every routine pin bump into a silent re-routing of untrusted fork code onto
+trusted infrastructure, with no diff in the calling repository to review. So:
+
+- a public repository must select its runner **explicitly** in every caller that
+  exposes the input, even when the pinned default is already hosted;
+- a reusable workflow published for external consumers must either require
+  `runner` or default it to a hosted label — an estate-specific label belongs in
+  a generated caller or an estate wrapper, never in a generic contract;
+- when reviewing a pin bump, diff the reusable's `inputs.runner.default` between
+  the old and new commit before approving it.
+
 ### 7. Environment, deployment, and release audit
 
 - Protected environments, branch/tag allowlists, required reviewers, wait/custom rules, concurrency locks.

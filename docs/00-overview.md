@@ -21,6 +21,15 @@ Cost and capability on GitHub depend on whether a repository is public,
 private-on-a-free-plan, or private with paid GitHub Advanced Security (GHAS).
 Every doc here maps features to one of three tiers.
 
+These three are a **reading aid, not the model.** Visibility, base plan and the
+three paid add-ons vary independently, and most real repositories sit in a
+combination the three tiers cannot name. The machine-readable model —
+four operating profiles, all eight Code Security / Secret Protection / Code
+Quality combinations, and the controls that go with each — lives in
+`catalog/profiles.yml` and is rendered to
+[the generated profile matrix](generated/profile-matrix.md). Where this prose
+and that matrix disagree, the matrix is right: it is validated, this is not.
+
 | Tier | What you get | Doc |
 | --- | --- | --- |
 | **Public OSS (free full suite)** | Standard hosted runners, CodeQL, native secret scanning + push protection, dependency review, OSSF Scorecard, artifact attestations/SBOM, GHCR public, Pages, rulesets — all free | [01-public-oss-free.md](01-public-oss-free.md) |
@@ -30,10 +39,11 @@ Every doc here maps features to one of three tiers.
 ### The one capability that ignores the model
 
 **GitHub Code Quality** (GA and billable since 2026-07-20) is **not** sorted by
-visibility: it is billed per active committer on public repositories exactly as
-on private ones, its licence is independent of GHAS, and committers are counted
-once per organization rather than per repository. It therefore sits outside the
-three tiers as an opt-in fourth one — see
+visibility the way the tiers assume: its licence is independent of GHAS, and
+committers are counted once per organization rather than per repository. Its
+public per-committer rate is **disputed between GitHub's own sources**, so no
+public cost is compiled for it in either direction. It therefore sits outside
+the three tiers as an opt-in fourth one — see
 [16 Code Quality tier](16-code-quality.md). Both free tiers exclude it, and the
 free maintainability substitutes are listed there.
 

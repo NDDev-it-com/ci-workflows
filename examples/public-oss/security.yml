@@ -1,5 +1,12 @@
 # Public OSS security suite (push + pull_request).
 # Replace @<sha> with a pinned full commit SHA of ci-workflows.
+#
+# `runner: ubuntu-latest` is not redundant. On a public repository
+# `pull_request` executes untrusted fork code, and several reusables here
+# default `runner` to a private self-hosted label. That default belongs to the
+# pinned commit, so omitting the input makes a routine pin bump silently move
+# fork PRs onto whatever infrastructure the new commit names. Public callers
+# name their runner.
 name: security
 on:
   push: { branches: [main] }
@@ -17,9 +24,15 @@ jobs:
   secret-scan:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/secret-scan.yml@<sha>
+    with:
+      runner: ubuntu-latest
   actionlint:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/actionlint.yml@<sha>
+    with:
+      runner: ubuntu-latest
   zizmor:
     permissions: { actions: read, contents: read, security-events: write }
     uses: NDDev-it-com/ci-workflows/.github/workflows/zizmor-sarif.yml@<sha>
+    with:
+      runner: ubuntu-latest
