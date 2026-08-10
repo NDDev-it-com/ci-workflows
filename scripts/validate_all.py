@@ -43,6 +43,7 @@ import check_skills
 import check_workflow_contracts
 import generate_docs
 import validate_catalog
+import resolve_profile
 import validate_profiles
 import validate_product_facts
 import validate_runtime_coverage
@@ -66,6 +67,7 @@ CHECKS = [
     ("catalog", validate_catalog.check),
     ("product-facts", validate_product_facts.check),
     ("profiles", validate_profiles.check),
+    ("profile-resolution", resolve_profile.check),
     ("runtime-coverage", validate_runtime_coverage.check),
     ("skills", check_skills.check),
     ("generated-docs", generate_docs.check),

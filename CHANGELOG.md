@@ -4,6 +4,30 @@
 
 ### Added
 
+- **`scripts/resolve_profile.py` makes a mode selectable, not just declared.**
+  `profiles.yml` said what a mode *is* — entitlements, controls, cost — but not
+  what you *run* in it, and a mode you cannot turn into a workflow set is a
+  description rather than a selection. Give the resolver a repository's shape
+  (`--visibility`, `--plan`, and the three add-on flags) or a profile id, and it
+  returns the profile, its controls and cost, and the capability/workflow set
+  split into run / conditional / unavailable, with the free substitute for
+  everything the mode does not entitle.
+
+  Which tier column applies is derived rather than guessed: public repositories
+  read `public_oss`, private and internal ones read `private_paid` when any
+  add-on is held and `private_free` otherwise. A capability priced `paid` is
+  included only when the entitlement that unlocks it is actually on, which is
+  what lets the two public profiles — sharing a tier column, differing in
+  entitlements — resolve to different programmes (65 vs 64 capabilities).
+
+  Its invariants run in `validate_all` as `profile-resolution`: every profile
+  resolves to a non-empty programme and is selectable from its own selectors,
+  the full paid profile leaves nothing unavailable, the zero-cost private
+  profile genuinely excludes the paid surface, and two profiles sharing a tier
+  column may not resolve identically. Verified by breaking each and watching the
+  gate name the specific failure. The generated matrix now carries each
+  profile's programme size.
+
 - **`catalog/profiles.yml` makes the mode model machine-readable**, with
   `scripts/validate_profiles.py` in `validate_all` and
   `docs/generated/profile-matrix.md` rendered from it.

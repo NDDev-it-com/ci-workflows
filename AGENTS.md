@@ -32,7 +32,11 @@ repositories pin by full commit SHA. Docs under `docs/` are human mirrors;
   profile against the capability and product-fact catalogs, that itemised fixed
   lines sum to the declared total, and that a fixed-cost profile cannot permit AI
   credits or Actions overage. `docs/generated/profile-matrix.md` is rendered from
-  it. **Tier prose may reference a profile; it may not restate one** — the three
+  it. `scripts/resolve_profile.py` turns a repository's shape into its profile
+  and the exact capability/workflow set to run, with the free substitute for
+  everything the mode does not entitle — a mode you cannot resolve is a
+  description, not a selection. Its invariants run in `validate_all` as
+  `profile-resolution`. **Tier prose may reference a profile; it may not restate one** — the three
   tiers in `docs/00` are a reading aid, and the drift they hid is why this file
   exists.
 - `catalog/runtime-coverage.yml` is the honest runtime-evidence ledger for every

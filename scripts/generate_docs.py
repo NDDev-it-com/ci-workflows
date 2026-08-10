@@ -142,6 +142,8 @@ def free_tier_matrix(facts: list[dict[str, Any]]) -> str:
 
 
 def profile_matrix(doc: dict[str, Any]) -> str:
+    import resolve_profile
+    caps = _load_capabilities()
     profiles = doc.get("profiles") or []
     matrix = doc.get("entitlement_matrix") or []
     lines = [
@@ -155,8 +157,8 @@ def profile_matrix(doc: dict[str, Any]) -> str:
         "",
         "## Profiles",
         "",
-        "| Profile | Visibility | Base plan | C/S/Q | CodeQL | Runner | Provenance | Enforcement | Fixed cost |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+        "| Profile | Visibility | Base plan | C/S/Q | CodeQL | Runner | Provenance | Enforcement | Fixed cost | Programme |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for profile in profiles:
         sel = profile.get("selectors") or {}
@@ -164,7 +166,7 @@ def profile_matrix(doc: dict[str, Any]) -> str:
         cost = profile.get("cost") or {}
         fixed = cost.get("fixed_usd")
         lines.append(
-            "| `{id}` | {vis} | {plans} | `{mask}` | {codeql} | {runner} | {prov} | {enf} | {cost} |".format(
+            "| `{id}` | {vis} | {plans} | `{mask}` | {codeql} | {runner} | {prov} | {enf} | {cost} | {programme} |".format(
                 id=profile.get("id"),
                 vis=", ".join(sel.get("visibility") or []),
                 plans=", ".join(sel.get("base_plan") or []),
@@ -174,6 +176,9 @@ def profile_matrix(doc: dict[str, Any]) -> str:
                 prov=ctl.get("release_provenance"),
                 enf=ctl.get("enforcement"),
                 cost=("free" if not fixed else f"${fixed:g}/month"),
+                programme=(lambda r: f"{len(r['included'])} run / {len(r['conditional'])} conditional / {len(r['excluded'])} unavailable")(
+                    resolve_profile.resolve(doc, caps, profile)
+                ),
             )
         )
     lines.extend(["", "## Entitlement combinations", "",
