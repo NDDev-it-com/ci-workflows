@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+### Added
+
+- **`pr-hygiene.yml` accepts a `runner` input**, so a caller can move its four
+  jobs onto a self-hosted fleet instead of being pinned to `ubuntu-latest`.
+
+  It defaults to `ubuntu-latest`, unlike most reusables here. This workflow is
+  driven by `pull_request`, so on a public caller it executes fork-authored
+  content; a self-hosted default would hand that content an estate runner
+  without the caller ever naming one. Estate callers opt in explicitly, which is
+  already the pattern their `go-ci.yml` calls follow.
+
+  `cross-platform-smoke.yml` deliberately gains no such input: its `os_list`
+  already *is* a list of runner labels, so a caller wanting a fleet runner passes
+  it there and keeps the OS matrix as the single place OS selection lives.
+
 ### Changed
 
 - **`hadolint-ci.yml` now runs a checksum-verified hadolint binary instead of
