@@ -2,7 +2,55 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **`docs/16-code-quality.md` no longer claims Code Quality has no API.** It
+  documents four REST endpoints (`GET`/`PATCH …/code-quality/setup`, findings
+  list and detail) and the setup object's fields, so the product's state is
+  assertable and drift-checkable by the estate reconciler. Reconciling it is
+  still explicitly out of scope for this library — the catalog entry keeps
+  `workflow: null` / `example: null`.
+
+- **The disputed public Code Quality rate is now recorded as disputed.**
+  GitHub's product page states "$0 per committer" for public repositories while
+  the billing documentation states every active committer consumes a licence
+  with no visibility exemption. `github-code-quality-transition` previously
+  asserted one side of this. Neither reading may be compiled into a cost; the
+  public rate is account-observed until licensing or an invoice settles it. The
+  $10 private rate, the Team/Enterprise gate and the once-per-organization
+  committer count are unaffected.
+
+- **`teamcity-professional` claimed unlimited build configurations.** The free
+  Professional licence caps them at 100 configurations and 10 pipelines
+  (+10 per additional agent); only build *time* is unlimited.
+
 ### Changed
+
+- **All 38 product facts dated 2026-07-11 re-verified against their sources and
+  re-stamped 2026-08-10.** They shared a single `expires_after: 2026-08-10`, so
+  the ledger would have failed `validate_all` in one 38-fact block from
+  2026-08-11. New expiries are staggered across 2026-09-04…2026-11-06 by how
+  fast each source actually moves, so the largest future refresh is 9 facts.
+
+- **Dead and imprecise fact sources replaced.** `semaphoreci.com` 301s to
+  `semaphore.io`; `ubicloud.com/pricing` returns 404. Added the sources that
+  actually carry the claim: the artifact-attestations plan gate, the
+  self-hosted-runner untrusted-fork warning, and the Harness credit figure.
+
+- **`github-actions-security` gained an inherited-runner rule.** The runner
+  audit now covers the runner a caller *inherits* rather than declares: a
+  reusable's `runner` default belongs to the pinned commit, so a library that
+  defaults it to a private self-hosted label makes every pin bump a silent
+  re-routing of untrusted fork code, invisible in the calling repository's diff.
+  Public callers must select the runner explicitly; generic reusables must
+  require it or default to a hosted label.
+
+- **`azure-pipelines-private` records two newly material conditions:** the
+  Microsoft-hosted free tier is not automatic and must be enabled by linking an
+  Azure subscription, and public projects are retired and convert to private in
+  2027. **`gitlab-open-source-program`** records the annual renewal requirement
+  and that the program page does not state the compute-minute accrual period
+  unambiguously.
 
 - **`public-codeql.yml` now provisions the repository Go toolchain for Go
   analysis.** The language matrix conditionally runs the digest-pinned
