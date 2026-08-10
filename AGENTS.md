@@ -58,6 +58,11 @@ repositories pin by full commit SHA. Docs under `docs/` are human mirrors;
   to dodge the obligation, and waiver expiries are staggered so renewals never
   land as one cliff. Adding a reusable workflow to a blocking family means
   adding it to that pin too.
+- `docs/adr/` records **why** a contract exists, in the estate's ADR format;
+  `docs/adr/README.md` is its generated index. Mechanics belong in the catalog
+  and the tier docs, rationale belongs here. Read the ADR before changing a
+  contract it explains, so the change reverses a decision deliberately rather
+  than by accident.
 - `docs/generated/*` is generated — never edit by hand. After a catalog,
   product-fact, or workflow change run `python3 scripts/generate_docs.py`; CI
   fails on drift.

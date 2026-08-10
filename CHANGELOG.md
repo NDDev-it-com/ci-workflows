@@ -52,6 +52,14 @@
 
 ### Added
 
+- **`docs/adr/` records the decisions behind the contracts**, in the estate's ADR
+  format, with a generated index. Four entries: the catalog as source of truth
+  with docs as a projection; operating modes compiled rather than described;
+  absence of evidence as a failure for blocking workflows; and the caller, never
+  the library, choosing its runner. Each states what the contract defends
+  against, so a later change reverses a decision deliberately rather than by
+  accident. `AGENTS.md` and `nddev-repo-orientation` point at them.
+
 - **`scripts/resolve_profile.py` makes a mode selectable, not just declared.**
   `profiles.yml` said what a mode *is* — entitlements, controls, cost — but not
   what you *run* in it, and a mode you cannot turn into a workflow set is a
