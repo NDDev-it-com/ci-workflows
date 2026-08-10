@@ -8,6 +8,13 @@ name: pr-hygiene
 on:
   workflow_call:
     inputs:
+      # Defaults hosted, unlike most reusables here. This workflow is triggered
+      # by `pull_request`, so on a public caller it runs fork-authored code; a
+      # self-hosted default would hand that code an estate runner without the
+      # caller ever naming one. Estate callers opt in explicitly.
+      runner:
+        type: string
+        default: 'ubuntu-latest'
       commitlint:
         type: boolean
         default: true
@@ -67,7 +74,7 @@ jobs:
   commitlint:
     if: ${{ inputs.commitlint }}
     name: commitlint
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       contents: read
@@ -85,7 +92,7 @@ jobs:
   pr-title:
     if: ${{ inputs.pr_title }}
     name: pr-title
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       contents: read
@@ -120,7 +127,7 @@ jobs:
   labeler:
     if: ${{ inputs.labeler }}
     name: labeler
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       contents: read
@@ -134,7 +141,7 @@ jobs:
   stale:
     if: ${{ inputs.stale }}
     name: stale
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       contents: read
