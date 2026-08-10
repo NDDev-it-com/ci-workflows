@@ -357,15 +357,15 @@ tools:
       - .github/workflows/grype-scan.yml
     last_verified: "2026-07-08"
 
-  - id: hadolint-action
-    name: hadolint/hadolint-action
-    homepage: "https://github.com/hadolint/hadolint-action"
-    kind: action
-    current_version: "v3.3.0"
-    pin: "hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5"
+  - id: hadolint
+    name: hadolint
+    homepage: "https://github.com/hadolint/hadolint"
+    kind: cli
+    current_version: "2.15.1"
+    pin: null
     used_by:
       - .github/workflows/hadolint-ci.yml
-    last_verified: "2026-07-08"
+    last_verified: "2026-08-10"
 
   - id: checkov-action
     name: bridgecrewio/checkov-action
