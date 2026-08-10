@@ -102,8 +102,13 @@ mutable facts stay in the catalogs above.
 python3 -m pip install --require-hashes -r requirements-ci.txt  # PyYAML
 python3 scripts/validate_all.py
 actionlint
-zizmor --persona regular --min-severity low .github/workflows
+uvx zizmor@1.26.1 --persona regular --min-severity low .github/workflows
 ```
+
+Run zizmor through `uvx` at **the version `zizmor-sarif.yml` pins**, not whatever
+is on `PATH` — CI runs the pinned one, and a different local version reports
+different findings. The pin is `inputs.zizmor_version.default`; read it from the
+workflow rather than trusting this line if they ever disagree.
 
 `validate_all.py` aggregates every contract check and mirrors the required
 `ci-gate` status. It executes behavior locks, not just lint: hermetic Git-DAG
@@ -132,6 +137,13 @@ variants, and runner-guard programs run against OS/architecture matrices.
 
 - Every third-party `uses:` pins a full 40-char commit SHA with a
   ` # vX.Y.Z` comment. No tags or branches.
+- **Never make a push/schedule-only workflow a required status check.** OSSF
+  Scorecard is the trap: it supports `push` and `schedule` on the default branch
+  only, so as a required context it can never report on a pull-request head. It
+  protects nothing — it cannot fail a PR, because it cannot run on one — while
+  blocking every merge. Two estate repositories sat unmergeable on exactly this.
+  Note the requirement can live in **classic branch protection** rather than a
+  ruleset, so a ruleset-shaped investigation finds nothing.
 - `permissions: {}` at top level; minimal per-job scopes; `timeout-minutes`
   on every job; `persist-credentials: false` on read-only checkouts.
 - Never interpolate `${{ inputs.* }}` or `${{ github.event.* }}` inside

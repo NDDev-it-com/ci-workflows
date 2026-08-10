@@ -4,6 +4,20 @@
 
 ### Fixed
 
+- **The zizmor invocation is now pinned to the version CI runs.** AGENTS.md said
+  `zizmor …`, which uses whatever is on `PATH` — a different version reports
+  different findings than the gate. It now says `uvx zizmor@1.26.1 …`, matching
+  `zizmor-sarif.yml`'s `zizmor_version` default, with the instruction to read the
+  pin from the workflow if the two ever disagree. Run against this tree at that
+  version: **no findings, 10 suppressed.**
+
+- **Recorded that a push/schedule-only workflow must never be a required check.**
+  OSSF Scorecard supports `push` and `schedule` on the default branch only, so as
+  a required context it can never report on a pull-request head: it protects
+  nothing and blocks every merge. Two estate repositories sat unmergeable on
+  exactly this, and the requirement lived in classic branch protection rather
+  than a ruleset, so a ruleset-shaped investigation found nothing.
+
 - **The Rust CodeQL claim was too strong.** `docs/17` said Rust "cannot be
   CodeQL-scanned this way at all" because the default-setup REST enum rejects
   it. GitHub's changelog is clear that Rust left public preview and is
