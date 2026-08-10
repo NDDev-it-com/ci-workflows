@@ -4,6 +4,37 @@
 
 ### Added
 
+- **`catalog/profiles.yml` makes the mode model machine-readable**, with
+  `scripts/validate_profiles.py` in `validate_all` and
+  `docs/generated/profile-matrix.md` rendered from it.
+
+  The tier model previously existed twice: three columns per capability in
+  `capabilities.yml`, and prose in `docs/00`, `docs/16` and `docs/17` describing
+  modes the catalog could not express. The prose drifted silently and more than
+  once — the $80 envelope named a control that cannot stop anything, and its
+  coverage figures had moved on.
+
+  The model declares the axes as **independent** — visibility, base plan, the
+  three add-on entitlements, and seven operational controls — rather than as a
+  line from free to paid. It carries all eight Code Security / Secret Protection
+  / Code Quality combinations so no repository is unplaceable, and four
+  operating profiles: `public-free-standalone`, `private-free-max`,
+  `public-enterprise-max` and `enterprise-full-private-fixed80`.
+
+  The validator encodes failures that actually happened rather than generic
+  schema rules: itemised fixed lines must sum to the declared total; a
+  fixed-cost profile may not permit AI credits or Actions overage, nor set
+  `code_quality_ai: on_push`; attestations on private repositories require
+  Enterprise Cloud and Code Quality requires Team or Enterprise (plan gates, not
+  visibility gates); a public profile may not use persistent self-hosted
+  runners; private CodeQL requires Code Security. Each rule has a regression
+  fixture, and all four headline rules were also verified live by breaking the
+  catalog and watching the gate fail.
+
+  Tier prose now references profiles instead of restating them, and `docs/00`
+  says outright that where it and the generated matrix disagree, the matrix
+  wins — it is validated and the prose is not.
+
 - **`catalog/runtime-coverage.yml` records `criticality`, and the ledger now
   carries a proof obligation** (schema `nddev-ci-runtime-contract-coverage/v2`).
   It policed whether a *claimed* status was honest but never required a claim,

@@ -1,0 +1,240 @@
+# Operating profiles — the machine-readable mode model.
+#
+# Before this file the tier model existed twice: as three columns per capability
+# in capabilities.yml (public_oss / private_free / private_paid), and as prose in
+# docs/16 and docs/17 describing modes the catalog could not express. The prose
+# drifted, silently, more than once — the $80 envelope described controls that do
+# not work and coverage numbers that had moved.
+#
+# So modes are declared here, validated by scripts/validate_profiles.py, and
+# rendered into docs/generated/profile-matrix.md. Prose may reference a profile;
+# it may not restate one.
+#
+# The axes are deliberately INDEPENDENT. A tier is not a point on a line from
+# "free" to "paid": visibility, base plan, the three add-on entitlements and the
+# operational controls vary separately, and most real repositories sit in a
+# combination no three-tier model can name.
+schema: nddev-ci-operating-profiles/v1
+
+axes:
+  visibility:
+    values: [public, private, internal]
+    note: >-
+      Drives what is free rather than what is possible. Public repositories get
+      CodeQL, secret scanning and standard runners at no cost; private ones need
+      the add-ons for the same features.
+  base_plan:
+    values: [free, pro, team, enterprise-cloud]
+    note: >-
+      A separate gate from visibility. Code Quality needs Team or Enterprise;
+      artifact attestations on private/internal repositories need Enterprise
+      Cloud. "Public" never implies "any plan".
+
+  # The three paid add-ons. Independent of each other and of the base plan's
+  # own features — a Code Security licence does not include Secret Protection,
+  # and neither includes Code Quality.
+  entitlements:
+    code_security:
+      values: [true, false]
+      unlocks: [codeql-code-scanning, dependency-review]
+    secret_protection:
+      values: [true, false]
+      unlocks: [native-secret-scanning]
+    code_quality:
+      values: [true, false]
+      unlocks: [github-code-quality]
+
+  controls:
+    codeql_mode:
+      values: [none, default, advanced]
+      note: >-
+        Exactly one per repository. Security-configuration attachment is atomic:
+        forcing default setup onto a repository with an active advanced setup
+        fails the whole attachment, taking the rest of the configuration with it.
+    code_quality_ai:
+      values: [disabled, on_push]
+      note: >-
+        Metered in AI credits with no included allowance. Not fully governed by
+        this switch — Copilot Autofix on CodeQL alerts bills to the same product
+        and has its own repository setting.
+    coverage_mode:
+      values: [off, report, gated]
+    runner_mode:
+      values: [github-hosted-standard, self-hosted-ephemeral, self-hosted-persistent]
+      note: >-
+        Untrusted code from a public fork must never reach a trusted persistent
+        runner. Callers state their runner; they do not inherit it.
+    governance_mode:
+      values: [solo-agent, team-strict, regulated]
+    enforcement:
+      values: [report, evaluate, active]
+      note: >-
+        Rulesets move report -> evaluate -> active only after the exact check
+        contexts have been observed on both pull_request and merge_group.
+    release_provenance:
+      values: [checksums, attestations]
+
+# Every combination of the three add-ons, so a repository can be placed without
+# inventing a tier for it. `mask` is C/S/Q in that order.
+entitlement_matrix:
+  - mask: "000"
+    code_security: false
+    secret_protection: false
+    code_quality: false
+    posture: OSS scanners only; local quality and coverage
+    fallbacks: [gitleaks-secret-scan, semgrep-sast, osv-scanner-sca, coverage-gate]
+  - mask: "100"
+    code_security: true
+    secret_protection: false
+    code_quality: false
+    posture: CodeQL security, SARIF upload, dependency review
+    fallbacks: [gitleaks-secret-scan]
+  - mask: "010"
+    code_security: false
+    secret_protection: true
+    code_quality: false
+    posture: Native secret scanning and push protection
+    fallbacks: [semgrep-sast, osv-scanner-sca]
+  - mask: "001"
+    code_security: false
+    secret_protection: false
+    code_quality: true
+    posture: Deterministic Code Quality and coverage
+    fallbacks: [gitleaks-secret-scan, semgrep-sast, osv-scanner-sca]
+  - mask: "110"
+    code_security: true
+    secret_protection: true
+    code_quality: false
+    posture: Full GitHub security without maintainability scoring
+    fallbacks: [coverage-gate]
+  - mask: "101"
+    code_security: true
+    secret_protection: false
+    code_quality: true
+    posture: CodeQL security plus Code Quality
+    fallbacks: [gitleaks-secret-scan]
+  - mask: "011"
+    code_security: false
+    secret_protection: true
+    code_quality: true
+    posture: Secret Protection plus Code Quality
+    fallbacks: [semgrep-sast, osv-scanner-sca]
+  - mask: "111"
+    code_security: true
+    secret_protection: true
+    code_quality: true
+    posture: Full paid mode
+    fallbacks: []
+
+profiles:
+  - id: public-free-standalone
+    name: Public OSS, no paid add-ons
+    doc: docs/01-public-oss-free.md
+    selectors:
+      visibility: [public]
+      base_plan: [free, pro, team, enterprise-cloud]
+    entitlements: { code_security: false, secret_protection: false, code_quality: false }
+    entitlement_mask: "000"
+    controls:
+      codeql_mode: default
+      code_quality_ai: disabled
+      coverage_mode: gated
+      runner_mode: github-hosted-standard
+      governance_mode: solo-agent
+      enforcement: active
+      release_provenance: attestations
+    cost:
+      fixed_usd: 0
+      metered_lines: []
+      product_facts: [github-actions-public-standard, github-attestations-public]
+    rationale: >-
+      On a public repository CodeQL, secret scanning, dependency review and
+      artifact attestations are free on every plan, and standard runners are
+      unmetered. The add-ons buy nothing here.
+
+  - id: private-free-max
+    name: Private, no paid add-ons
+    doc: docs/02-private-free.md
+    selectors:
+      visibility: [private, internal]
+      base_plan: [free, pro, team]
+    entitlements: { code_security: false, secret_protection: false, code_quality: false }
+    entitlement_mask: "000"
+    controls:
+      codeql_mode: none
+      code_quality_ai: disabled
+      coverage_mode: gated
+      runner_mode: self-hosted-persistent
+      governance_mode: solo-agent
+      enforcement: active
+      release_provenance: checksums
+    cost:
+      fixed_usd: 0
+      metered_lines: [actions-minutes]
+      product_facts: [github-actions-private-team, github-attestations-private]
+    rationale: >-
+      Private CodeQL, SARIF upload, native secret scanning and dependency review
+      all require add-ons, and attestations require Enterprise Cloud. This
+      profile is the honest zero-cost subset: OSS scanners, repository-native
+      tests, checksummed releases.
+
+  - id: public-enterprise-max
+    name: Public OSS under Enterprise governance
+    doc: docs/17-nddev-tier.md
+    selectors:
+      visibility: [public]
+      base_plan: [enterprise-cloud]
+    entitlements: { code_security: true, secret_protection: true, code_quality: true }
+    entitlement_mask: "111"
+    controls:
+      codeql_mode: default
+      code_quality_ai: disabled
+      coverage_mode: gated
+      runner_mode: github-hosted-standard
+      governance_mode: solo-agent
+      enforcement: active
+      release_provenance: attestations
+    cost:
+      fixed_usd: 0
+      metered_lines: [ai-credits]
+      product_facts: [github-actions-public-standard, github-code-quality-transition]
+    rationale: >-
+      Everything public-free provides, plus enterprise rulesets and security
+      overview. Code Quality applies here, but its public per-committer rate is
+      disputed between GitHub's own sources, so no cost is compiled for it —
+      see the fact ledger.
+
+  - id: enterprise-full-private-fixed80
+    name: NDDev estate — full paid private mode at a fixed $80/month
+    doc: docs/17-nddev-tier.md
+    selectors:
+      visibility: [private, internal]
+      base_plan: [enterprise-cloud]
+    entitlements: { code_security: true, secret_protection: true, code_quality: true }
+    entitlement_mask: "111"
+    controls:
+      codeql_mode: default
+      code_quality_ai: disabled
+      coverage_mode: gated
+      runner_mode: self-hosted-persistent
+      governance_mode: solo-agent
+      enforcement: active
+      release_provenance: attestations
+    cost:
+      fixed_usd: 80
+      fixed_lines:
+        - { line: Enterprise Cloud, usd: 21 }
+        - { line: Code Security, usd: 30 }
+        - { line: Secret Protection, usd: 19 }
+        - { line: Code Quality, usd: 10 }
+      metered_lines: [actions-minutes, actions-storage, ai-credits]
+      product_facts: [github-actions-private-ghec, github-attestations-private, github-code-quality-transition]
+      guards:
+        allow_ai_credits: false
+        allow_actions_overage: false
+        active_committers: 1
+    rationale: >-
+      The four licences are billed once per active committer, so the estate pays
+      the same whether one repository or fifty are enabled. Every metered line
+      is driven to zero by a $0 stop-usage budget. The fixed total holds only at
+      one active committer: a second adds $59 before anyone writes a workflow.

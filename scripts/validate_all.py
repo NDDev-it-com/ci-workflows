@@ -14,6 +14,7 @@ Checks:
   - merge_queue / merge_group trigger compatibility
   - ruleset JSON shape
   - capability catalog schema
+  - operating-profile model
   - generated docs drift
 """
 
@@ -42,6 +43,7 @@ import check_skills
 import check_workflow_contracts
 import generate_docs
 import validate_catalog
+import validate_profiles
 import validate_product_facts
 import validate_runtime_coverage
 
@@ -63,6 +65,7 @@ CHECKS = [
     ("rulesets", check_rulesets.check),
     ("catalog", validate_catalog.check),
     ("product-facts", validate_product_facts.check),
+    ("profiles", validate_profiles.check),
     ("runtime-coverage", validate_runtime_coverage.check),
     ("skills", check_skills.check),
     ("generated-docs", generate_docs.check),

@@ -139,15 +139,18 @@ protected less. Re-evaluate that reasoning the moment a second committer joins.
 <a id="cost-envelope"></a>
 ## The $80/month envelope
 
-Unit prices read from the billing API on 2026-08-01, at one active committer:
+This estate is the `enterprise-full-private-fixed80` profile. The four fixed
+lines, its guards and every other mode are declared in `catalog/profiles.yml`
+and rendered to
+[the generated profile matrix](generated/profile-matrix.md) — read the amounts
+there, not here. `scripts/validate_profiles.py` checks that the itemised lines
+sum to the declared total and that a fixed-cost profile cannot permit AI credits
+or Actions overage, so the two cannot drift apart.
 
-| Line | Rate | Monthly |
-| --- | --- | --- |
-| Enterprise Cloud | $21.00 / user | $21.00 |
-| Code Security | $30.00 / active committer | $30.00 |
-| Secret Protection | $19.00 / active committer | $19.00 |
-| Code Quality | $10.00 / active committer | $10.00 |
-| **Fixed total** | | **$80.00** |
+Confirmed against the enterprise licensing page on 2026-08-10: 1 Enterprise
+Cloud licence, 2 Advanced Security licences (Secret Protection + Code Security)
+and 1 Code Quality licence, billed at $21 + $49 + $10 = **$80.00**, due
+1 September.
 
 Everything else is metered and deliberately driven to zero:
 

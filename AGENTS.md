@@ -25,6 +25,16 @@ repositories pin by full commit SHA. Docs under `docs/` are human mirrors;
   correcting the fact — bumping the dates alone is precisely what this validator
   exists to prevent. Spread each refreshed fact's new expiry by how fast its
   source actually moves.
+- `catalog/profiles.yml` is the machine-readable **mode model**: independent axes
+  (visibility, base plan, the three add-on entitlements, and the operational
+  controls), all eight C/S/Q combinations, and the four operating profiles
+  including the estate's fixed-$80 one. `scripts/validate_profiles.py` checks a
+  profile against the capability and product-fact catalogs, that itemised fixed
+  lines sum to the declared total, and that a fixed-cost profile cannot permit AI
+  credits or Actions overage. `docs/generated/profile-matrix.md` is rendered from
+  it. **Tier prose may reference a profile; it may not restate one** — the three
+  tiers in `docs/00` are a reading aid, and the drift they hid is why this file
+  exists.
 - `catalog/runtime-coverage.yml` is the honest runtime-evidence ledger for every
   reusable workflow (`runtime-proven` needs a repo-scoped `…/actions/runs/<id>`
   URL **and** a `proven_digest` = sha256 of the workflow file, which
