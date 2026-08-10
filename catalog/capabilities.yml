@@ -1417,7 +1417,6 @@ capabilities:
     last_verified: "2026-07-08"
     sources:
       - "https://github.com/hadolint/hadolint"
-      - "https://github.com/hadolint/hadolint-action"
 
   - id: iac-scan-checkov
     name: IaC scan (Checkov)
