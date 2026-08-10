@@ -4,6 +4,15 @@
 
 ### Fixed
 
+- **The Rust CodeQL claim was too strong.** `docs/17` said Rust "cannot be
+  CodeQL-scanned this way at all" because the default-setup REST enum rejects
+  it. GitHub's changelog is clear that Rust left public preview and is
+  **generally available for default setup** since October 2025, so the enum is
+  this account's surface lagging the product, not a product limitation.
+  Re-verified 2026-08-10: the enum still rejects `rust` and `GET` does not offer
+  it on the three repositories here that contain Rust. Recorded as pending and
+  retryable rather than impossible.
+
 - **Resolution was leaking capabilities across entitlements.** `private_paid`
   is the Advanced Security tier column, so it marks CodeQL, dependency review
   and native secret scanning `available` for the whole tier. The resolver read
