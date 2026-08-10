@@ -4,6 +4,24 @@
 
 ### Changed
 
+- **`hadolint-ci.yml` now runs a checksum-verified hadolint binary instead of
+  `hadolint/hadolint-action`.** The action is a Docker *container action*, and
+  the runner starts those itself with a hardcoded `-v /var/run/docker.sock`. A
+  self-hosted runner on rootless Docker has no readable socket there, so the job
+  failed with `permission denied while trying to connect to the docker API` —
+  under this workflow's own `runner: amsterdam` default, which made it broken by
+  default for self-hosted callers. No caller-side setting could fix it, because
+  the runner and not the workflow chooses that mount. hadolint now downloads
+  like actionlint and shellcheck already do: pinned version, SHA256 verified
+  against the upstream `checksums.sha256`, installed into `RUNNER_TEMP/bin`
+  rather than `/usr/local/bin`. Two new optional inputs, `hadolint_version` and
+  `hadolint_sha256`, default to `2.15.1` and its published digest. Behaviour is
+  otherwise unchanged: `recursive` performs the same `**/<dockerfile>`
+  expansion, `ignore` still accepts comma- or space-separated codes, and
+  `failure_threshold` maps to `--failure-threshold` as before. A runner-contract
+  step now fails fast when the runner is not Linux X64, since the pinned digest
+  covers only that binary.
+
 - **`public-codeql.yml` now provisions the repository Go toolchain for Go
   analysis.** The language matrix conditionally runs the digest-pinned
   `actions/setup-go` against `go.mod` with cache writes disabled, so persistent

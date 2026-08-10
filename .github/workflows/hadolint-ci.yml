@@ -1,6 +1,17 @@
 name: hadolint-ci
 
 # Reusable Dockerfile linter (hadolint) for BOTH tiers. Free everywhere.
+#
+# hadolint runs from a checksum-verified release binary rather than from
+# hadolint/hadolint-action. That action is a Docker *container action*, and the
+# runner starts container actions itself with a hardcoded
+# `-v /var/run/docker.sock`. A self-hosted runner on rootless Docker has its
+# socket at /run/user/<uid>/docker.sock and cannot read the classic path, so the
+# container action dies with "permission denied while trying to connect to the
+# docker API" — on this workflow's own default runner. No caller-side setting
+# can fix that, because the mount is chosen by the runner and not by the
+# workflow. A `docker run` issued from an ordinary `run:` step is unaffected,
+# which is why secret-scan's gitleaks container still works on the fleet.
 
 on:
   workflow_call:
@@ -23,6 +34,14 @@ on:
         description: 'Comma/space-separated rule codes to ignore, e.g. "DL3008 DL3059".'
         type: string
         default: ''
+      hadolint_version:
+        description: 'hadolint release version to download (without a leading v).'
+        type: string
+        default: '2.15.1'
+      hadolint_sha256:
+        description: 'SHA256 of hadolint-linux-x86_64 from the upstream checksums.sha256.'
+        type: string
+        default: 'c7187db94eeeeca956519a6af171adc31453941a1e777961f6e680f697c8c507'
       timeout_minutes:
         type: number
         default: 10
@@ -37,15 +56,100 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Validate runner contract
+        shell: bash
+        env:
+          HADOLINT_RUNNER_OS: ${{ runner.os }}
+          HADOLINT_RUNNER_ARCH: ${{ runner.arch }}
+        run: |
+          set -euo pipefail
+          python3 -I <<'PY'
+          import os
+          import sys
+
+          def fail(message):
+              print(f"hadolint runner contract: {message}", file=sys.stderr)
+              raise SystemExit(1)
+
+          if os.environ["HADOLINT_RUNNER_OS"] != "Linux":
+              fail(
+                  "this workflow downloads the linux x86_64 hadolint binary; "
+                  "the runner must be Linux X64"
+              )
+          if os.environ["HADOLINT_RUNNER_ARCH"] != "X64":
+              fail(
+                  "the pinned hadolint_sha256 covers the linux x86_64 binary "
+                  "only; the runner must be Linux X64"
+              )
+          print("runner contract validated: Linux X64")
+          PY
+
+      - name: Isolate global Git config
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          isolated_config="$RUNNER_TEMP/nddev-ci-global.gitconfig"
+          : > "$isolated_config"
+          printf 'GIT_CONFIG_GLOBAL=%s\n' "$isolated_config" >> "$GITHUB_ENV"
+
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
 
-      - name: hadolint
-        uses: hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5  # v3.3.0
-        with:
-          dockerfile: ${{ inputs.dockerfile }}
-          recursive: ${{ inputs.recursive }}
-          failure-threshold: ${{ inputs.failure_threshold }}
-          ignore: ${{ inputs.ignore }}
+      - name: Download hadolint (pinned + checksum-verified)
+        shell: bash
+        env:
+          HADOLINT_VERSION: ${{ inputs.hadolint_version }}
+          HADOLINT_SHA256: ${{ inputs.hadolint_sha256 }}
+        run: |
+          set -euo pipefail
+          # Download into RUNNER_TEMP rather than /tmp: the fleet runs several
+          # runner instances under one uid, and a shared /tmp filename is a
+          # cross-job race.
+          curl -fsSL -o "${RUNNER_TEMP}/hadolint" \
+            "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-linux-x86_64"
+          echo "${HADOLINT_SHA256}  ${RUNNER_TEMP}/hadolint" | sha256sum -c -
+          # Install into a runner-writable directory rather than /usr/local/bin:
+          # GitHub-hosted runners let the job user write there, self-hosted ones
+          # normally do not, and a correctly isolated self-hosted runner must not.
+          mkdir -p "${RUNNER_TEMP}/bin"
+          install -m 0755 "${RUNNER_TEMP}/hadolint" "${RUNNER_TEMP}/bin/hadolint"
+          echo "${RUNNER_TEMP}/bin" >> "$GITHUB_PATH"
+          "${RUNNER_TEMP}/bin/hadolint" --version
+
+      - name: Run hadolint
+        shell: bash
+        env:
+          HADOLINT_DOCKERFILE: ${{ inputs.dockerfile }}
+          HADOLINT_RECURSIVE: ${{ inputs.recursive }}
+          HADOLINT_FAILURE_THRESHOLD: ${{ inputs.failure_threshold }}
+          HADOLINT_IGNORE: ${{ inputs.ignore }}
+        run: |
+          set -euo pipefail
+          args=( --format tty --failure-threshold "$HADOLINT_FAILURE_THRESHOLD" )
+          if [ -n "$HADOLINT_IGNORE" ]; then
+            # The input has always documented both the comma and the space
+            # separated spellings, so accept either.
+            IFS=', ' read -r -a ignore_codes <<< "$HADOLINT_IGNORE"
+            for code in "${ignore_codes[@]}"; do
+              if [ -n "$code" ]; then
+                args+=( --ignore "$code" )
+              fi
+            done
+          fi
+          if [ "$HADOLINT_RECURSIVE" = "true" ]; then
+            # The same expansion the container action performed: every file
+            # whose name matches the dockerfile input, at any depth.
+            shopt -s globstar nullglob
+            targets=( **/"$HADOLINT_DOCKERFILE" )
+            if [ "${#targets[@]}" -eq 0 ]; then
+              echo "recursive lint found no file named '${HADOLINT_DOCKERFILE}' in the checkout" >&2
+              exit 1
+            fi
+          else
+            targets=( "$HADOLINT_DOCKERFILE" )
+          fi
+          printf 'linting %d Dockerfile(s)\n' "${#targets[@]}"
+          hadolint "${args[@]}" -- "${targets[@]}"
