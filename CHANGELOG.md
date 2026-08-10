@@ -33,7 +33,9 @@
 
   Tier prose now references profiles instead of restating them, and `docs/00`
   says outright that where it and the generated matrix disagree, the matrix
-  wins — it is validated and the prose is not.
+  wins — it is validated and the prose is not. `nddev-repo-orientation` and
+  `nddev-change-flow` carry the new catalog and the failure it produces, so the
+  golden path teaches it rather than leaving it to be discovered.
 
 - **`catalog/runtime-coverage.yml` records `criticality`, and the ledger now
   carries a proof obligation** (schema `nddev-ci-runtime-contract-coverage/v2`).

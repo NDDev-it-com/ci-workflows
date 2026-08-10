@@ -78,6 +78,11 @@ Pick the right file:
   fails CI if a `SKILL.md` embeds a quota figure. Capabilities link facts via
   the optional `product_facts` field.
 - **`runtime-coverage.yml`** — the honesty ledger (see the next section).
+- **`profiles.yml`** — the operating-mode model. Change a mode here, never in a
+  tier doc: `validate_profiles.py` checks a profile against the capability and
+  fact catalogs, that itemised fixed cost lines sum to the declared total, and
+  that a fixed-cost profile cannot permit metered AI or compute spend. Adding a
+  mode means adding a profile, not a document.
 
 ## The runtime-coverage "static-only dance"
 
@@ -130,13 +135,15 @@ git diff --check
 `pinned-actions`, `permissions`, `workflow-contracts`, `harden-runner-contract`,
 `release-supply-chain`, `monorepo-routing`, `benchmark-contract`,
 `actionlint-contract`, `examples`, `docs-links`, `merge-group`, `rulesets`,
-`catalog`, `product-facts`, `runtime-coverage`, `skills`, `generated-docs`.
+`catalog`, `product-facts`, `profiles`, `runtime-coverage`, `skills`,
+`generated-docs`.
 
 ## Common failures → fix
 
 | Failure names… | Do |
 | --- | --- |
 | `generated-docs` drift | run `python3 scripts/generate_docs.py` and commit |
+| `profiles` failure | fix `catalog/profiles.yml`; the message names the rule (cost sum, plan gate, runner trust, missing entitlement combination) |
 | `skills` mirror drift / set mismatch | run `sync_skills.py`; update `EXPECTED_SKILLS` |
 | `catalog` unknown/missing path | fix `used_by` / `workflow` / `example` to a real file |
 | `runtime-coverage` digest mismatch | do the static-only dance above |

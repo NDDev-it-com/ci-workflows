@@ -46,7 +46,13 @@ CI drift check rejects hand edits). The catalog files:
 - `product-facts.yml` — the **only** home for volatile plan/price/quota facts;
   each fact is dated (`verified_at` / `expires_after`) and expires closed.
 - `runtime-coverage.yml` — the honesty ledger: whether each reusable workflow is
-  proven by a live run, stood in for by a validator, or not yet verified.
+  proven by a live run, stood in for by a validator, or not yet verified, and
+  what it is load-bearing for (`criticality`).
+- `profiles.yml` — the **operating-mode model**: visibility, base plan, the three
+  add-on entitlements and the operational controls as *independent* axes, every
+  combination of those entitlements, and the named profiles. The three tiers in
+  `docs/00` are a reading aid; this is the model. Tier prose may reference a
+  profile, never restate one.
 - `deprecations.yml` — deprecation records.
 - `schema/capability.schema.yaml` — the machine-readable capability schema.
 

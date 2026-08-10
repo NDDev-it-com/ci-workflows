@@ -311,7 +311,7 @@ rulesets-first model and a migration guide from classic branch protection.
 
 ```
 docs/       CI/CD encyclopedia (public/private tiers, security, supply chain, governance, AI)
-catalog/    machine-readable capability + tools + deprecations catalog
+catalog/    machine-readable capability + tools + deprecations + operating-profile catalog
 docs/generated/ catalog-derived matrices (do not edit by hand)
 .github/
   workflows/   reusable workflows (the product)
