@@ -12,5 +12,6 @@ jobs:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/kotlin-android-ci.yml@<sha>
     with:
+      runner: ubuntu-latest
       lint_command: './gradlew ktlintCheck detekt'
       build_command: './gradlew build'

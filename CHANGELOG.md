@@ -4,6 +4,17 @@
 
 ### Fixed
 
+- **Every example outside `examples/nddev/` now names its runner, and
+  `check_examples.py` enforces it.** 36 example jobs across 37 files inherited
+  `runner: amsterdam` from the reusable they call. These are copy-paste
+  templates: outside this estate the label never resolves and the job queues
+  forever; inside it, on a public repository, inheriting the default puts
+  untrusted fork-PR code on trusted private infrastructure. The default is a
+  property of the pinned commit, not of the caller, so the caller states it.
+  `check_workflow_contracts.py` already enforced this for this repository's own
+  self-calls; the rule now reaches the surface we publish to consumers.
+  `examples/nddev/` is exempt — it is estate-specific by name.
+
 - **`docs/16-code-quality.md` no longer claims Code Quality has no API.** It
   documents four REST endpoints (`GET`/`PATCH …/code-quality/setup`, findings
   list and detail) and the setup object's fields, so the product's state is

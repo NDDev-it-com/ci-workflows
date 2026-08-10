@@ -12,6 +12,7 @@ jobs:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/container-ci.yml@<sha>
     with:
+      runner: ubuntu-latest
       scan_type: fs
       scan_ref: '.'
       severity: 'CRITICAL,HIGH'

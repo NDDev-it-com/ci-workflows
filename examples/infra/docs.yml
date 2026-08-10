@@ -12,4 +12,5 @@ jobs:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/docs-ci.yml@<sha>
     with:
+      runner: ubuntu-latest
       docs_glob: 'docs/**/*.md'

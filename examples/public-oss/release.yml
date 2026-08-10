@@ -1,5 +1,10 @@
 # Tag-driven immutable release with SBOM + attestations (either tier).
 # Replace @<sha> with a pinned full commit SHA of ci-workflows.
+#
+# `runner: ubuntu-latest` is deliberate: these reusables default `runner` to a
+# private self-hosted label, and the default belongs to the pinned commit. A
+# public repository names its runner so a pin bump cannot move the release
+# build onto infrastructure the caller never chose.
 name: release
 on:
   push:
@@ -13,6 +18,7 @@ jobs:
     permissions: { contents: write, id-token: write, attestations: write, artifact-metadata: write }
     uses: NDDev-it-com/ci-workflows/.github/workflows/release-supply-chain.yml@<sha>
     with:
+      runner: ubuntu-latest
       version: ${{ github.ref_name }}
       package_name: my-repo
       archive_paths: "README.md LICENSE VERSION CHANGELOG.md src"

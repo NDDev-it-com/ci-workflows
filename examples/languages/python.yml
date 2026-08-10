@@ -12,6 +12,7 @@ jobs:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/python-ci.yml@<sha>
     with:
+      runner: ubuntu-latest
       python_version: '3.13'
       install_command: 'uv sync --frozen'
       test_command: 'uv run pytest'

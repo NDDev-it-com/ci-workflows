@@ -18,6 +18,36 @@ EXAMPLES_DIR = REPO_ROOT / "examples"
 USES_RE = re.compile(
     r"^NDDev-it-com/ci-workflows/\.github/workflows/[^@]+\.ya?ml@(<sha>|[0-9a-f]{40})$"
 )
+REUSABLE_RE = re.compile(
+    r"^NDDev-it-com/ci-workflows/\.github/workflows/([^@]+\.ya?ml)@"
+)
+# Runner labels every GitHub account can resolve. Anything else is somebody's
+# private fleet.
+HOSTED_RUNNER_PREFIXES = ("ubuntu-", "macos-", "windows-")
+# `examples/nddev/` is estate-specific by name and may name the NDDev fleet.
+# Every other example is copy-paste material for a repository we do not own.
+ESTATE_EXAMPLE_PREFIX = "examples/nddev/"
+
+
+def _reusable_runner_default(uses: str) -> str | None:
+    """The `runner` default of a locally-defined reusable, or None.
+
+    Returns None when the reference is not a local reusable or exposes no
+    `runner` input — in both cases the caller has nothing to choose.
+    """
+    match = REUSABLE_RE.match(uses)
+    if not match:
+        return None
+    path = REPO_ROOT / ".github" / "workflows" / match.group(1)
+    if not path.is_file():
+        return None
+    on_block = get_on(load_yaml(path))
+    call = on_block.get("workflow_call") if isinstance(on_block, dict) else None
+    inputs = (call or {}).get("inputs") if isinstance(call, dict) else None
+    runner = (inputs or {}).get("runner") if isinstance(inputs, dict) else None
+    if not isinstance(runner, dict):
+        return None
+    return str(runner.get("default", ""))
 
 
 def _events(doc: dict[str, Any]) -> set[str]:
@@ -59,6 +89,23 @@ def check() -> list[str]:
             uses = str(job.get("uses", ""))
             if uses and not USES_RE.match(uses):
                 problems.append(f"{rel}: job `{job_id}` reusable ref is not @<sha> or full SHA: {uses}")
+            # An example that omits `runner` inherits whatever the pinned
+            # commit defaults to. Most reusables here default to the NDDev
+            # self-hosted label, so a copied example either fails on a label
+            # the copier does not own, or — worse, when the copier is inside
+            # this estate and the repository is public — routes untrusted fork
+            # code onto trusted infrastructure. The default is a property of
+            # the pin, not of the example, so the example must state it.
+            if not rel.startswith(ESTATE_EXAMPLE_PREFIX):
+                default = _reusable_runner_default(uses)
+                if default is not None and not default.startswith(HOSTED_RUNNER_PREFIXES):
+                    with_values = job.get("with")
+                    if not isinstance(with_values, dict) or "runner" not in with_values:
+                        problems.append(
+                            f"{rel}: job `{job_id}` must set `runner` explicitly — "
+                            f"the reusable defaults to {default!r}, which is not a "
+                            "hosted runner an arbitrary consumer can resolve"
+                        )
         if rel.endswith("scorecard.yml") and events != {"push", "schedule"}:
             problems.append(f"{rel}: Scorecard example must use only push + schedule")
         if rel == "examples/private-free/security.yml":

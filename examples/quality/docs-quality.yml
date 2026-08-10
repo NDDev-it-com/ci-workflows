@@ -11,3 +11,5 @@ jobs:
   docs-quality:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/docs-quality.yml@<sha>
+    with:
+      runner: ubuntu-latest
