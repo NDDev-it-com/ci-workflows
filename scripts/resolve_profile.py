@@ -42,11 +42,19 @@ def _load(path: Path) -> Any:
     return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
+# `private_paid` in the catalog means "private repository on a paid **Advanced
+# Security** plan". Code Quality is a separate product on its own licence and
+# does not put a repository in that tier: a private repo holding only Code
+# Quality still cannot run CodeQL, dependency review or native secret scanning.
+GHAS_ENTITLEMENTS = ("code_security", "secret_protection")
+
+
 def tier_column(visibility: str, entitlements: dict[str, bool]) -> str:
     """The capability column that governs this repository."""
     if visibility == "public":
         return "public_oss"
-    return "private_paid" if any(entitlements.get(k) for k in ENTITLEMENT_KEYS) else "private_free"
+    return ("private_paid" if any(entitlements.get(k) for k in GHAS_ENTITLEMENTS)
+            else "private_free")
 
 
 def _unlock_map(profiles_doc: dict[str, Any]) -> dict[str, str]:
@@ -75,12 +83,23 @@ def resolve(profiles_doc: dict[str, Any], capabilities: list[dict[str, Any]],
         cid = str(cap.get("id"))
         value = str(cap.get(column))
         gate = unlocks.get(cid)
-        # A capability the column prices as paid is only yours if the
-        # entitlement that unlocks it is actually held. This is what separates
-        # two profiles that share a tier column.
-        if value == "paid":
-            entry = (cid, cap.get("workflow"))
+        entry = (cid, cap.get("workflow"))
+        # Where an entitlement is actually required, hold the capability to it.
+        # Two distinct cases, and conflating them is wrong in both directions:
+        #   * `paid` in any column means the capability costs an add-on, so it
+        #     needs the entitlement that unlocks it (Code Quality on public).
+        #   * `private_paid` is the Advanced Security tier column, so its
+        #     `available` presupposes an add-on — but not necessarily the same
+        #     one. Secret Protection does not unlock CodeQL, and Code Security
+        #     does not unlock native secret scanning.
+        # A `free` value never needs a gate: CodeQL and secret scanning are free
+        # on public repositories no matter which add-ons are held.
+        needs_entitlement = value == "paid" or (column == "private_paid" and gate is not None)
+        if needs_entitlement:
             (included if gate and entitlements.get(gate) else excluded).append(entry)
+        elif value == "paid":
+            # Priced as paid with no declared unlock: not resolvable as included.
+            excluded.append(entry)
         elif value in INCLUDED:
             included.append((cid, cap.get("workflow")))
         elif value in CONDITIONAL:
@@ -198,6 +217,51 @@ def check() -> list[str]:
     free = resolved.get("private-free-max")
     if free and not free["excluded"]:
         problems.append("resolve-profile: private-free-max excludes nothing, which cannot be right")
+    # Cross-entitlement leakage: holding one add-on must not resolve another's
+    # capabilities. `private_paid` marks the whole Advanced Security tier
+    # `available`, so a naive column read hands CodeQL to a repository that only
+    # bought Secret Protection. Probed with synthetic shapes because no declared
+    # profile occupies these masks.
+    def probe(mask: str, ents: dict[str, bool]) -> set[str]:
+        r = resolve(profiles_doc, capabilities,
+                    {"id": f"probe-{mask}", "name": "probe",
+                     "selectors": {"visibility": ["private"], "base_plan": ["team"]},
+                     "entitlements": ents, "entitlement_mask": mask,
+                     "controls": {}, "cost": {}})
+        return {x["capability"] for x in r["included"]}
+
+    sp_only = probe("010", {"code_security": False, "secret_protection": True,
+                            "code_quality": False})
+    if "codeql-code-scanning" in sp_only or "dependency-review" in sp_only:
+        problems.append(
+            "resolve-profile: Secret Protection alone resolves Code Security "
+            "capabilities — the private_paid column is being read without its "
+            "per-entitlement gate"
+        )
+    if "native-secret-scanning" not in sp_only:
+        problems.append("resolve-profile: Secret Protection does not resolve native secret scanning")
+    cq_only = probe("001", {"code_security": False, "secret_protection": False,
+                            "code_quality": True})
+    leaked = {"codeql-code-scanning", "dependency-review", "native-secret-scanning"} & cq_only
+    if leaked:
+        problems.append(
+            f"resolve-profile: Code Quality alone resolves {sorted(leaked)} — "
+            "Code Quality is a separate licence and unlocks none of the Advanced "
+            "Security surface"
+        )
+    if "github-code-quality" not in cq_only:
+        problems.append("resolve-profile: Code Quality does not resolve its own capability")
+    # A public repository must keep the free surface regardless of add-ons.
+    pub = resolved.get("public-free-standalone")
+    if pub:
+        free_on_public = {x["capability"] for x in pub["included"]}
+        for cap in ("codeql-code-scanning", "native-secret-scanning"):
+            if cap not in free_on_public:
+                problems.append(
+                    f"resolve-profile: {cap} is free on public repositories but the "
+                    "zero-entitlement public profile excludes it"
+                )
+
     # Two profiles sharing a tier column must still differ, or entitlements are
     # not actually influencing resolution.
     a, b = resolved.get("public-free-standalone"), resolved.get("public-enterprise-max")

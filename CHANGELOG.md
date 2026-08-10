@@ -2,6 +2,31 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **Resolution was leaking capabilities across entitlements.** `private_paid`
+  is the Advanced Security tier column, so it marks CodeQL, dependency review
+  and native secret scanning `available` for the whole tier. The resolver read
+  that column whenever *any* add-on was held and applied its entitlement gate
+  only to values priced `paid`, so a private repository holding just Secret
+  Protection resolved to "you can run CodeQL", and one holding just Code Quality
+  resolved to the entire Advanced Security surface. Verified against GitHub's
+  own product split: CodeQL code scanning and dependency review on private
+  repositories require **Code Security** specifically, and Code Quality is a
+  separate licence that unlocks none of it.
+
+  Two corrections: the tier column now keys off the two Advanced Security
+  products rather than any add-on, and the entitlement gate applies to every
+  `private_paid` capability that names an unlock, not only to `paid` ones. A
+  `free` value is never gated, so CodeQL and secret scanning stay available on
+  public repositories regardless of add-ons — the first attempt at this fix
+  removed them, which the public-profile invariant now prevents.
+
+  Four probe-based invariants join `profile-resolution`: Secret Protection alone
+  must not resolve Code Security capabilities and must resolve its own; Code
+  Quality alone must resolve nothing from Advanced Security; and the
+  zero-entitlement public profile must keep the free surface.
+
 ### Added
 
 - **`scripts/resolve_profile.py` makes a mode selectable, not just declared.**
