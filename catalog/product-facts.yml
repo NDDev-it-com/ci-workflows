@@ -33,8 +33,8 @@ facts:
   overage: not-applicable-for-standard-public-runners
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-10-09'
   source_urls:
   - https://docs.github.com/en/billing/concepts/product-billing/github-actions
   - https://docs.github.com/en/actions/reference/runners/github-hosted-runners
@@ -61,8 +61,8 @@ facts:
   overage: blocked without valid payment method; billed when enabled
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-10-09'
   source_urls:
   - https://docs.github.com/en/billing/concepts/product-billing/github-actions
   notes: []
@@ -87,8 +87,8 @@ facts:
   overage: billed when enabled
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-10-09'
   source_urls:
   - https://docs.github.com/en/billing/concepts/product-billing/github-actions
   notes: []
@@ -113,8 +113,8 @@ facts:
   overage: blocked without valid payment method; billed when enabled
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-10-09'
   source_urls:
   - https://docs.github.com/en/billing/concepts/product-billing/github-actions
   notes: []
@@ -140,8 +140,8 @@ facts:
   overage: billed when enabled
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-10-09'
   source_urls:
   - https://docs.github.com/en/billing/concepts/product-billing/github-actions
   notes: []
@@ -168,8 +168,8 @@ facts:
   overage: billed under enterprise account
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-10-09'
   source_urls:
   - https://docs.github.com/en/billing/concepts/product-billing/github-actions
   notes: []
@@ -197,8 +197,8 @@ facts:
   overage: metered from first minute
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-10-09'
   source_urls:
   - https://docs.github.com/en/billing/concepts/product-billing/github-actions
   notes: []
@@ -225,11 +225,12 @@ facts:
   overage: infrastructure-provider costs apply
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-10-09'
   source_urls:
   - https://docs.github.com/en/billing/concepts/product-billing/github-actions
   - https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/apply-labels
+  - https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/manage-access
   notes:
   - Current official billing documentation says Actions usage is free for self-hosted runners.
 - id: github-attestations-public
@@ -256,8 +257,8 @@ facts:
   overage: not-stated
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-11-06'
   source_urls:
   - https://docs.github.com/en/code-security/concepts/supply-chain-security/supply-chain-security
   notes: []
@@ -283,11 +284,12 @@ facts:
   overage: not-applicable
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-11-06'
   source_urls:
   - https://docs.github.com/en/code-security/concepts/supply-chain-security/supply-chain-security
   - https://docs.github.com/en/actions/concepts/security/artifact-attestations
+  - https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations
   notes:
   - 'Backs catalog capabilities artifact-attestations, slsa-build-provenance, release-supply-chain (private-free release uses release-supply-chain-free.yml).'
 - id: github-dependency-review-public
@@ -310,8 +312,8 @@ facts:
   overage: not-applicable
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-11-06'
   source_urls:
   - https://docs.github.com/en/code-security/concepts/supply-chain-security/supply-chain-security
   notes: []
@@ -337,8 +339,8 @@ facts:
   overage: license-dependent
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-11-06'
   source_urls:
   - https://docs.github.com/en/code-security/concepts/supply-chain-security/supply-chain-security
   notes: []
@@ -363,8 +365,8 @@ facts:
   overage: not-applicable
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-11-06'
   source_urls:
   - https://docs.github.com/en/code-security/concepts/supply-chain-security/supply-chain-security
   notes: []
@@ -388,8 +390,8 @@ facts:
   overage: not-applicable
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-11-06'
   source_urls:
   - https://docs.github.com/en/code-security/reference/secret-security/supported-secret-scanning-patterns
   notes: []
@@ -416,8 +418,8 @@ facts:
   overage: license-dependent
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-11-06'
   source_urls:
   - https://docs.github.com/en/code-security/reference/secret-security/supported-secret-scanning-patterns
   notes: []
@@ -445,8 +447,8 @@ facts:
   overage: not-applicable
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-11-06'
   source_urls:
   - https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments
   notes: []
@@ -474,8 +476,8 @@ facts:
   overage: not-applicable
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-11-06'
   source_urls:
   - https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments
   notes: []
@@ -499,7 +501,12 @@ facts:
   conditions:
   - Public preview before 2026-07-20
   - GA and paid from 2026-07-20
-  - Repository visibility does not discount the licence; public repositories bill the same per-active-committer rate as private
+  - 'DISPUTED — the public per-committer rate is not settled between GitHub''s own sources. The product
+    page states "Public repositories: $0 per committer + usage-based billing for AI-powered work"; the
+    billing documentation states only that "each active committer uses one Code Quality license", with
+    no visibility exemption and no rate. Do not compile a public per-committer cost from this fact:
+    treat it as account-observed until NDDev Licensing/Billing or an invoice resolves it. The $10
+    private rate and the Team/Enterprise plan gate are undisputed.'
   - Active committers are counted once per organization across every repository with Code Quality enabled
   - A committer is active if one of their commits was pushed in the last 90 days, regardless of authoring date
   - Bot accounts are not billed
@@ -545,8 +552,8 @@ facts:
   overage: purchase additional compute or use own runners
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-09-11'
   source_urls:
   - https://about.gitlab.com/pricing/
   notes: []
@@ -567,15 +574,21 @@ facts:
   conditions:
   - Qualification and acceptance required
   - Project must remain eligible under program rules
+  - Membership must be renewed annually or the account is downgraded
+  - The program page states the compute-minute grant alongside an annual renewal cycle without naming
+    the accrual period; treat the monthly reading as the Ultimate-tier allotment, not a program claim
   payment_method: not-required-after-approval
   overage: program/plan dependent
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-09-11'
   source_urls:
   - https://about.gitlab.com/solutions/open-source/join/
-  notes: []
+  notes:
+  - 'Re-verified 2026-08-10: grant is GitLab Ultimate (self-managed or SaaS) including 50,000 compute
+    minutes, gated on OSI-approved licence, public visibility and non-profit status, applied for
+    through the Customers Portal and renewed annually.'
 - id: circleci-free
   provider: CircleCI
   product: Free plan
@@ -599,8 +612,8 @@ facts:
   overage: upgrade or wait for reset
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-09-18'
   source_urls:
   - https://circleci.com/pricing/
   notes: []
@@ -625,8 +638,8 @@ facts:
   overage: plan dependent
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-09-18'
   source_urls:
   - https://circleci.com/open-source/
   notes: []
@@ -653,8 +666,8 @@ facts:
   overage: private repositories require trial or paid plan
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-09-25'
   source_urls:
   - https://www.appveyor.com/pricing/
   notes: []
@@ -682,10 +695,10 @@ facts:
   overage: upgrade/add payment
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-09-25'
   source_urls:
-  - https://semaphoreci.com/pricing
+  - https://semaphore.io/pricing
   notes: []
 - id: semaphore-community
   provider: Semaphore
@@ -709,10 +722,10 @@ facts:
   overage: infrastructure costs apply
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-09-25'
   source_urls:
-  - https://semaphoreci.com/community
+  - https://semaphore.io/community
   notes: []
 - id: azure-pipelines-private
   provider: Microsoft Azure DevOps
@@ -732,15 +745,21 @@ facts:
   - One Microsoft-hosted parallel job
   - 60-minute job limit
   - One self-hosted parallel job without hosted minute limit
+  - The Microsoft-hosted free tier is not automatic; it must be enabled by linking the organization to
+    a valid Azure subscription. The self-hosted free tier is granted automatically.
+  - Public projects are retired and convert to private in 2027, after which they receive the same
+    private-project allocation
   payment_method: Azure subscription/organization setup may be required
   overage: purchase parallel jobs
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-09-25'
   source_urls:
   - https://learn.microsoft.com/en-us/azure/devops/pipelines/licensing/concurrent-jobs
-  notes: []
+  notes:
+  - 'Re-verified 2026-08-10: 1,800 minutes/month, one hosted parallel job, 60-minute job limit,
+    360 minutes per job on the paid tier with no monthly limit.'
 - id: azure-pipelines-public-retirement
   provider: Microsoft Azure DevOps
   product: Azure DevOps public projects
@@ -791,8 +810,8 @@ facts:
   overage: purchase build minutes or upgrade
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-09-25'
   source_urls:
   - https://www.atlassian.com/software/bitbucket/pricing
   notes: []
@@ -821,8 +840,8 @@ facts:
   overage: upgrade or self-host
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-09-25'
   source_urls:
   - https://buildkite.com/pricing/
   notes: []
@@ -849,8 +868,8 @@ facts:
   overage: metered Google Cloud billing
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-10-16'
   source_urls:
   - https://cloud.google.com/build/pricing
   notes: []
@@ -877,8 +896,8 @@ facts:
   overage: metered AWS billing
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-10-16'
   source_urls:
   - https://aws.amazon.com/codebuild/pricing/
   notes: []
@@ -905,8 +924,8 @@ facts:
   overage: upgrade
   status: vendor-verified
   source_authority: vendor
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-09-04'
   source_urls:
   - https://www.blacksmith.sh/pricing
   notes:
@@ -935,10 +954,10 @@ facts:
   overage: metered billing
   status: vendor-verified
   source_authority: vendor
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-09-04'
   source_urls:
-  - https://www.ubicloud.com/pricing
+  - https://www.ubicloud.com/use-cases/github-actions
   notes: []
 - id: buddy-free
   provider: Buddy
@@ -964,8 +983,8 @@ facts:
   overage: upgrade
   status: vendor-verified
   source_authority: vendor
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-09-04'
   source_urls:
   - https://buddy.works/pricing
   notes: []
@@ -992,10 +1011,11 @@ facts:
   overage: upgrade/purchase
   status: vendor-verified
   source_authority: vendor
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-09-04'
   source_urls:
   - https://www.harness.io/pricing
+  - https://developer.harness.io/docs/continuous-integration/get-started/ci-subscription-mgmt/
   notes: []
 - id: codemagic-personal
   provider: Codemagic
@@ -1019,8 +1039,8 @@ facts:
   overage: metered/upgrade
   status: vendor-verified
   source_authority: vendor
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-10-02'
   source_urls:
   - https://codemagic.io/pricing/
   notes: []
@@ -1046,8 +1066,8 @@ facts:
   overage: upgrade
   status: vendor-verified
   source_authority: vendor
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-10-02'
   source_urls:
   - https://appcircle.io/pricing
   notes: []
@@ -1074,8 +1094,8 @@ facts:
   overage: upgrade
   status: vendor-verified
   source_authority: vendor
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-10-02'
   source_urls:
   - https://bitrise.io/pricing
   notes: []
@@ -1100,8 +1120,8 @@ facts:
   overage: paid plan or renewed grant
   status: conditional
   source_authority: vendor
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-10-23'
   source_urls:
   - https://www.travis-ci.com/pricing/
   - https://docs.travis-ci.com/user/billing-overview/
@@ -1150,14 +1170,20 @@ facts:
     multipliers: {}
   conditions:
   - 3 build agents
-  - Unlimited build configurations and build time
+  - Capped at 100 build configurations and 10 pipelines, including archived ones; each additional
+    agent raises the configuration limit by 10
+  - Build time is unlimited
   - Operator supplies infrastructure and maintenance
   payment_method: not-required-for-license
   overage: additional agents/enterprise features may require license
   status: official
   source_authority: primary
-  verified_at: '2026-07-11'
-  expires_after: '2026-08-10'
+  verified_at: '2026-08-10'
+  expires_after: '2026-10-23'
   source_urls:
   - https://www.jetbrains.com/teamcity/buy/
-  notes: []
+  - https://www.jetbrains.com/help/teamcity/licensing-policy.html
+  notes:
+  - 'Corrected 2026-08-10: the fact previously claimed "unlimited build configurations". The licensing
+    policy caps free Professional at 100 build configurations and 10 pipelines; only build *time* is
+    unlimited. Unlimited configurations require Enterprise.'
