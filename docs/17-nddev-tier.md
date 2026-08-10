@@ -42,9 +42,16 @@ Two settings are deliberately **not** in it, and both decisions are load-bearing
 
   Four traps in the default-setup REST API, all learned by hitting them:
 
-  - **There is no `rust`.** The accepted set is `actions, c-cpp, csharp, go,
-    java-kotlin, javascript-typescript, python, ruby, swift`, so Rust code
-    cannot be CodeQL-scanned this way at all.
+  - **The REST enum has no `rust`, but the product does.** `PATCH` accepts only
+    `actions, c-cpp, csharp, go, java-kotlin, javascript-typescript, python,
+    ruby, swift`. Yet CodeQL Rust support left public preview and went
+    **generally available for default setup** in October 2025. Verified
+    2026-08-10 on this account: the enum rejects `rust`, and `GET` does not
+    offer it as available on `nddev-web`, `captcha` or `rldyour-chatgpt`,
+    all three of which contain Rust. So the gap is this account's API surface
+    lagging the documented GA, not a product limitation — treat Rust coverage as
+    **pending and retryable**, not impossible, and re-probe the enum before
+    reaching for a substitute.
   - **`GET` returns *available* languages when `not-configured` and *configured*
     languages when `configured`**, and it echoes the legacy aliases `javascript`
     and `typescript` which the `PATCH` enum then rejects. Filter the read-back
