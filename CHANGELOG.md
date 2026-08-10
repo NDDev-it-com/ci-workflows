@@ -2,7 +2,36 @@
 
 ## [Unreleased]
 
+### Added
+
+- **`catalog/runtime-coverage.yml` records `criticality`, and the ledger now
+  carries a proof obligation** (schema `nddev-ci-runtime-contract-coverage/v2`).
+  It policed whether a *claimed* status was honest but never required a claim,
+  so `unverified` — the default — was an unlimited resting state and `ci-gate`
+  stayed green over 42 of 46 unproven reusables. Every record now declares
+  `release`, `security-blocking`, `required-gate` or `supporting`, and for the
+  first two `unverified` is rejected: prove it, mark `static-only` behind an
+  executable validator, or take a waiver with an owner and an expiry.
+  Classified all 46 — 3 release, 10 security-blocking, 6 required-gate,
+  27 supporting. `release-supply-chain.yml` and `release-supply-chain-free.yml`
+  became `static-only` behind `check_release_supply_chain.py`, which runs real
+  fixtures; the nine security scanners with no executable stand-in took dated
+  waivers, staggered one per date from 2026-09-15 to 2027-01-15 so renewals
+  never land as one cliff.
+
+  Two properties stop this being ceremony: `PINNED_CRITICALITY` fixes the
+  blocking families so the obligation cannot be dodged by relabelling a record
+  `supporting`, and the waiver dates are spread. Both directions are covered by
+  new fixtures, and verified by hand: expired waiver, security workflow demoted
+  to `unverified`, `static-only` naming a missing validator, and the relabel
+  dodge each produce exactly one failure.
+
 ### Fixed
+
+- **`.claude/CLAUDE.md` named the wrong runtime-proven workflows.** It listed
+  `release-supply-chain.yml`, `actionlint.yml` and `zizmor-sarif.yml`; the
+  ledger's proven records are `public-dependency-review.yml` and
+  `public-scorecard-json.yml`.
 
 - **Every example outside `examples/nddev/` now names its runner, and
   `check_examples.py` enforces it.** 36 example jobs across 37 files inherited

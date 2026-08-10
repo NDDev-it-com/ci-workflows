@@ -33,6 +33,17 @@ repositories pin by full commit SHA. Docs under `docs/` are human mirrors;
   Editing any proven workflow fails the gate on the digest mismatch — re-run and
   re-record, or drop to `static-only`, until a fresh run re-proves it. Never
   upgrade to `runtime-proven` without an observed `workflow_call` run.
+  Every record also declares `criticality`: `release`, `security-blocking`,
+  `required-gate` or `supporting`. **For `release` and `security-blocking`,
+  `unverified` is rejected** — absence of evidence is a failure for the things
+  that gate a merge or ship a release, so those must be proven, `static-only`
+  behind a named executable validator, or `waived` with an owner and an
+  unexpired date. `supporting` may rest at `unverified` indefinitely; that is
+  the honest state for a benchmark helper. The classification of the blocking
+  families is pinned in `PINNED_CRITICALITY` so it cannot be quietly relabelled
+  to dodge the obligation, and waiver expiries are staggered so renewals never
+  land as one cliff. Adding a reusable workflow to a blocking family means
+  adding it to that pin too.
 - `docs/generated/*` is generated — never edit by hand. After a catalog,
   product-fact, or workflow change run `python3 scripts/generate_docs.py`; CI
   fails on drift.
