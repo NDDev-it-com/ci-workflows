@@ -19,6 +19,21 @@ Adoption is four decisions, in order. Getting them out of order is what produces
 the two failure shapes seen in practice: a repository that looks configured but
 still bills, and a repository that is routed to hardware its jobs cannot use.
 
+## Start by resolving the mode
+
+Do not choose a tier by reading prose. Resolve it:
+
+```bash
+python3 scripts/resolve_profile.py --visibility private --plan enterprise-cloud \
+    --code-security --secret-protection --code-quality
+```
+
+It returns the matching profile, its controls (CodeQL mode, runner class,
+enforcement, release provenance), the fixed and metered cost lines, and the
+capability/workflow set split into run / conditional / unavailable, with the
+free substitute for everything the mode does not entitle. Adopt that set; the
+sections below are how to wire it correctly.
+
 ## 1. Tier — from visibility *and* entitlements, never visibility alone
 
 Pick the tier doc first; it decides which reusables are even legal to call:

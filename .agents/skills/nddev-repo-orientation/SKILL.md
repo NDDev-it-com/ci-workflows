@@ -52,7 +52,11 @@ CI drift check rejects hand edits). The catalog files:
   add-on entitlements and the operational controls as *independent* axes, every
   combination of those entitlements, and the named profiles. The three tiers in
   `docs/00` are a reading aid; this is the model. Tier prose may reference a
-  profile, never restate one.
+  profile, never restate one. To answer "which workflows do I run here?",
+  use `python3 scripts/resolve_profile.py --visibility <v> --plan <p>
+  [--code-security] [--secret-protection] [--code-quality]` — it resolves the
+  profile and prints the run / conditional / unavailable split plus the free
+  substitutes.
 - `deprecations.yml` — deprecation records.
 - `schema/capability.schema.yaml` — the machine-readable capability schema.
 

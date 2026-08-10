@@ -8,12 +8,12 @@ catalogs, so prose cannot drift away from it.
 
 ## Profiles
 
-| Profile | Visibility | Base plan | C/S/Q | CodeQL | Runner | Provenance | Enforcement | Fixed cost |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `public-free-standalone` | public | free, pro, team, enterprise-cloud | `000` | default | github-hosted-standard | attestations | active | free |
-| `private-free-max` | private, internal | free, pro, team | `000` | none | self-hosted-persistent | checksums | active | free |
-| `public-enterprise-max` | public | enterprise-cloud | `111` | default | github-hosted-standard | attestations | active | free |
-| `enterprise-full-private-fixed80` | private, internal | enterprise-cloud | `111` | default | self-hosted-persistent | attestations | active | $80/month |
+| Profile | Visibility | Base plan | C/S/Q | CodeQL | Runner | Provenance | Enforcement | Fixed cost | Programme |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `public-free-standalone` | public | free, pro, team, enterprise-cloud | `000` | default | github-hosted-standard | attestations | active | free | 64 run / 6 conditional / 4 unavailable |
+| `private-free-max` | private, internal | free, pro, team | `000` | none | self-hosted-persistent | checksums | active | free | 29 run / 30 conditional / 15 unavailable |
+| `public-enterprise-max` | public | enterprise-cloud | `111` | default | github-hosted-standard | attestations | active | free | 65 run / 6 conditional / 3 unavailable |
+| `enterprise-full-private-fixed80` | private, internal | enterprise-cloud | `111` | default | self-hosted-persistent | attestations | active | $80/month | 60 run / 14 conditional / 0 unavailable |
 
 ## Entitlement combinations
 
