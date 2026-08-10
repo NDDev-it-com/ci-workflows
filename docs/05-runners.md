@@ -146,7 +146,7 @@ separate setting that no workflow file can reach:
 | --- | --- | --- |
 | Reusable workflows from this library | `runner` input on the caller | `with: { runner: <label> }` |
 | CodeQL **default setup** (code scanning) | repository code-scanning settings | `PATCH /repos/{owner}/{repo}/code-scanning/default-setup` with `runner_type: labeled`, `runner_label: <label>` |
-| **Code Quality** scans | repository Code quality settings | UI only — *Runner type → Labeled runner*; there is no REST API |
+| **Code Quality** scans | repository Code quality settings | `PATCH /repos/{owner}/{repo}/code-quality/setup` with `runner_type: labeled`, `runner_label: <label>` — or the UI, *Runner type → Labeled runner* |
 
 Miss either of the last two and the repository still burns metered minutes even
 though every caller says otherwise — the scans are scheduled by GitHub, not by a

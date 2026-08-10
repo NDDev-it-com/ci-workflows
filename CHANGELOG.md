@@ -11,6 +11,15 @@
   still explicitly out of scope for this library — the catalog entry keeps
   `workflow: null` / `example: null`.
 
+- **The Code Quality corrections now reach the catalog, not only the tier doc.**
+  `catalog/capabilities.yml` is the source of truth and still carried the
+  no-API claim and the undisputed-public-rate claim, as did
+  `docs/05-runners.md` (labeled-runner selection), `docs/02-private-free.md`
+  and the `ci-consumer-adoption` skill. The capability's `risks` now state the
+  dispute, name the REST API, and record that its check runs collide with
+  CodeQL default setup on `Analyze (<language>)`. Historical CHANGELOG entries
+  are left as written — they record what was believed at the time.
+
 - **The disputed public Code Quality rate is now recorded as disputed.**
   GitHub's product page states "$0 per committer" for public repositories while
   the billing documentation states every active committer consumes a licence
