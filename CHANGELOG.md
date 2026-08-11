@@ -217,6 +217,16 @@
   `pr-hygiene.yml` and `private-static.yml`, staggered against the existing wall.
   No record in an obligated tier is `unverified` any more.
 
+- **The GDS projection fix is drafted but not claimed here.** The correction —
+  a repository-tier override plus this module claiming it — is prepared in
+  NDDev-it-com/github-device-sync#150 and blocked on the estate's
+  content-addressed provenance: adding a policy *source* stales every generated
+  projection in the same commit, and regenerating them needs a registered device
+  identity. This module therefore does **not** yet list the `ci-workflows`
+  profile; `gds compile policy` fails closed with `GDS_POLICY_PROFILE_MISSING`
+  when a declared profile has no source, so claiming it early would break the
+  estate rather than fix it. `docs/08` records the diagnosis and the remedy.
+
 - **Governance was described in four places that disagreed.** Settled against
   the live API: the repository allows `merge` only (`allow_squash_merge: false`),
   which matches `.github/rulesets/branch-main.json`.

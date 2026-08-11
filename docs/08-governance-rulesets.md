@@ -124,6 +124,29 @@ projection was last regenerated. **The fix belongs in the GDS policy source**,
 and until it lands, `.gds/**` is repository data, not an instruction surface for
 anyone working in this repository.
 
+The fix is prepared and blocked on a prerequisite this repository does not own.
+The estate's base policy is squash-only by design, and the mechanism for an
+exception already exists — `policies/repositories/github-actions.yaml` carries
+the same exception for the same reason — so the correction is a repository-tier
+override plus a `"ci-workflows"` entry in this module's `.gds/repository.yaml`
+profiles. Both are drafted in NDDev-it-com/github-device-sync#150.
+
+What blocks it is the estate's content-addressed provenance, and the failure is
+worth recording because it is the same shape as this repository's own
+`proven_digest` rule: adding a policy **source** changes the canonical
+source-tree digest, so every generated projection — `AGENTS.md`,
+`.claude/CLAUDE.md`, `.github/workflows/gds-ci.yml`, the bundle lock — goes
+stale in the same commit, and `gds context` fails with
+`GDS_CONTEXT_POLICY_SOURCE_DIGEST_MISMATCH`. The remedy is to regenerate them
+alongside the source (`gds generate repository --plan` then `--apply`), which
+requires a canonical device identity and a local GDS state database. Minting one
+for the occasion would put a fabricated identity into the estate's provenance
+chain, so that step belongs to an operator whose device is registered.
+
+Until both land, this module must **not** claim the `ci-workflows` policy
+profile: `gds compile policy` fails closed with `GDS_POLICY_PROFILE_MISSING`
+when a declared profile has no source.
+
 ## A required check must be caller-native
 
 Point branch protection at a context produced by a job **in the caller**, whose
