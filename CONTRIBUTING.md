@@ -103,19 +103,30 @@ python3 scripts/validate_all.py
 Install validator dependencies with the hash-locked file:
 
 ```bash
-python3 -m pip install --require-hashes -r requirements-ci.txt
+uv pip install --system --require-hashes -r requirements-ci.txt
 ```
 
 Install the tools locally with:
 
 ```bash
-# actionlint (choose one)
-brew install actionlint          # macOS
-go install github.com/rhysd/actionlint/cmd/actionlint@latest
+# actionlint — pinned version, checksum-verified, matching actionlint.yml's
+# `actionlint_version` default. Read the pin from the workflow if they disagree.
+curl -fsSL -o /tmp/actionlint.tar.gz \
+  https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz
+echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  /tmp/actionlint.tar.gz" | sha256sum -c -
+tar -xzf /tmp/actionlint.tar.gz -C ~/.local/bin actionlint
 
-# zizmor
-pipx install zizmor              # or: uv tool install zizmor
+# zizmor — run the version CI runs, not whatever is on PATH. The pin is
+# zizmor-sarif.yml's `zizmor_version` default.
+uvx zizmor@1.26.1 --persona regular --min-severity low .github/workflows
 ```
+
+Every command here uses `uv` or a checksum-verified download on purpose. The
+estate policy forbids `pip`, `pipx`, `npm`/`npx`, and mutable version resolution
+such as `go install ...@latest`; CI itself installs with `uv pip install
+--system --require-hashes`. A setup guide that told contributors to use a
+forbidden installer, while CI used a different one, is how three descriptions of
+one command ended up disagreeing.
 
 ## Commits and pull requests
 

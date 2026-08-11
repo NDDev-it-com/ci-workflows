@@ -127,7 +127,7 @@ The authoritative list is the "Contracts Claude must not break" section of
 One sequence reproduces what the required `ci-gate` check runs:
 
 ```bash
-python3 -m pip install --require-hashes -r requirements-ci.txt   # PyYAML only
+uv pip install --system --require-hashes -r requirements-ci.txt   # PyYAML only
 python3 scripts/validate_all.py        # the full validator aggregate
 actionlint
 zizmor --persona regular --min-severity low .github/workflows
