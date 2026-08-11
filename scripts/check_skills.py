@@ -27,8 +27,11 @@ EXPECTED_SKILLS = {
     "ci-free-tier-planner", "ci-failure-triage", "ci-release-provenance",
     "ci-cost-performance", "ci-runtime-contract-testing",
     "ci-consumer-adoption",
-    # Repository-operation skills for agents working on this repo.
-    "nddev-repo-orientation", "nddev-change-flow", "nddev-release-flow",
+    # Repository-operation skill for agents working on this repo. One, not
+    # three: orientation, change flow and release flow described a single
+    # workflow across three files that had to be kept in step with each other
+    # and with AGENTS.md, and drifted from both.
+    "nddev-repo-flow",
 }
 PLACEHOLDERS = ("TODO_PLACEHOLDER", "<fill-me>", "TBD_PLACEHOLDER")
 # Volatile plan/price/quota figures must live only in catalog/product-facts.yml

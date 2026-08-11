@@ -13,7 +13,7 @@ metadata:
 # Adopting ci-workflows in a consumer repository
 
 This is the *caller* side. For work inside the library itself use
-`nddev-repo-orientation`, `nddev-change-flow`, and `nddev-release-flow`.
+`nddev-repo-flow`.
 
 Adoption is four decisions, in order. Getting them out of order is what produces
 the two failure shapes seen in practice: a repository that looks configured but

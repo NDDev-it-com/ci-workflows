@@ -2,6 +2,55 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Three repository-operation skills became one.** `nddev-repo-orientation`,
+  `nddev-change-flow` and `nddev-release-flow` described a single workflow across
+  three files that had to be kept in step with each other *and* with `AGENTS.md`,
+  and drifted from both. `nddev-repo-flow` replaces them: 439 lines to 138, ten
+  skills instead of twelve, and the procedure lives in one place while the facts
+  live in the brief.
+
+- **The public library stopped publishing account-observed estate state.**
+  `docs/17` and `docs/18` carried a live operations report: licence counts,
+  repository inventory ("23 repos", "all 51 repositories", "36 on default setup,
+  8 on their own"), an invoice total, AI-credit spend to the cent, a metered-pool
+  reading with a projected exhaustion date, and a named private repository. None
+  of it was secret, which is why it survived review — the defect is the trust
+  domain. A consumer reads a public library for stable contracts, not for what
+  one organization's bill looked like on one morning, and every figure was stale
+  within days.
+
+  Durable statements stay: which products the estate holds, why push protection
+  is off, that a security configuration attaches atomically, that a budget cannot
+  stop a licence-based product, that a second committer is the largest available
+  step change. Countable account state moves to the control plane, and
+  `scripts/check_public_docs.py` now rejects inventory counts and cent-precision
+  currency in public prose so the report cannot creep back. `docs/16` also
+  restated the AI-credit tariff, which the freshness-gated ledger owns; it now
+  references the fact instead.
+
+### Fixed
+
+- **Pin comments could say nothing, and two lied.** `check_pinned_actions.py`
+  required only that *some* `#` comment follow the SHA, so `#` and `# bumped`
+  both passed — while the comment is the only human-readable half of a pin and
+  the thing a reviewer reads when diffing a Dependabot bump. It must now name a
+  release (`# vX.Y.Z`) or an ISO date for upstreams that publish none
+  (`google/clusterfuzzlite`). Two pins carried a moving major tag; resolved
+  against the upstream tag list to `# v2.12.1` (`r-lib/actions/setup-r`) and
+  `# v3.0.0-beta.1` (`swift-actions/setup-swift`).
+
+- **`catalog/tools.yml` recorded pins that were no longer running.** Adding a
+  cross-check between each pin comment and the catalog's `current_version`
+  immediately found `codeql-action` at `v4.37.0` / `99df26d4` and `setup-gradle`
+  at `v6.2.0` / `3f131e86` while the workflows had been bumped to `v4.37.5` /
+  `d1ba80a1` and `v6.3.0` / `9c971963`. The catalog exists to record which build
+  is pinned and was wrong about it for two tools across eight call sites, in the
+  direction that matters least visibly: a reviewer checking "what does this SHA
+  correspond to" got a stale answer. Both corrected against the upstream tag
+  list and the cross-check now runs in the gate.
+
 ### Security
 
 - **The release path had a documented promotion gate it never called.**

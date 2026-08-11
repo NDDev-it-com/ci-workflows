@@ -88,10 +88,10 @@ capability set is identical because the tier posture is identical.
 A reusable workflow owned by a **different account** (e.g. this library,
 `NDDev-it-com/ci-workflows`, called from a personal-account repository) does
 **not** resolve jobs for `push` events to the default branch. The run is
-created but hangs in `pending` with zero jobs — indefinitely. This was
-verified empirically on `rldyourmnd/declaro-platform`: the same workflow file
-succeeded instantly on `pull_request` (run completed in seconds) while `push`
-runs to `main` hung for 8+ hours with no jobs spawned. The mechanism is a
+created but hangs in `pending` with zero jobs — indefinitely. Verified
+empirically on a personal-account consumer: the same workflow file succeeded
+instantly on `pull_request` while `push` runs to `main` hung for hours with no
+jobs spawned. The mechanism is a
 GitHub-side cross-owner workflow resolution gate, not a misconfiguration —
 `allowed_actions: all` and full admin access do not unblock it.
 

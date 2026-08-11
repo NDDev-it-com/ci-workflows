@@ -63,7 +63,7 @@ jobs:
 
       - name: Set up Swift
         if: ${{ inputs.swift_version != '' }}
-        uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9  # v3
+        uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9  # v3.0.0-beta.1
         with:
           swift-version: ${{ inputs.swift_version }}
 

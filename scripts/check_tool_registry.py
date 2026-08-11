@@ -23,6 +23,7 @@ covers `.github/workflows/` only; examples pin the reusables, not the actions.
 from __future__ import annotations
 
 import sys
+import re
 from collections import defaultdict
 from pathlib import Path
 
@@ -62,6 +63,46 @@ def _actual_usage() -> dict[str, set[str]]:
     return uses
 
 
+COMMENTED_PIN = re.compile(
+    r"uses:\s*(?P<ref>[^\s#]+)@(?P<sha>[0-9a-f]{40})\s*#\s*(?P<version>\S+)"
+)
+
+
+def _version_agreement(tools: list) -> list[str]:
+    """A pin comment and the catalog must name the same release."""
+    declared = {}
+    for tool in tools:
+        if isinstance(tool, dict) and tool.get("kind") == "action" and tool.get("pin"):
+            repo = str(tool["pin"]).split("@")[0]
+            declared[repo] = (str(tool.get("id")), str(tool.get("current_version") or ""))
+
+    problems: list[str] = []
+    for path in workflow_files():
+        for lineno, line in enumerate(
+            path.read_text(encoding="utf-8").splitlines(), start=1
+        ):
+            match = COMMENTED_PIN.search(line)
+            if not match:
+                continue
+            ref = match.group("ref")
+            entry = next(
+                (v for repo, v in declared.items()
+                 if ref == repo or ref.startswith(repo + "/")),
+                None,
+            )
+            if entry is None:
+                continue
+            tool_id, version = entry
+            comment = match.group("version")
+            if version and comment != version:
+                problems.append(
+                    f"{path.name}:{lineno}: pin comment says {comment!r} but "
+                    f"catalog/tools.yml records current_version {version!r} for "
+                    f"{tool_id!r} — one of them is wrong about which release is pinned"
+                )
+    return problems
+
+
 def check() -> list[str]:
     problems: list[str] = []
     if not TOOLS.is_file():
@@ -96,6 +137,13 @@ def check() -> list[str]:
             problems.append(
                 f"tools.yml: {tool_id!r} declares used_by {stale} but does not appear there"
             )
+
+    # The pin comment and the catalog's `current_version` are two statements of
+    # the same fact and drifted: two workflows carried the moving major tag
+    # (`# v2`, `# v3`) while the pinned SHA was a specific release, so the
+    # catalog recorded the major and a reviewer could not tell which build was
+    # pinned. Compare them.
+    problems += _version_agreement(tools)
 
     for ref in sorted(usage):
         if not any(ref == repo or ref.startswith(repo + "/") for repo in registered):

@@ -133,10 +133,13 @@ the $10 licence:
 | **Code Quality analysis** — CodeQL quality queries | included in the per-committer licence; unmetered |
 | **AI findings** — AI-generated findings on push | **metered separately: AI credits, with no included allowance** |
 
-Every AI-credit line in the billing API shows `discountAmount: 0.00` — nothing is
-bundled. Observed rate: **$0.01 per credit**, and a single mid-sized repository
-burned **774.9 credits in roughly twelve days** — about **$19/month for one
-repository**, i.e. nearly twice the licence that covers the whole organization.
+Every AI-credit line in the billing API shows `discountAmount: 0.00` — nothing
+is bundled. The per-credit rate is a tariff and lives in the
+`github-code-quality-transition` fact in `catalog/product-facts.yml`, which is
+dated and expires; do not copy it into prose. What matters here is the shape,
+and it is stark: a single mid-sized repository has been observed burning enough
+credits in under two weeks to cost more per month than the licence covering the
+whole organization. AI findings are the expensive half of this product.
 
 Two consequences worth stating plainly:
 
@@ -150,12 +153,11 @@ Two consequences worth stating plainly:
   New budget flow: it is metered, so stop-usage applies, and it caps every
   AI-credit source at once. Budgets are not retroactive — usage before creation
   still bills for that cycle.
-- **The per-repository switch is not sufficient on its own.** Observed
-  2026-08-10: every repository reported `ai_findings_option: disabled` and the
-  line kept accruing anyway ($1.31 month-to-date under product *Code Quality*).
-  Copilot Autofix — "suggest fixes for CodeQL alerts using AI" — is a separate
-  repository setting that the Code Quality setup object does not cover. Size the
-  budget; do not rely on the toggle.
+- **The per-repository switch is not sufficient on its own.** Every repository
+  has been observed reporting `ai_findings_option: disabled` while the line kept
+  accruing regardless. Copilot Autofix — "suggest fixes for CodeQL alerts using
+  AI" — is a separate repository setting that the Code Quality setup object does
+  not cover. Size the budget; do not rely on the toggle.
 - **The switch is absent where CodeQL finds no supported language.** Those
   repositories render *"No CodeQL supported languages to scan in this
   repository"* and cannot generate AI credits at all — a stronger guarantee than
