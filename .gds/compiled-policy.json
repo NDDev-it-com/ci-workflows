@@ -2,8 +2,8 @@
   "schema_version": 1,
   "compiled_policy": {
     "repository_id": "repo_01KX8PR6R8YJETP3PV4H7E608B",
-    "bundle_version": "0.1.0-dev",
-    "digest": "sha256:abec4c6506362de93d5f6565790d25f6427f84921270cfc7bdb323062de63e9f"
+    "bundle_version": "0.4.0-dev",
+    "digest": "sha256:ed0fd21908ec494f88601eb9b3126999d0ae9db46c372a70e3d4f3f3165f3cfd"
   },
   "sources": [
     {
@@ -12,7 +12,7 @@
       "priority": 100,
       "distribution": "public",
       "path": "policies/base/repository-default.yaml",
-      "digest": "sha256:13324a48e45daa7008310bb24d158ee92b606316040e3a70433b5c942a187af5"
+      "digest": "sha256:538f486d49620c169cbbac77745ce2ecc21010ebd4a564017c79cefbb468ca1e"
     },
     {
       "id": "organization-default",
@@ -28,7 +28,7 @@
       "priority": 100,
       "distribution": "public",
       "path": "policies/roles/public-module.yaml",
-      "digest": "sha256:ece6164691eda262e2692f97bd70262ea98c268084900b3f285f3d50f3767200"
+      "digest": "sha256:084f7b09dbfd85a386e47cf83ea0015154b6b01fa3cf85a68f04ef407b89ed4b"
     }
   ],
   "effective": {
@@ -101,6 +101,12 @@
         "squash_merge_commit_title": {
           "management": "managed",
           "value": "PR_TITLE"
+        }
+      },
+      "releases": {
+        "immutable": {
+          "management": "managed",
+          "value": true
         }
       },
       "rulesets": {
@@ -362,6 +368,20 @@
       "tier": "base",
       "priority": 100,
       "file": "policies/base/repository-default.yaml",
+      "operation": "set"
+    },
+    "/effective/github/releases/immutable/management": {
+      "source": "public-module",
+      "tier": "role",
+      "priority": 100,
+      "file": "policies/roles/public-module.yaml",
+      "operation": "set"
+    },
+    "/effective/github/releases/immutable/value": {
+      "source": "public-module",
+      "tier": "role",
+      "priority": 100,
+      "file": "policies/roles/public-module.yaml",
       "operation": "set"
     },
     "/effective/github/rulesets/management": {
