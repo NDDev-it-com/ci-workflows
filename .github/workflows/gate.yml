@@ -72,9 +72,9 @@ on:
         type: string
         default: ''
       runner:
-        description: 'Runner label. Defaults to amsterdam (self-hosted).'
+        description: 'Runner label. Callers on their own fleet name it explicitly.'
         type: string
-        default: 'amsterdam'
+        default: 'ubuntu-latest'
 
 permissions: {}
 

@@ -9,7 +9,7 @@ on:
     inputs:
       runner:
         type: string
-        default: 'amsterdam'
+        default: 'ubuntu-latest'
       path:
         description: 'Filesystem path to scan.'
         type: string

@@ -42,7 +42,7 @@ on:
         default: ''
       runner:
         type: string
-        default: 'amsterdam'
+        default: 'ubuntu-latest'
     outputs:
       result:
         description: 'JSON object of group -> bool (did that group change).'

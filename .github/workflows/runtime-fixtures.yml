@@ -89,7 +89,16 @@ jobs:
       # proves it.
       setup_uv: true
       install_command: "uv pip install --system --require-hashes -r requirements-ci.txt"
-      command: "python3 scripts/validate_all.py --tier core"
+      # Deliberately NOT `validate_all --tier core`. That command reads
+      # runtime-coverage.yml, whose digests this very run exists to refresh, so
+      # the fixture could only pass once it had already succeeded — a circular
+      # dependency that made the lane look broken every time a proven workflow
+      # changed. These validators are just as real and depend on the tree alone.
+      command: >-
+        python3 scripts/check_workflow_contracts.py &&
+        python3 scripts/check_permissions.py &&
+        python3 scripts/check_pinned_actions.py &&
+        python3 scripts/generate_docs.py --check
 
   # required-gate — the change router. On a branch push `github.event.before` is
   # the all-zero oid, so this exercises the conservative all-true path: the one

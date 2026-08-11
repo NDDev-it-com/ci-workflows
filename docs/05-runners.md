@@ -155,10 +155,15 @@ workflow file in the repository.
 <a id="always-name-the-runner"></a>
 ### Always name the runner — the default belongs to the pin
 
-Most reusables here default `runner` to `amsterdam`, the NDDev self-hosted
-label. That default is a property of **the commit you pinned**, not of your
-caller, so a caller that omits `runner` silently adopts whatever the next pin
-says. Two ways that bites:
+Reusables here default `runner` to `ubuntu-latest`. A default is a property of
+**the commit you pinned**, not of your caller, so a caller that omits `runner`
+silently adopts whatever the next pin says. Name it anyway — and if you run your
+own fleet you must, because a hosted default will quietly meter you.
+
+That the default is safe today is recent. It was `amsterdam`, a private
+self-hosted label, until that fleet was retired in August 2026 — at which point
+every caller inheriting it queued against a runner that no longer existed. Both
+ways a stale default bites:
 
 - **Outside this estate** the label does not resolve, so the job queues
   forever against a runner that will never appear.

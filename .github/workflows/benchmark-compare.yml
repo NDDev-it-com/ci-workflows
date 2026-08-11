@@ -13,7 +13,7 @@ on:
     inputs:
       runner:
         type: string
-        default: 'amsterdam'
+        default: 'ubuntu-latest'
       language:
         description: 'Toolchain to set up: python, rust, node, go, or none.'
         type: string

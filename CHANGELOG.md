@@ -4,6 +4,39 @@
 
 ### Added
 
+- **Caller commands must be shell-parseable, checked by `shlex`.** An unbalanced
+  quote in a `command:` input was invisible to everything: the YAML is valid so
+  actionlint passes, the value is just a string so no schema complains, and the
+  failure surfaced only when a runner reached `bash: unexpected EOF while looking
+  for matching "`. That cost a full CI round-trip to find a typo. Written after
+  making exactly that mistake in the fixture estate.
+
+### Changed
+
+- **The `runner` default is `ubuntu-latest`; the `amsterdam` fleet is gone.**
+  Thirty-nine reusables defaulted to a private self-hosted label. ADR 0004
+  described exactly what that costs an external consumer — "the label resolves to
+  nothing, so the job queues against a runner that will never appear" — and
+  deliberately left the default alone, because flipping it would have moved ~10
+  private callers onto metered hosted runners, a cost decision the library may
+  not make for its consumers.
+
+  That objection died with the fleet. The estate moved to its own GitHub App for
+  CI and retired the label, so there is nothing left to move those callers off,
+  and the default stopped being wrong-by-default and became broken: every caller
+  inheriting it now queues forever. All 39 defaults are `ubuntu-latest`.
+
+  The migration was one edit precisely because ADR 0004's rule held: callers were
+  already required to name their runner, so no example and no compliant consumer
+  depended on the default. A caller on its own fleet still names its label —
+  and now must, since a hosted default meters silently.
+
+  ADR 0004 records the supersession rather than being rewritten; `docs/05`
+  carries the history, because "the default is safe today" is a fact with a date
+  on it.
+
+### Added
+
 - **A consumer fixture estate, and it immediately found four defects static
   validation could not.** `runtime-fixtures.yml` calls nine reusables the way a
   consumer would. ADR 0003 named its absence as the reason 44 of 46 workflows

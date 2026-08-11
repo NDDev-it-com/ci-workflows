@@ -40,11 +40,22 @@ Dependabot bump would have flipped it.
 
 ## Consequences
 
-- The estate default itself is unchanged. Flipping it would silently move ~10
-  private callers that rely on it onto metered hosted runners, which is a cost
-  decision the library may not make for its consumers. The rule closes the
-  exposure at the caller; the generic contract remains wrong-by-default and is
-  known to be.
+- The estate default was left in place at the time. Flipping it would have
+  silently moved ~10 private callers onto metered hosted runners, which is a cost
+  decision the library may not make for its consumers, so the rule closed the
+  exposure at the caller and the generic contract stayed wrong-by-default.
+
+  **Superseded 2026-08-12: the fleet no longer exists.** The estate moved to its
+  own GitHub App for CI and the `amsterdam` label was retired. That voids the
+  objection — there is nothing to move those callers *off*, and a default naming
+  a retired label is not merely wrong-by-default but broken: the first failure
+  mode above, a job queuing forever against a runner that will never appear, is
+  now what every caller relying on the default actually gets. All 39 defaults
+  moved to `ubuntu-latest`.
+
+  The decision itself is unchanged and is the reason the migration was one edit:
+  because callers were already required to name their runner, no example and no
+  consumer that followed the rule depended on the default at all.
 - A public repository on a persistent self-hosted fleet stays out of policy
   regardless of this rule. Making that safe needs ephemeral runners or fork-PR
   approval for all external contributors, neither of which this library controls.

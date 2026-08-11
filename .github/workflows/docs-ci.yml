@@ -9,7 +9,7 @@ on:
     inputs:
       runner:
         type: string
-        default: 'amsterdam'
+        default: 'ubuntu-latest'
       docs_glob:
         description: 'Glob of Markdown files to check.'
         type: string

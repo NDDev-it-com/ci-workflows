@@ -15,9 +15,9 @@ entries:
   - workflow: .github/workflows/actionlint.yml
     criticality: required-gate
     status: runtime-proven
-    evidence: 'Called by runtime-fixtures.yml through a relative ref; the Linux X64 runner guard, the checksum-verified binary install and the per-job Git-config isolation all executed live.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31535606661
-    proven_digest: 30d823c99bf4b274a461d4d4511c2f8e56ab45c61239e9aaad9fa6f5daea7967
+    evidence: 'Called by runtime-fixtures.yml through a relative ref, re-proved after the runner default moved to ubuntu-latest; the Linux X64 runner guard, the checksum-verified binary install and the per-job Git-config isolation all executed live.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31540604161
+    proven_digest: 81e40be6896d24dfbdc9aa3b137142fbcb884560f7910d07c1ece7c6226fbc42
     waiver: null
   - workflow: .github/workflows/benchmark-compare.yml
     criticality: supporting
@@ -71,8 +71,8 @@ entries:
     criticality: supporting
     status: runtime-proven
     evidence: 'Called by runtime-fixtures.yml; the relative-link check executed.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31535606661
-    proven_digest: 1b73939b5be9c9c3f5f58ab9774f81d2d8d69ef25f5c39a8ad5be1b21de93c71
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31540604161
+    proven_digest: 5a8c357ab2c2b3748a9823ceaa665abd031ca06c495d36450c5f8085fbe4c14f
     waiver: null
   - workflow: .github/workflows/docs-quality.yml
     criticality: supporting
@@ -140,8 +140,8 @@ entries:
     criticality: required-gate
     status: runtime-proven
     evidence: 'Called by runtime-fixtures.yml on a branch push, where github.event.before is the all-zero oid: this executed the conservative all-true path, the one that must never silently report all-false.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31535606661
-    proven_digest: 35e007d2a056233e327a1108f2157388ebc1e3204ecc4528b2c7e45ac60042f7
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31540604161
+    proven_digest: 5b595bc7b043a081fc8ee2970fb59a034c78a54f15ad9269b660e682aacd930a
     waiver: null
   - workflow: .github/workflows/mutation-testing.yml
     criticality: supporting
@@ -159,8 +159,8 @@ entries:
     criticality: security-blocking
     status: runtime-proven
     evidence: 'Called by runtime-fixtures.yml; the checksum-verified OSV-Scanner binary downloaded, verified and scanned.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31535606661
-    proven_digest: da41520dcc1ec2d6f2a1ab5c0d40cae577aec07c5acfbb00663dc93ff194df8a
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31540604161
+    proven_digest: 6294d14aac3208deecfe20aa956f38d7a83cb08cd66d0ecc67b4b22fb22c11ad
     waiver: null
   - workflow: .github/workflows/pr-hygiene.yml
     criticality: required-gate
@@ -176,8 +176,8 @@ entries:
     criticality: required-gate
     status: runtime-proven
     evidence: 'Called by runtime-fixtures.yml; the lane provisioned uv through the new setup_uv input, installed hash-pinned dependencies and ran a real caller command. The first fixture attempt failed here with uv not found, which is how the missing-installer gap was found.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31535606661
-    proven_digest: 54a911bd9706d9884f9f0c03ba3430d6abb706a07b4aa4f864de5b1d62de3962
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31540604161
+    proven_digest: 888618f9891ae14e619e5a1936a03c67cf7d54070e331c01be290c1285e63a5d
     waiver: null
   - workflow: .github/workflows/public-codeql.yml
     criticality: security-blocking
@@ -264,15 +264,15 @@ entries:
     criticality: security-blocking
     status: runtime-proven
     evidence: 'Called by runtime-fixtures.yml; full-history gitleaks executed through the digest-pinned container.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31535606661
-    proven_digest: fd59fb2c75e91789d22564826f59b36fc2a1fe35bd65ed3efb11fd826714b96b
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31540604161
+    proven_digest: 283c40be1e8b6f3018425f6cc38373dd11f2d4c02777082589476788ea482b9f
     waiver: null
   - workflow: .github/workflows/semgrep-ci.yml
     criticality: security-blocking
     status: runtime-proven
     evidence: 'Called by runtime-fixtures.yml; the pinned Semgrep ran 33 rules over the tree and the non-SARIF gate path executed. An earlier run of the same fixture exited 1 on ten real findings, so the gate is proven to fire as well as to pass.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31535606661
-    proven_digest: 4d45570b0a02a50ce9e778161e927b818346246dec6bd18d128d749fcf42625d
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31540604161
+    proven_digest: 58e1d6f4479de648fc0959bdcd62a022fb9692a63bd5194e97e76cbd3268e716
     waiver: null
   - workflow: .github/workflows/sql-ci.yml
     criticality: supporting
@@ -302,8 +302,8 @@ entries:
     criticality: security-blocking
     status: runtime-proven
     evidence: 'Called by runtime-fixtures.yml; the private-free lane ran to completion on contents:read alone, proving the reduced permission set is sufficient without the SARIF upload. Its online audits fired and found three ref-version-mismatch pins that a tokenless local run had reported clean.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31535606661
-    proven_digest: 4f488af8ce4c5c9883f51ee09c0e0c782b85c7d00f92487e08571cb417360d29
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31540604161
+    proven_digest: 3038950341e4ab95198ad21c0d766195ebf6137d406b6aedd1c6f16a26df89b2
     waiver: null
   - workflow: .github/workflows/zizmor-sarif.yml
     criticality: security-blocking
@@ -321,8 +321,8 @@ entries:
     criticality: supporting
     status: runtime-proven
     evidence: 'Called by runtime-fixtures.yml as a consumer should call it - every job in needs listed in required_jobs - proving the reporting path. It remains supporting, not a merge gate: the reusable cannot authenticate needs_json.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31535606661
-    proven_digest: df78fede64a9a464756076c1b0286bd2b0e88350c5a2596bba395bd80939015c
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31540604161
+    proven_digest: b3e8bb120394a0f50f8e6e16dca666f0efd0436409123db6ec016086040cb412
     waiver: null
   - workflow: .github/workflows/rust-supply-chain.yml
     criticality: security-blocking

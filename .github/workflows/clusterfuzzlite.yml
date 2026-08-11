@@ -28,7 +28,7 @@ on:
       runner:
         description: 'Runner label.'
         type: string
-        default: 'amsterdam'
+        default: 'ubuntu-latest'
       mode:
         description: 'CFLite mode: code-change (PR) or batch (scheduled).'
         type: string
