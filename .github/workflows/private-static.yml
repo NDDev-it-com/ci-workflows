@@ -16,6 +16,19 @@ on:
       setup_python:
         type: boolean
         default: true
+      setup_uv:
+        description: >-
+          Provision the pinned uv before install_command runs. This lane sets up
+          Python and then hands you install_command with no installer in scope:
+          pip and pipx are forbidden by estate policy, so a caller following that
+          policy had nothing to install with. Default false keeps every existing
+          caller byte-identical.
+        type: boolean
+        default: false
+      uv_version:
+        description: 'Exact astral-sh/uv version to pin when setup_uv is true.'
+        type: string
+        default: '0.11.30'
       checkout_ref:
         description: 'Optional ref/SHA to checkout (needed by pull_request wrappers).'
         type: string
@@ -94,6 +107,12 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: ${{ inputs.python_version }}
+
+      - name: Set up uv
+        if: ${{ inputs.setup_uv }}
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        with:
+          version: ${{ inputs.uv_version }}
 
       - name: Run install command
         if: ${{ inputs.install_command != '' }}

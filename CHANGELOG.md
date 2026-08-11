@@ -2,6 +2,42 @@
 
 ## [Unreleased]
 
+### Added
+
+- **A consumer fixture estate, and it immediately found four defects static
+  validation could not.** `runtime-fixtures.yml` calls nine reusables the way a
+  consumer would. ADR 0003 named its absence as the reason 44 of 46 workflows
+  were unproven; the first run proved seven and produced these:
+
+  - **Three pin comments named the wrong release.** zizmor's `ref-version-mismatch`
+    is an *online* audit. Run locally without a token it is skipped silently and
+    zizmor prints "No findings"; CI has `GH_TOKEN`, so it runs. The pinned
+    `cargo-deny-action` SHA is `v2.1.1`, not the `v2.0.11` its comment claimed —
+    a different commit entirely — and both `clusterfuzzlite` comments were dated
+    2024-09-19 against a commit from 2026-02-12. The new pin-comment rule checked
+    the *format* and passed all three. Corrected, and `AGENTS.md` and the skill
+    now require a token for local zizmor.
+
+  - **`private-static.yml` provisioned no installer.** It sets up Python, then
+    runs a caller-supplied `install_command` — with `pip` and `pipx` forbidden by
+    estate policy and `uv` never installed, a caller following that policy had
+    nothing to install with. The fixture failed on `uv: command not found`. Closed
+    with an additive `setup_uv` input, default `false`, so every existing caller
+    is byte-identical.
+
+  - **The examples did not demonstrate the library's own headline rule.** Semgrep
+    flagged ten `github-actions-mutable-action-tag` findings, all in `examples/`:
+    third-party actions carried the `@<sha>` placeholder, which no scanner can
+    distinguish from a mutable tag. `check_pinned_actions.py` enforces full-SHA
+    pinning over `.github/workflows/` only. The four affected examples now pin
+    real SHAs; `@<sha>` remains where it belongs, on the `ci-workflows` reference
+    a consumer must choose for themselves.
+
+  The estate is deliberately not a required check and not on `pull_request` —
+  evidence production is not merge gating. It triggers on a push to `fixtures/**`
+  so a change can be proven before it merges, and weekly so evidence does not go
+  stale as pins move.
+
 ### Changed
 
 - **The release procedure now says how to produce the promotion record.**

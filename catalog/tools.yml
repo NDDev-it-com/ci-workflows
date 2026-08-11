@@ -459,6 +459,7 @@ tools:
     used_by:
       - .github/workflows/ci.yml
       - .github/workflows/maintenance.yml
+      - .github/workflows/private-static.yml
       - .github/workflows/python-ci.yml
       - .github/workflows/release.yml
       - .github/workflows/semgrep-ci.yml
@@ -554,7 +555,7 @@ tools:
     name: EmbarkStudios/cargo-deny-action
     homepage: "https://github.com/EmbarkStudios/cargo-deny-action"
     kind: action
-    current_version: "v2.0.11"
+    current_version: "v2.1.1"
     pin: "EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25"
     used_by:
       - .github/workflows/rust-supply-chain.yml
@@ -577,7 +578,7 @@ tools:
     name: google/clusterfuzzlite
     homepage: "https://github.com/google/clusterfuzzlite"
     kind: action
-    current_version: "2024-09-19"
+    current_version: "2026-02-12"
     pin: "google/clusterfuzzlite@52ecc61cb587ee99c26825a112a21abf19c7448c"
     used_by:
       - .github/workflows/clusterfuzzlite.yml

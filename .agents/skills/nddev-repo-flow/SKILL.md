@@ -51,7 +51,7 @@ uv pip install --system --require-hashes -r requirements-ci.txt
 python3 scripts/validate_all.py --tier core     # what ci-gate blocks on
 python3 scripts/validate_all.py                 # all three tiers
 actionlint
-uvx zizmor@1.26.1 --persona regular --min-severity low .github/workflows
+GH_TOKEN=$(gh auth token) uvx zizmor@1.26.1 --persona regular --min-severity low .github/workflows
 ```
 
 Three tiers, and the split is load-bearing. **core** holds only properties of
@@ -64,6 +64,12 @@ vendor's tariff block an unrelated bugfix.
 Never use `pip` or `pipx`, and never a mutable version (`@latest`). Run zizmor
 at the version `zizmor-sarif.yml` pins, not whatever is on `PATH`; a different
 version reports different findings than the gate.
+
+**Give zizmor a token.** Its online audits — `ref-version-mismatch`,
+`impostor-commit` — need the API. Without one it skips them silently and prints
+"No findings" while CI fails, because CI has `GH_TOKEN`. Three pin comments
+naming the wrong release reached the default branch that way, and only a real
+fixture run caught them.
 
 ## When a check fails
 

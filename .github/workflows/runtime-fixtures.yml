@@ -83,6 +83,11 @@ jobs:
     uses: ./.github/workflows/private-static.yml
     with:
       runner: ubuntu-latest
+      # The first fixture run failed here with `uv: command not found`: the lane
+      # sets up Python and then runs a caller command with no installer in
+      # scope. That gap is now closed by setup_uv, and this fixture is what
+      # proves it.
+      setup_uv: true
       install_command: "uv pip install --system --require-hashes -r requirements-ci.txt"
       command: "python3 scripts/validate_all.py --tier core"
 

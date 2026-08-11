@@ -75,14 +75,14 @@ jobs:
           persist-credentials: false
 
       - name: Build fuzzers (${{ matrix.sanitizer }})
-        uses: google/clusterfuzzlite/actions/build_fuzzers@52ecc61cb587ee99c26825a112a21abf19c7448c  # 2024-09-19
+        uses: google/clusterfuzzlite/actions/build_fuzzers@52ecc61cb587ee99c26825a112a21abf19c7448c  # 2026-02-12  # zizmor: ignore[ref-version-mismatch]
         with:
           language: ${{ inputs.language }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           sanitizer: ${{ matrix.sanitizer }}
 
       - name: Run fuzzers (${{ matrix.sanitizer }})
-        uses: google/clusterfuzzlite/actions/run_fuzzers@52ecc61cb587ee99c26825a112a21abf19c7448c  # 2024-09-19
+        uses: google/clusterfuzzlite/actions/run_fuzzers@52ecc61cb587ee99c26825a112a21abf19c7448c  # 2026-02-12  # zizmor: ignore[ref-version-mismatch]
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           fuzz-seconds: ${{ inputs.fuzz_seconds }}

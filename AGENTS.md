@@ -26,13 +26,17 @@ uv pip install --system --require-hashes -r requirements-ci.txt   # PyYAML only
 python3 scripts/validate_all.py --tier core                       # what ci-gate blocks on
 python3 scripts/validate_all.py                                   # everything
 actionlint
-uvx zizmor@1.26.1 --persona regular --min-severity low .github/workflows
+GH_TOKEN=$(gh auth token) uvx zizmor@1.26.1 --persona regular --min-severity low .github/workflows
 python3 scripts/generate_docs.py                                  # after any catalog change
 python3 scripts/resolve_profile.py --visibility private --plan team --code-security
 ```
 
 Use `uv`, never `pip`/`pipx`/`npm`, and never a mutable version (`@latest`). Run
-zizmor at the version `zizmor-sarif.yml` pins, not whatever is on `PATH`.
+zizmor at the version `zizmor-sarif.yml` pins, not whatever is on `PATH` — **and
+with a token**. Without one zizmor silently skips its online audits and reports
+"No findings" while CI, which has `GH_TOKEN`, fails: that is exactly how three
+`ref-version-mismatch` findings reached the default branch, with pin comments
+naming releases the pinned SHA is not.
 
 `validate_all.py` runs three tiers. **core** is blocking and contains only
 properties of the tree, so it can fail only because of your change. **touched**
