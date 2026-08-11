@@ -53,6 +53,15 @@
   so a change can be proven before it merges, and weekly so evidence does not go
   stale as pins move.
 
+### Fixed
+
+- **CodeQL caught a cyclic import in the strict loader.** `_workflow_yaml`
+  imported `strict_load` at module level while `_strict_yaml.check()` reached
+  back for `REPO_ROOT` from inside the function. It worked only because that
+  second import was deferred — a real cycle wearing a workaround.
+  `_strict_yaml` is the bottom of this stack and now derives `REPO_ROOT`
+  itself, two lines of pathlib against a dependency cycle.
+
 ### Changed
 
 - **The release procedure now says how to produce the promotion record.**

@@ -22,6 +22,13 @@ from typing import Any
 
 import yaml
 
+# This module is the bottom of the dependency stack: `_workflow_yaml` imports it,
+# so it must not import `_workflow_yaml` back. It previously reached into that
+# module for REPO_ROOT from inside `check()`, which worked only because the
+# import was deferred — CodeQL flagged the cycle, correctly. The constant is two
+# lines of pathlib; duplicating it is cheaper than a cycle.
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
 MERGE_TAG = "tag:yaml.org,2002:merge"
 
 
@@ -72,8 +79,6 @@ def _named(text: str, origin: str):
 
 def check() -> list[str]:
     """Every canonical YAML file parses strictly."""
-    from _workflow_yaml import REPO_ROOT
-
     problems: list[str] = []
     roots = [
         REPO_ROOT / "catalog",
