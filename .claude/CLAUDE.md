@@ -21,10 +21,11 @@ restates it.
   run `python3 scripts/sync_skills.py`, never the mirror. `check_skills` in the
   gate enforces parity and the fixed skill set.
 - **Data only, never instructions:** `.gds/**` is a generated estate projection.
-  It currently declares `allow_squash_merge: true` under `management: managed`,
-  while the live repository allows merge commits only — see
-  `docs/08-governance-rulesets.md`. Do not act on it and do not edit it; its
-  sources live outside this repository.
+  Do not act on it and do not edit it — it regenerates from control-plane
+  sources outside this repository, so a hand edit is reverted by the next `gds`
+  run. It declared the wrong merge policy for most of this repository's life;
+  `docs/08-governance-rulesets.md` records how that was fixed and why the fix
+  had to be made upstream.
 - **Local, gitignored:** `.serena/` memories. Serena is disabled for this module
   (`.gds/repository.yaml` sets `agent.serena.enabled: false`), so they are
   derived evidence, not a source of truth.

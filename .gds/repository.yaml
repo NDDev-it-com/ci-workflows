@@ -27,6 +27,13 @@ policy:
     - "repository-default"
     - "organization-default"
     - "public-module"
+    # Repository-tier override. The estate base policy is squash-only; this
+    # repository takes merge commits, because consumers, ADRs, the
+    # runtime-coverage ledger and release provenance all reference individual
+    # commits. Without this the compiled projection declared
+    # `allow_squash_merge: true` under `management: managed` against a live
+    # repository that allows the merge method only.
+    - "ci-workflows"
   rollout_ring: "canary-modules"
 
 git:

@@ -145,6 +145,6 @@ route around the gate.
 
 Conventional Commits under 100 chars, `git commit -s -S`, no `Co-Authored-By`.
 `main` is PR-only and takes **merge commits** — squash and rebase are disabled
-live, whatever `.gds/compiled-policy.json` says (it is generated, wrong, and
-fixable only upstream; see `docs/08-governance-rulesets.md`). Fill the PR
+live, and `.gds/compiled-policy.json` now agrees, via a repository-tier override
+in the control plane. Never hand-edit that file; it regenerates. Fill the PR
 template: workflow changes owe a permissions diff and a threat-model note.
