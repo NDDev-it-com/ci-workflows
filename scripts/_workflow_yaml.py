@@ -24,6 +24,7 @@ SELF_WORKFLOWS = {
     "dependency-review.yml",
     "gitleaks.yml",
     "release.yml",
+    "runtime-fixtures.yml",
     "scorecard.yml",
 }
 

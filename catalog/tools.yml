@@ -170,6 +170,7 @@ tools:
       - .github/workflows/release-supply-chain-free.yml
       - .github/workflows/release-supply-chain.yml
       - .github/workflows/release.yml
+      - .github/workflows/runtime-fixtures.yml
       - .github/workflows/rust-ci.yml
       - .github/workflows/rust-supply-chain.yml
       - .github/workflows/secret-scan.yml
