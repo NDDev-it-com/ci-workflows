@@ -17,7 +17,7 @@
 #
 # Replace @<sha> with a pinned full commit SHA of ci-workflows, and <label>
 # with the self-hosted runner label registered on the repository (e.g.
-# `server-nddev-amsterdam`). Repo-level runner registration is required because
+# `my-linux-runner`). Repo-level runner registration is required because
 # a self-hosted runner registered on an *organization* is not reachable from a
 # repository owned by a personal account — see
 # [docs/05-runners.md#visibility-routing].
