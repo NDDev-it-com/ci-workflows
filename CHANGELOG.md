@@ -33,6 +33,21 @@
     real SHAs; `@<sha>` remains where it belongs, on the `ci-workflows` reference
     a consumer must choose for themselves.
 
+  **Result after the fixes: 10/10 green, and nine reusables promoted to
+  `runtime-proven`** against run 31535606661 — `actionlint`, `zizmor-no-sarif`,
+  `secret-scan`, `private-static`, `monorepo-changed-paths`, `osv-scan`,
+  `semgrep-ci`, `docs-ci` and `gate`. The ledger moves from 2 proven / 31
+  unverified to **11 proven / 25 unverified**, and of the eighteen records in an
+  obligated tier, eight are now proven by a real run rather than standing on a
+  validator or a dated waiver. Seven waivers remain: `coverage-gate`,
+  `grype-scan`, `iac-scan`, `pr-hygiene`, `public-codeql`, `rust-supply-chain`,
+  `zizmor-sarif` — each needs a fixture this run does not provide (a container
+  image, a pull-request context, SARIF upload permissions, a crate).
+
+  `semgrep-ci` is proven in both directions: an earlier run of the same fixture
+  exited 1 on ten real findings before they were fixed, so the gate is known to
+  fire, not only to pass.
+
   The estate is deliberately not a required check and not on `pull_request` —
   evidence production is not merge gating. It triggers on a push to `fixtures/**`
   so a change can be proven before it merges, and weekly so evidence does not go
