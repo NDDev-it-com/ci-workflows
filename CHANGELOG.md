@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Caller commands must be shell-parseable, checked by `shlex`.** An unbalanced
+  quote in a `command:` input was invisible to everything: the YAML is valid so
+  actionlint passes, the value is just a string so no schema complains, and the
+  failure surfaced only when a runner reached `bash: unexpected EOF while looking
+  for matching "`. That cost a full CI round-trip to find a typo. Written after
+  making exactly that mistake in the fixture estate.
+
 ### Changed
 
 - **The `runner` default is `ubuntu-latest`; the `amsterdam` fleet is gone.**

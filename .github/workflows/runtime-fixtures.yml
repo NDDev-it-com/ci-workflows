@@ -98,7 +98,7 @@ jobs:
         python3 scripts/check_workflow_contracts.py &&
         python3 scripts/check_permissions.py &&
         python3 scripts/check_pinned_actions.py &&
-        python3 scripts/generate_docs.py --check"
+        python3 scripts/generate_docs.py --check
 
   # required-gate — the change router. On a branch push `github.event.before` is
   # the all-zero oid, so this exercises the conservative all-true path: the one

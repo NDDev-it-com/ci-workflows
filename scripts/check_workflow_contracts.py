@@ -13,6 +13,7 @@ Authorization headers cannot combine with actions/checkout's scoped token.
 from __future__ import annotations
 
 import re
+import shlex
 import sys
 
 from _workflow_yaml import SELF_WORKFLOWS, get_on, is_reusable, load_yaml, workflow_files
@@ -193,10 +194,45 @@ printf 'GIT_CONFIG_GLOBAL=%s\\n' "$isolated_config" >> "$GITHUB_ENV"
     # that did not succeed. The rule is the same everywhere a caller's command
     # is executed, so it is enforced everywhere.
     problems += _fail_fast_caller_commands()
+    problems += _balanced_caller_commands()
     return problems
 
 
 BARE_BASH_C = re.compile(r'\bbash -c "(\$\{?[A-Za-z_][A-Za-z0-9_]*\}?)"')
+# Inputs whose value is handed to a shell by the reusable that receives it.
+COMMAND_INPUT = re.compile(r"(^|_)commands?$")
+
+
+def _balanced_caller_commands() -> list[str]:
+    """A command passed to a reusable must be shell-parseable.
+
+    An unbalanced quote in one of these is invisible to every check this
+    repository had: the YAML is valid, so actionlint passes; the value is just a
+    string, so no schema complains; and the failure surfaces only when a runner
+    reaches `bash: unexpected EOF while looking for matching \"`. That is a
+    real minute of CI and a confusing log to reach a typo. `shlex` settles it in
+    microseconds.
+
+    This checks parseability, not safety: these strings are caller-authored by
+    design, and the reusables run them through `bash -euo pipefail -c` on
+    purpose.
+    """
+    problems: list[str] = []
+    for path in workflow_files():
+        for job_name, job in (load_yaml(path).get("jobs") or {}).items():
+            if not isinstance(job, dict):
+                continue
+            for key, value in (job.get("with") or {}).items():
+                if not isinstance(value, str) or not COMMAND_INPUT.search(str(key)):
+                    continue
+                try:
+                    shlex.split(value)
+                except ValueError as exc:
+                    problems.append(
+                        f"{path.name}: job {job_name!r} input {key!r} is not "
+                        f"shell-parseable ({exc}): {value[:70]!r}"
+                    )
+    return problems
 
 
 def _fail_fast_caller_commands() -> list[str]:
