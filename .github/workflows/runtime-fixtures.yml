@@ -1,0 +1,230 @@
+name: runtime-fixtures
+
+# The consumer fixture estate. This is what `catalog/runtime-coverage.yml` has
+# been honest about not having.
+#
+# Static validation proves the contracts hold in the tree. It cannot prove a
+# reusable workflow *starts* — that its `workflow_call` interface resolves, that
+# its permissions are sufficient, that its downloads and checksums work on a real
+# runner. ADR 0003 says so plainly: "The fixture estate that would supply real
+# proof is still absent." Two of forty-six workflows were runtime-proven, and
+# both only because this repository happened to call them for its own sake.
+#
+# So this workflow calls them deliberately, as a consumer would, with the same
+# safe inputs a consumer would pass. Each successful job is real evidence for one
+# reusable, and its run URL plus the workflow's sha256 go into the ledger.
+#
+# Deliberately NOT a required check and deliberately not on `pull_request`:
+# evidence production is not merge gating, and running the whole estate on every
+# pull request would be a cost this buys nothing back. `ci-gate` does not depend
+# on it.
+#
+# Triggers: a push to `fixtures/**` produces evidence on demand (workflow_dispatch
+# only works from the default branch, which is no use while proving a change);
+# the weekly schedule keeps evidence from going stale as pins move.
+#
+# Every call names `runner: ubuntu-latest` explicitly. These reusables default to
+# a private self-hosted label, and a default belongs to the pinned commit, not to
+# the caller — the same rule every example here follows.
+
+on:
+  push:
+    branches: ['fixtures/**']
+  schedule:
+    # Sundays 04:00 UTC — well clear of the Monday Dependabot and maintenance
+    # windows, so a failure here is not confused with a pin bump.
+    - cron: "0 4 * * 0"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: runtime-fixtures-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # required-gate — the workflow-lint lane, including its Linux X64 runner guard
+  # and the per-job Git-config isolation.
+  fixture-actionlint:
+    name: fixture / actionlint
+    permissions:
+      contents: read
+    uses: ./.github/workflows/actionlint.yml
+    with:
+      runner: ubuntu-latest
+
+  # security-blocking — the private-free scanner lane. Must be proven separately
+  # from the SARIF variant precisely because it drops the upload step and its
+  # permission, so this run is the only thing that can prove the reduced set is
+  # sufficient.
+  fixture-zizmor-no-sarif:
+    name: fixture / zizmor (no SARIF)
+    permissions:
+      contents: read
+    uses: ./.github/workflows/zizmor-no-sarif.yml
+    with:
+      runner: ubuntu-latest
+
+  # security-blocking — full-history gitleaks through a digest-pinned container.
+  fixture-secret-scan:
+    name: fixture / secret-scan
+    permissions:
+      contents: read
+    uses: ./.github/workflows/secret-scan.yml
+    with:
+      runner: ubuntu-latest
+
+  # required-gate — the private-free validation lane. Runs this repository's own
+  # blocking tier, which is a real caller command rather than a toy one.
+  fixture-private-static:
+    name: fixture / private-static
+    permissions:
+      contents: read
+    uses: ./.github/workflows/private-static.yml
+    with:
+      runner: ubuntu-latest
+      # The first fixture run failed here with `uv: command not found`: the lane
+      # sets up Python and then runs a caller command with no installer in
+      # scope. That gap is now closed by setup_uv, and this fixture is what
+      # proves it.
+      setup_uv: true
+      install_command: "uv pip install --system --require-hashes -r requirements-ci.txt"
+      command: "python3 scripts/validate_all.py --tier core"
+
+  # required-gate — the change router. On a branch push `github.event.before` is
+  # the all-zero oid, so this exercises the conservative all-true path: the one
+  # that must never silently report all-false.
+  fixture-monorepo-router:
+    name: fixture / monorepo router
+    permissions:
+      contents: read
+    uses: ./.github/workflows/monorepo-changed-paths.yml
+    with:
+      runner: ubuntu-latest
+      filters: '{"workflows":[".github/workflows/"],"catalog":["catalog/"],"scripts":["scripts/"]}'
+
+  # security-blocking — checksum-verified OSV-Scanner binary and the
+  # fail-on-known-vulnerability gate.
+  fixture-osv-scan:
+    name: fixture / osv-scan
+    permissions:
+      contents: read
+    uses: ./.github/workflows/osv-scan.yml
+    with:
+      runner: ubuntu-latest
+
+  # security-blocking — Semgrep SAST, exercising the config input and the
+  # non-SARIF gate path.
+  fixture-semgrep:
+    name: fixture / semgrep
+    permissions:
+      contents: read
+    uses: ./.github/workflows/semgrep-ci.yml
+    with:
+      runner: ubuntu-latest
+
+  # supporting — documentation lane.
+  fixture-docs-ci:
+    name: fixture / docs-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/docs-ci.yml
+    with:
+      runner: ubuntu-latest
+
+  # supporting — the reporting helper, called the way a consumer should call it:
+  # every job in `needs` listed in `required_jobs`, and never as a required check.
+  fixture-gate-report:
+    name: fixture / gate (report)
+    needs: [fixture-actionlint, fixture-docs-ci]
+    if: always()
+    permissions:
+      contents: read
+    uses: ./.github/workflows/gate.yml
+    with:
+      runner: ubuntu-latest
+      check_name: fixture summary
+      needs_json: ${{ toJSON(needs) }}
+      required_jobs: "fixture-actionlint,fixture-docs-ci"
+
+  # One place to read the outcome, and the digests to paste into the ledger when
+  # promoting a record. Never required; this is a report, not a gate.
+  evidence:
+    name: evidence summary
+    needs:
+      - fixture-actionlint
+      - fixture-zizmor-no-sarif
+      - fixture-secret-scan
+      - fixture-private-static
+      - fixture-monorepo-router
+      - fixture-osv-scan
+      - fixture-semgrep
+      - fixture-docs-ci
+      - fixture-gate-report
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Render evidence for the runtime-coverage ledger
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          python3 -I <<'PY'
+          import hashlib
+          import json
+          import os
+          import pathlib
+
+          # fixture job id -> the reusable it proves
+          PROVES = {
+              "fixture-actionlint": "actionlint.yml",
+              "fixture-zizmor-no-sarif": "zizmor-no-sarif.yml",
+              "fixture-secret-scan": "secret-scan.yml",
+              "fixture-private-static": "private-static.yml",
+              "fixture-monorepo-router": "monorepo-changed-paths.yml",
+              "fixture-osv-scan": "osv-scan.yml",
+              "fixture-semgrep": "semgrep-ci.yml",
+              "fixture-docs-ci": "docs-ci.yml",
+              "fixture-gate-report": "gate.yml",
+          }
+          results = json.loads(os.environ["RESULTS"])
+          run_url = os.environ["RUN_URL"]
+
+          lines = [
+              "### Runtime evidence",
+              "",
+              f"Run: {run_url}",
+              "",
+              "Only a `success` row is evidence. Copy `last_run` and `proven_digest`",
+              "into `catalog/runtime-coverage.yml` and set the status to",
+              "`runtime-proven`. A failed or skipped row proves nothing — leave that",
+              "record where it is.",
+              "",
+              "| Workflow | Result | proven_digest |",
+              "| --- | --- | --- |",
+          ]
+          for job, workflow in sorted(PROVES.items(), key=lambda kv: kv[1]):
+              result = (results.get(job) or {}).get("result", "missing")
+              path = pathlib.Path(".github/workflows") / workflow
+              digest = (
+                  hashlib.sha256(path.read_bytes()).hexdigest()
+                  if path.is_file()
+                  else "FILE MISSING"
+              )
+              mark = "" if result == "success" else " ⚠"
+              lines.append(f"| `{workflow}` | {result}{mark} | `{digest}` |")
+
+          summary = pathlib.Path(os.environ["GITHUB_STEP_SUMMARY"])
+          with summary.open("a", encoding="utf-8") as handle:
+              handle.write("\n".join(lines) + "\n")
+          print("\n".join(lines))
+          PY

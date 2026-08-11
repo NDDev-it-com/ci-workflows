@@ -69,12 +69,12 @@ jobs:
         if: ${{ inputs.install_command != '' }}
         env:
           INSTALL_COMMAND: ${{ inputs.install_command }}
-        run: bash -c "$INSTALL_COMMAND"
+        run: bash -euo pipefail -c "$INSTALL_COMMAND"
 
       - name: Run tests
         env:
           TEST_COMMAND: ${{ inputs.test_command }}
           PY_VERSION: ${{ inputs.python_version }}
         run: |
-          bash -c "$TEST_COMMAND"
+          bash -euo pipefail -c "$TEST_COMMAND"
           echo "Python ${PY_VERSION} tests passed." >> "$GITHUB_STEP_SUMMARY"

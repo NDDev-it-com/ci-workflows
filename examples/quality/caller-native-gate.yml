@@ -1,0 +1,104 @@
+# Caller-native gate — the correct shape for a REQUIRED status check.
+#
+# A reusable workflow cannot read its caller's `needs` context. Anything that
+# ships those results across the boundary ships them as caller-authored data,
+# which a reusable can validate for shape but never authenticate. So a required
+# merge gate belongs in the caller, where `needs` is the real dependency graph
+# of the same run and `needs.<job>.result` is the runner's own verdict.
+#
+# `ci-workflows/.github/workflows/gate.yml` remains available as a *reporting*
+# helper for dashboards and non-blocking summaries. It is not this.
+#
+# Point branch protection at the `ci-gate` context produced below.
+#
+# `runner: ubuntu-latest` is stated explicitly: the reusables default `runner`
+# to a private self-hosted label, and a default belongs to the pinned commit,
+# not to you.
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # A required check is never reported to a merge queue unless its workflow
+  # subscribes to merge_group; without this an enabled queue waits forever.
+  merge_group:
+    types: [checks_requested]
+permissions: {}
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  # Cancel superseded PR iterations only. Cancelling a queued merge-group
+  # candidate or a main push makes branch protection observe a partial-cancel
+  # status instead of a decisive result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/actionlint.yml@<sha>
+    with:
+      runner: ubuntu-latest
+
+  test:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/python-ci.yml@<sha>
+    with:
+      runner: ubuntu-latest
+      test_command: "uv run pytest -q"
+
+  coverage:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/coverage-gate.yml@<sha>
+    with:
+      runner: ubuntu-latest
+      coverage_command: "uv run pytest --cov --cov-report=xml"
+
+  ci-gate:
+    name: ci-gate
+    needs: [lint, test, coverage]
+    # `always()` so the gate reports a decisive result even when an upstream job
+    # fails or is skipped; without it the context simply never appears and the
+    # pull request waits forever.
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: { contents: read }
+    steps:
+      - name: Aggregate required results
+        env:
+          # toJSON of the REAL needs context of this run. Nothing crosses a
+          # workflow boundary, so nothing can be substituted.
+          RESULTS: ${{ toJSON(needs) }}
+          # Jobs allowed to report `skipped` (never `failure` or `cancelled`).
+          ALLOW_SKIPPED: coverage
+        run: |
+          set -euo pipefail
+          python3 -I <<'PY'
+          import json
+          import os
+          import sys
+
+          results = json.loads(os.environ["RESULTS"])
+          allow_skipped = {
+              j.strip() for j in os.environ["ALLOW_SKIPPED"].split(",") if j.strip()
+          }
+          if not results:
+              print("ci-gate: needs context is empty", file=sys.stderr)
+              raise SystemExit(1)
+
+          failures = []
+          for job_id, entry in sorted(results.items()):
+              result = (entry or {}).get("result", "unknown")
+              if result == "success":
+                  continue
+              if result == "skipped" and job_id in allow_skipped:
+                  continue
+              failures.append(f"  {job_id}: {result}")
+
+          if failures:
+              print("ci-gate FAILED:", file=sys.stderr)
+              for line in failures:
+                  print(line, file=sys.stderr)
+              raise SystemExit(1)
+          print(f"ci-gate passed ({len(results)} jobs)")
+          PY

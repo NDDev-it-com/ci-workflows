@@ -5,18 +5,20 @@ plan. This one describes what the **NDDev-it-com organization actually owns**,
 so that a repository in this estate stops being configured as if it were on the
 free plan.
 
-Entitlements, verified 2026-08-01 against the enterprise licensing page:
+Which products the organization holds. Licence counts, repository inventory and
+observed spend are account state, not library facts, and live in the control
+plane rather than here — see the note at the end of this document.
 
 | Product | Licences | Consequence for this library |
 | --- | --- | --- |
-| **Enterprise Cloud** | 1 consumed | Artifact Attestations work on **private** repos |
-| **Code Security** | 1 active committer, 23 repos | CodeQL + SARIF upload legal on private |
-| **Secret Protection** | 1 active committer, 26 repos | Native secret scanning on private (push protection deliberately off) |
-| **Code Quality** | 1 consumed | Maintainability scans + PR gate — see [16](16-code-quality.md) |
+| **Enterprise Cloud** | held | Artifact Attestations work on **private** repos |
+| **Code Security** | held | CodeQL + SARIF upload legal on private |
+| **Secret Protection** | held | Native secret scanning on private (push protection deliberately off) |
+| **Code Quality** | held | Maintainability scans + PR gate — see [16](16-code-quality.md) |
 
 Platform side is already applied: the org security configuration
-**`nddev-config`** (`enforcement: enforced`) is attached to all 51 repositories
-and is the default for new ones. It enables GHAS, secret scanning, validity
+**`nddev-config`** (`enforcement: enforced`) is attached to every repository in
+the organization and is the default for new ones. It enables GHAS, secret scanning, validity
 checks, non-provider patterns, Dependabot security updates, and private
 vulnerability reporting.
 
@@ -30,12 +32,14 @@ Two settings are deliberately **not** in it, and both decisions are load-bearing
 - **`code_scanning_default_setup: not_set`.** Config attachment is atomic per
   repository: forcing default setup where an active CodeQL *advanced* setup
   exists fails the **whole** attachment, taking secret scanning down with it —
-  observed exactly once, when the stock `GitHub recommended` configuration
-  attached to 4 of 24 public repos and failed on the 20 running `codeql.yml`.
+  observed when the stock `GitHub recommended` configuration attached to the
+  public repositories without an advanced setup and failed on every repository
+  already running `codeql.yml`.
   Code scanning is therefore enabled per repository instead.
 
-  **Coverage as of 2026-08-10: 36 repositories on default setup, 8 on their own
-  CodeQL workflow, 7 configured with an empty language list.** The last group is
+  **Coverage is tracked in the control plane, not here.** Repositories fall into
+  three groups: default setup, their own CodeQL workflow, and an empty language
+  list. The last group is
   not a gap — they are submodule parents holding only Shell and Dockerfile, so
   CodeQL has nothing to analyse. Note that such a record still *reads* as "code
   scanning on" while scanning nothing, so count languages, not state.
@@ -123,7 +127,7 @@ The manifest records `slsa_build_level: 3` rather than the `null` that
 - **Copilot Autofix.** Copilot Business is provisioned on the organization but
   **zero seats are assigned** (`seat_management_setting: unconfigured`), so
   Autofix on code scanning and Code Quality findings is unavailable until a seat
-  is assigned. That is a per-seat paid product; the $10 Code Quality licence does
+  is assigned. That is a per-seat paid product, and the Code Quality licence does
   not include it.
 - **SAML SSO, IP allow list, SSH certificate authorities.** None configured at
   org or enterprise level.
@@ -139,12 +143,13 @@ do not run it.
 Every paid product here — Code Security, Secret Protection, Code Quality — bills
 per **active committer**, counted **once per organization**, not per repository.
 With a single active committer the estate pays the same whether one repository or
-all fifty are enabled. That is why `nddev-config` is attached to all 50 rather
-than a chosen subset: partial coverage would have cost exactly the same and
-protected less. Re-evaluate that reasoning the moment a second committer joins.
+every repository is enabled. That is why `nddev-config` is attached to all of
+them rather than a chosen subset: partial coverage would have cost exactly the
+same and protected less. Re-evaluate that reasoning the moment a second
+committer joins.
 
 <a id="cost-envelope"></a>
-## The $80/month envelope
+## The fixed-cost envelope
 
 This estate is the `enterprise-full-private-fixed80` profile. The four fixed
 lines, its guards and every other mode are declared in `catalog/profiles.yml`
@@ -154,10 +159,10 @@ there, not here. `scripts/validate_profiles.py` checks that the itemised lines
 sum to the declared total and that a fixed-cost profile cannot permit AI credits
 or Actions overage, so the two cannot drift apart.
 
-Confirmed against the enterprise licensing page on 2026-08-10: 1 Enterprise
-Cloud licence, 2 Advanced Security licences (Secret Protection + Code Security)
-and 1 Code Quality licence, billed at $21 + $49 + $10 = **$80.00**, due
-1 September.
+The licence mix and the amount are declared in `catalog/profiles.yml` and
+validated against it; the invoice that confirms them is account state and lives
+in the control plane. Read the amounts from the generated matrix, never from
+this paragraph.
 
 Everything else is metered and deliberately driven to zero:
 
@@ -180,18 +185,19 @@ Three facts worth carrying:
 - **AI credits have their own budget type, and that one works.** The "New budget"
   flow offers **"AI credits budget — set a budget for all SKUs that consume AI
   credits"** alongside product- and SKU-level. It is metered, so stop-usage
-  applies. Created at enterprise scope on 2026-08-10 at **$0 with stop-usage**,
-  it caps every AI-credit source at once — which matters, because
-  `ai_findings_option: disabled` on every repository did **not** stop the line:
-  $1.31 still accrued in August under product *Code Quality*, and Copilot Autofix
+  applies. Created at enterprise scope at **$0 with stop-usage**, it caps every
+  AI-credit source at once — which matters, because `ai_findings_option:
+  disabled` on every repository did **not** stop the line: credits still
+  accrued under product *Code Quality*, and Copilot Autofix
   ("suggest fixes for CodeQL alerts using AI") remains `On` at repository level.
   Do not treat the per-repository AI toggle as the control.
   Budgets are not retroactive: "usage before budget creation isn't counted in the
   current billing cycle".
 - **Seat count is the one thing no budget bounds.** A second active committer
-  adds $59/month (Code Security + Secret Protection) before anyone writes a
-  workflow. Org membership, outside-collaborator invitation, and enterprise
-  member purchasing are all closed for that reason.
+  adds two more Advanced Security licences before anyone writes a workflow — the
+  single largest step change available to this envelope. Org membership,
+  outside-collaborator invitation, and enterprise member purchasing are all
+  closed for that reason.
 
 <a id="runner-routing"></a>
 ## Runner routing in this estate
@@ -202,30 +208,25 @@ security defect. Mechanics, the two settings that a workflow file cannot reach,
 and the reason this public repository never routes itself to self-hosted:
 [05 Runners → Routing by visibility](05-runners.md#visibility-routing).
 
-Current state, verified 2026-08-10: **all 25 private repositories with a
-configured default setup are on `runner_type: labeled` / `amsterdam`, and all 18
-public ones are on `standard`.** Re-verify this after any change to code-scanning
-setup — omitting `runner_type` from a `PATCH` silently resets it to `standard`,
-which moves private scanning onto metered runners.
+The invariant is that every private repository with a configured default setup
+runs on `runner_type: labeled` and every public one on `standard`; the current
+per-repository tally is control-plane state. Re-verify after any change to
+code-scanning setup — omitting `runner_type` from a `PATCH` silently resets it
+to `standard`, which moves private scanning onto metered runners.
 
 <a id="included-minutes"></a>
 ### The included-minutes pool is the live risk to this envelope
 
-Routing private work to the fleet is what keeps Actions at $0, and the routing
-is only as good as its last write. Measured on 2026-08-10, ten days into the
-month:
+Routing private work to the fleet is what keeps Actions at zero, and the routing
+is only as good as its last write. The included pool has been observed emptying
+well before month end when routing slips.
 
-| Included meter | Used | Included |
-| --- | --- | --- |
-| Actions minutes | **30,689** | 50,000 |
-| Actions storage | 1.1 GB | 50 GB |
-| Actions custom image storage | 0 GiB | 150 GiB |
-
-At that rate the pool empties around **16–17 August**. What happens then is not
-an overspend — the Actions budget is $0 with stop-usage, so **Actions halt**.
-The envelope holds and CI stops. That is the intended trade, but it is worth
-stating plainly, because "the bill stayed at $80" and "CI ran all month" are not
-the same claim.
+What happens then is not an overspend — the Actions budget is $0 with
+stop-usage, so **Actions halt**. The envelope holds and CI stops. That is the
+intended trade, but it is worth stating plainly, because "the bill stayed inside
+the envelope" and "CI ran all month" are not the same claim. Read the current
+meter in the control plane; a figure copied into this document is stale the day
+after it is written.
 
 Anything that adds a scheduled or per-PR job to a **private** repository draws on
 this pool. Check the meter before adding one.

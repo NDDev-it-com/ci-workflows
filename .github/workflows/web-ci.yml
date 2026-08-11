@@ -65,19 +65,19 @@ jobs:
         if: ${{ inputs.install_command != '' }}
         env:
           INSTALL_COMMAND: ${{ inputs.install_command }}
-        run: bash -c "$INSTALL_COMMAND"
+        run: bash -euo pipefail -c "$INSTALL_COMMAND"
 
       - name: Lint
         if: ${{ inputs.lint_command != '' }}
         env:
           LINT_COMMAND: ${{ inputs.lint_command }}
-        run: bash -c "$LINT_COMMAND"
+        run: bash -euo pipefail -c "$LINT_COMMAND"
 
       - name: Run tests
         if: ${{ inputs.test_command != '' }}
         env:
           TEST_COMMAND: ${{ inputs.test_command }}
-        run: bash -c "$TEST_COMMAND"
+        run: bash -euo pipefail -c "$TEST_COMMAND"
 
       - name: Summary
         env:

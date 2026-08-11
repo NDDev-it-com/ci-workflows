@@ -14,10 +14,10 @@ baseline_ref: 218f63feb6be020e71ff8ac8e18146a12fa23a38
 entries:
   - workflow: .github/workflows/actionlint.yml
     criticality: required-gate
-    status: static-only
-    validator: scripts/check_actionlint_contract.py
-    evidence: "Static validators enforce the runner guard and per-job Git-config isolation; a fresh observed workflow_call must prove the new checkout environment before runtime promotion."
-    last_run: null
+    status: runtime-proven
+    evidence: 'Called by runtime-fixtures.yml through a relative ref; the Linux X64 runner guard, the checksum-verified binary install and the per-job Git-config isolation all executed live.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31535606661
+    proven_digest: 30d823c99bf4b274a461d4d4511c2f8e56ab45c61239e9aaad9fa6f5daea7967
     waiver: null
   - workflow: .github/workflows/benchmark-compare.yml
     criticality: supporting
@@ -41,10 +41,14 @@ entries:
     waiver: null
   - workflow: .github/workflows/coverage-gate.yml
     criticality: required-gate
-    status: unverified
+    status: waived
     evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
     last_run: null
-    waiver: null
+    waiver:
+      owner: rldyourmnd
+      reason: >-
+        Coverage threshold gate. The threshold comparison, the artifact upload and the optional Codecov/Coveralls lanes have no fixture and no observed run, so the number it enforces is unexercised.
+      expires_after: "2026-10-08"
   - workflow: .github/workflows/cpp-ci.yml
     criticality: supporting
     status: unverified
@@ -65,9 +69,10 @@ entries:
     waiver: null
   - workflow: .github/workflows/docs-ci.yml
     criticality: supporting
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: runtime-proven
+    evidence: 'Called by runtime-fixtures.yml; the relative-link check executed.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31535606661
+    proven_digest: 1b73939b5be9c9c3f5f58ab9774f81d2d8d69ef25f5c39a8ad5be1b21de93c71
     waiver: null
   - workflow: .github/workflows/docs-quality.yml
     criticality: supporting
@@ -133,10 +138,10 @@ entries:
     waiver: null
   - workflow: .github/workflows/monorepo-changed-paths.yml
     criticality: required-gate
-    status: unverified
-    validator: scripts/check_monorepo_routing.py
-    evidence: 'Executable contract validator exercises the embedded program(s); no live workflow_call run.'
-    last_run: null
+    status: runtime-proven
+    evidence: 'Called by runtime-fixtures.yml on a branch push, where github.event.before is the all-zero oid: this executed the conservative all-true path, the one that must never silently report all-false.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31535606661
+    proven_digest: 35e007d2a056233e327a1108f2157388ebc1e3204ecc4528b2c7e45ac60042f7
     waiver: null
   - workflow: .github/workflows/mutation-testing.yml
     criticality: supporting
@@ -152,25 +157,27 @@ entries:
     waiver: null
   - workflow: .github/workflows/osv-scan.yml
     criticality: security-blocking
+    status: runtime-proven
+    evidence: 'Called by runtime-fixtures.yml; the checksum-verified OSV-Scanner binary downloaded, verified and scanned.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31535606661
+    proven_digest: da41520dcc1ec2d6f2a1ab5c0d40cae577aec07c5acfbb00663dc93ff194df8a
+    waiver: null
+  - workflow: .github/workflows/pr-hygiene.yml
+    criticality: required-gate
     status: waived
     evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
     last_run: null
     waiver:
       owner: rldyourmnd
       reason: >-
-        OSV-Scanner SCA with a checksum-verified binary. The checksum path and the failure-on-known-vulnerability gate have no observed run.
-      expires_after: "2026-10-31"
-  - workflow: .github/workflows/pr-hygiene.yml
-    criticality: required-gate
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
-    waiver: null
+        PR title/label/stale hygiene across four jobs. The pull-requests and issues write scopes are unproven by any observed run.
+      expires_after: "2026-11-05"
   - workflow: .github/workflows/private-static.yml
     criticality: required-gate
-    status: unverified
-    evidence: 'Per-job Git-config isolation is statically enforced; no observed consumer run yet proves checkout on a persistent self-hosted runner.'
-    last_run: null
+    status: runtime-proven
+    evidence: 'Called by runtime-fixtures.yml; the lane provisioned uv through the new setup_uv input, installed hash-pinned dependencies and ran a real caller command. The first fixture attempt failed here with uv not found, which is how the missing-installer gap was found.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31535606661
+    proven_digest: 54a911bd9706d9884f9f0c03ba3430d6abb706a07b4aa4f864de5b1d62de3962
     waiver: null
   - workflow: .github/workflows/public-codeql.yml
     criticality: security-blocking
@@ -234,14 +241,12 @@ entries:
     criticality: release
     status: static-only
     validator: scripts/check_release_supply_chain.py
-    validator: scripts/check_release_supply_chain.py
     evidence: 'Executable contract validator exercises the embedded program(s); no live workflow_call run.'
     last_run: null
     waiver: null
   - workflow: .github/workflows/release-supply-chain.yml
     criticality: release
     status: static-only
-    validator: scripts/check_release_supply_chain.py
     validator: scripts/check_release_supply_chain.py
     evidence: 'Executable contract validator exercises the embedded program(s). The
       runtime proof lapsed when actions/attest and actions/checkout were bumped: this
@@ -257,25 +262,18 @@ entries:
     waiver: null
   - workflow: .github/workflows/secret-scan.yml
     criticality: security-blocking
-    status: waived
-    evidence: 'The prior runtime proof predates checkout 7.0.1 and per-job Git-config
-      isolation. A fresh workflow_call has not proven the current bytes.'
-    last_run: null
-    waiver:
-      owner: rldyourmnd
-      reason: >-
-        Gitleaks full-history scan. Runs today only as a caller in consuming repositories, never as an observed workflow_call fixture here, so its startup, runner lane and fetch-depth contract are unproven.
-      expires_after: "2026-09-15"
+    status: runtime-proven
+    evidence: 'Called by runtime-fixtures.yml; full-history gitleaks executed through the digest-pinned container.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31535606661
+    proven_digest: fd59fb2c75e91789d22564826f59b36fc2a1fe35bd65ed3efb11fd826714b96b
+    waiver: null
   - workflow: .github/workflows/semgrep-ci.yml
     criticality: security-blocking
-    status: waived
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
-    waiver:
-      owner: rldyourmnd
-      reason: >-
-        Semgrep SAST. No fixture consumer; the config input and the non-SARIF gate path are unexercised.
-      expires_after: "2026-10-15"
+    status: runtime-proven
+    evidence: 'Called by runtime-fixtures.yml; the pinned Semgrep ran 33 rules over the tree and the non-SARIF gate path executed. An earlier run of the same fixture exited 1 on ten real findings, so the gate is proven to fire as well as to pass.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31535606661
+    proven_digest: 4d45570b0a02a50ce9e778161e927b818346246dec6bd18d128d749fcf42625d
+    waiver: null
   - workflow: .github/workflows/sql-ci.yml
     criticality: supporting
     status: unverified
@@ -302,14 +300,11 @@ entries:
     waiver: null
   - workflow: .github/workflows/zizmor-no-sarif.yml
     criticality: security-blocking
-    status: waived
-    evidence: 'Per-job Git-config isolation is statically enforced; no observed consumer run yet proves the current private-free scanner bytes.'
-    last_run: null
-    waiver:
-      owner: rldyourmnd
-      reason: >-
-        Private-free zizmor variant. Must be proven separately from the SARIF variant precisely because it drops the upload step and its permission.
-      expires_after: "2026-11-30"
+    status: runtime-proven
+    evidence: 'Called by runtime-fixtures.yml; the private-free lane ran to completion on contents:read alone, proving the reduced permission set is sufficient without the SARIF upload. Its online audits fired and found three ref-version-mismatch pins that a tokenless local run had reported clean.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31535606661
+    proven_digest: 4f488af8ce4c5c9883f51ee09c0e0c782b85c7d00f92487e08571cb417360d29
+    waiver: null
   - workflow: .github/workflows/zizmor-sarif.yml
     criticality: security-blocking
     status: waived
@@ -323,10 +318,11 @@ entries:
         Workflow static analysis with SARIF upload. The security-events permission path is unproven by any observed run.
       expires_after: "2026-11-15"
   - workflow: .github/workflows/gate.yml
-    criticality: required-gate
-    status: unverified
-    evidence: 'Redesigned to accept needs_json input (reusable workflows cannot read caller needs context). Awaiting first live run.'
-    last_run: null
+    criticality: supporting
+    status: runtime-proven
+    evidence: 'Called by runtime-fixtures.yml as a consumer should call it - every job in needs listed in required_jobs - proving the reporting path. It remains supporting, not a merge gate: the reusable cannot authenticate needs_json.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31535606661
+    proven_digest: df78fede64a9a464756076c1b0286bd2b0e88350c5a2596bba395bd80939015c
     waiver: null
   - workflow: .github/workflows/rust-supply-chain.yml
     criticality: security-blocking

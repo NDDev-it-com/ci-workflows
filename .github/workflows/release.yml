@@ -1,5 +1,23 @@
 name: release
 
+# Release graph — every write capability sits behind two gates:
+#
+#   resolve      validate the version against VERSION + CHANGELOG (read-only)
+#     └─ promotion   verify the tag carries a control-plane promotion record
+#          └─ authorize   protected environment; a human release operator approves
+#               └─ publish   the only job holding contents/id-token/attestations
+#
+# `publish` calls a reusable workflow, and GitHub does not allow `environment:`
+# on a `uses:` job (actionlint: "when a reusable workflow is called with
+# 'uses', 'environment' is not available"). The approval therefore lives in its
+# own `authorize` job. `publish` declares its write scopes but can never start
+# until authorize succeeds, so the token is never minted for an unauthorized
+# candidate.
+#
+# workflow_dispatch must be run **from the tag ref**: the promotion gate
+# requires github.ref_type == 'tag' and ref_name == version, so dispatching from
+# a branch fails closed rather than bypassing the gate.
+
 on:
   push:
     tags:
@@ -7,7 +25,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (must equal VERSION and an existing tag).'
+        description: 'Version to release. Run this from the tag ref; must equal VERSION and the tag.'
         required: true
         type: string
 
@@ -35,10 +53,42 @@ jobs:
             agent.api.stepsecurity.io:443
             github.com:443
             api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            raw.githubusercontent.com:443
+            astral.sh:443
+            pypi.org:443
+            files.pythonhosted.org:443
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        with:
+          version: 0.11.30
+          # setup-uv caches by default. On a publishing workflow that turns the
+          # Actions cache into an input to a release build, and a cache entry
+          # written from a lower-trust ref would be restored here
+          # (zizmor: cache-poisoning, high). The preflight installs one
+          # hash-pinned wheel; a cache saves nothing worth that exposure.
+          enable-cache: false
+
+      - name: Install validator dependencies
+        run: uv pip install --system --require-hashes -r requirements-ci.txt
+
+      # A release is the one place where the full sweep is the right gate: an
+      # immutable artifact must not ship carrying an expired external fact or a
+      # runtime-coverage waiver that is already past due. Pull requests get the
+      # scoped tiers; a release gets everything.
+      - name: Full validation sweep
+        run: python3 -I scripts/validate_all.py
+
       - name: Resolve and validate version
         id: v
         env:
@@ -99,8 +149,43 @@ jobs:
           print(f"release contract validated for {version}")
           PY
 
-  publish:
+  promotion:
+    name: Verify release promotion
     needs: resolve
+    permissions:
+      contents: read
+    uses: ./.github/workflows/release-promotion-gate.yml
+    with:
+      runner: ubuntu-latest
+      version: ${{ needs.resolve.outputs.version }}
+
+  authorize:
+    name: Authorize release
+    needs: [resolve, promotion]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # The protected environment is the release authority. A GitHub-verified
+    # signature proves who signed, never that the signer may ship — this job is
+    # where that second question is answered, by a required reviewer on the
+    # `release` environment.
+    environment: release
+    permissions: {}
+    steps:
+      - name: Record the authorized candidate
+        env:
+          RELEASE_VERSION: ${{ needs.resolve.outputs.version }}
+        run: |
+          set -euo pipefail
+          {
+            echo "### Release authorized"
+            echo
+            echo "- version: \`${RELEASE_VERSION}\`"
+            echo "- promotion record: verified"
+            echo "- approver: recorded by the \`release\` environment"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    needs: [resolve, promotion, authorize]
     permissions:
       contents: write
       id-token: write

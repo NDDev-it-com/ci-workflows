@@ -2,6 +2,293 @@
 
 ## [Unreleased]
 
+### Added
+
+- **A consumer fixture estate, and it immediately found four defects static
+  validation could not.** `runtime-fixtures.yml` calls nine reusables the way a
+  consumer would. ADR 0003 named its absence as the reason 44 of 46 workflows
+  were unproven; the first run proved seven and produced these:
+
+  - **Three pin comments named the wrong release.** zizmor's `ref-version-mismatch`
+    is an *online* audit. Run locally without a token it is skipped silently and
+    zizmor prints "No findings"; CI has `GH_TOKEN`, so it runs. The pinned
+    `cargo-deny-action` SHA is `v2.1.1`, not the `v2.0.11` its comment claimed —
+    a different commit entirely — and both `clusterfuzzlite` comments were dated
+    2024-09-19 against a commit from 2026-02-12. The new pin-comment rule checked
+    the *format* and passed all three. Corrected, and `AGENTS.md` and the skill
+    now require a token for local zizmor.
+
+  - **`private-static.yml` provisioned no installer.** It sets up Python, then
+    runs a caller-supplied `install_command` — with `pip` and `pipx` forbidden by
+    estate policy and `uv` never installed, a caller following that policy had
+    nothing to install with. The fixture failed on `uv: command not found`. Closed
+    with an additive `setup_uv` input, default `false`, so every existing caller
+    is byte-identical.
+
+  - **The examples did not demonstrate the library's own headline rule.** Semgrep
+    flagged ten `github-actions-mutable-action-tag` findings, all in `examples/`:
+    third-party actions carried the `@<sha>` placeholder, which no scanner can
+    distinguish from a mutable tag. `check_pinned_actions.py` enforces full-SHA
+    pinning over `.github/workflows/` only. The four affected examples now pin
+    real SHAs; `@<sha>` remains where it belongs, on the `ci-workflows` reference
+    a consumer must choose for themselves.
+
+  **Result after the fixes: 10/10 green, and nine reusables promoted to
+  `runtime-proven`** against run 31535606661 — `actionlint`, `zizmor-no-sarif`,
+  `secret-scan`, `private-static`, `monorepo-changed-paths`, `osv-scan`,
+  `semgrep-ci`, `docs-ci` and `gate`. The ledger moves from 2 proven / 31
+  unverified to **11 proven / 25 unverified**, and of the eighteen records in an
+  obligated tier, eight are now proven by a real run rather than standing on a
+  validator or a dated waiver. Seven waivers remain: `coverage-gate`,
+  `grype-scan`, `iac-scan`, `pr-hygiene`, `public-codeql`, `rust-supply-chain`,
+  `zizmor-sarif` — each needs a fixture this run does not provide (a container
+  image, a pull-request context, SARIF upload permissions, a crate).
+
+  `semgrep-ci` is proven in both directions: an earlier run of the same fixture
+  exited 1 on ten real findings before they were fixed, so the gate is known to
+  fire, not only to pass.
+
+  The estate is deliberately not a required check and not on `pull_request` —
+  evidence production is not merge gating. It triggers on a push to `fixtures/**`
+  so a change can be proven before it merges, and weekly so evidence does not go
+  stale as pins move.
+
+### Fixed
+
+- **CodeQL caught a cyclic import in the strict loader.** `_workflow_yaml`
+  imported `strict_load` at module level while `_strict_yaml.check()` reached
+  back for `REPO_ROOT` from inside the function. It worked only because that
+  second import was deferred — a real cycle wearing a workaround.
+  `_strict_yaml` is the bottom of this stack and now derives `REPO_ROOT`
+  itself, two lines of pathlib against a dependency cycle.
+
+### Changed
+
+- **The release procedure now says how to produce the promotion record.**
+  `docs/09` described the gate and the record's shape without saying who builds
+  it, which read as though the record had to be hand-written. It does not:
+  `scripts/promotion_record.py` in the control plane already builds and verifies
+  it against the same `nddev-release-promotion/v1` schema and the same nine
+  evidence roles the gate enforces. Documented with the exact `create` / `verify`
+  invocation, the `git tag -s -F` step that puts it in the signed annotation, and
+  the three properties easiest to get wrong: canonical compact JSON plus one LF,
+  the 168-hour freshness window, and the commit identity every evidence entry
+  must agree on.
+
+- **Three repository-operation skills became one.** `nddev-repo-orientation`,
+  `nddev-change-flow` and `nddev-release-flow` described a single workflow across
+  three files that had to be kept in step with each other *and* with `AGENTS.md`,
+  and drifted from both. `nddev-repo-flow` replaces them: 439 lines to 138, ten
+  skills instead of twelve, and the procedure lives in one place while the facts
+  live in the brief.
+
+- **The public library stopped publishing account-observed estate state.**
+  `docs/17` and `docs/18` carried a live operations report: licence counts,
+  repository inventory ("23 repos", "all 51 repositories", "36 on default setup,
+  8 on their own"), an invoice total, AI-credit spend to the cent, a metered-pool
+  reading with a projected exhaustion date, and a named private repository. None
+  of it was secret, which is why it survived review — the defect is the trust
+  domain. A consumer reads a public library for stable contracts, not for what
+  one organization's bill looked like on one morning, and every figure was stale
+  within days.
+
+  Durable statements stay: which products the estate holds, why push protection
+  is off, that a security configuration attaches atomically, that a budget cannot
+  stop a licence-based product, that a second committer is the largest available
+  step change. Countable account state moves to the control plane, and
+  `scripts/check_public_docs.py` now rejects inventory counts and cent-precision
+  currency in public prose so the report cannot creep back. `docs/16` also
+  restated the AI-credit tariff, which the freshness-gated ledger owns; it now
+  references the fact instead.
+
+### Fixed
+
+- **Pin comments could say nothing, and two lied.** `check_pinned_actions.py`
+  required only that *some* `#` comment follow the SHA, so `#` and `# bumped`
+  both passed — while the comment is the only human-readable half of a pin and
+  the thing a reviewer reads when diffing a Dependabot bump. It must now name a
+  release (`# vX.Y.Z`) or an ISO date for upstreams that publish none
+  (`google/clusterfuzzlite`). Two pins carried a moving major tag; resolved
+  against the upstream tag list to `# v2.12.1` (`r-lib/actions/setup-r`) and
+  `# v3.0.0-beta.1` (`swift-actions/setup-swift`).
+
+- **`catalog/tools.yml` recorded pins that were no longer running.** Adding a
+  cross-check between each pin comment and the catalog's `current_version`
+  immediately found `codeql-action` at `v4.37.0` / `99df26d4` and `setup-gradle`
+  at `v6.2.0` / `3f131e86` while the workflows had been bumped to `v4.37.5` /
+  `d1ba80a1` and `v6.3.0` / `9c971963`. The catalog exists to record which build
+  is pinned and was wrong about it for two tools across eight call sites, in the
+  direction that matters least visibly: a reviewer checking "what does this SHA
+  correspond to" got a stale answer. Both corrected against the upstream tag
+  list and the cross-check now runs in the gate.
+
+### Security
+
+- **The release path had a documented promotion gate it never called.**
+  `release-promotion-gate.yml` existed, was validated by its own fixtures, was
+  drawn in `docs/09` as `release.yml -> promotion -> supply-chain`, and had a
+  caller example — while the repository's actual `release.yml` ran
+  `publish: needs: resolve` straight into the write-capable reusable. A control
+  that is not in the path is not a control.
+
+  `release.yml` is now `resolve -> promotion -> authorize -> publish`. Every
+  write scope (`contents`, `id-token`, `attestations`, `artifact-metadata`)
+  lives on `publish`, which cannot start until the machine gate verifies the
+  tag's control-plane promotion record *and* a human approves through the
+  protected `release` environment. `environment:` is not permitted on a job that
+  calls a reusable workflow, so the approval sits in its own unprivileged
+  `authorize` job. `scripts/check_release_graph.py` walks the `needs` graph and
+  rejects any release-capable job reachable without both gates, plus five
+  negative fixtures including the exact defect that shipped.
+
+  **This is a release-blocking change on purpose.** No existing tag carries an
+  `nddev-release-promotion/v1` record, and the `release` environment does not
+  exist yet, so the next tag fails closed until both are in place.
+
+- **`gate.yml` was sold as a branch-protection primitive and could not be one.**
+  A reusable workflow cannot read its caller's `needs` context, so results
+  arrive as the caller-authored `needs_json` string. Executed against the
+  embedded verifier, five forged inputs all passed — including
+  `needs_json: '{}'` with `required_jobs: ''`, which produced a green named
+  check while asserting nothing at all.
+
+  It is now labelled a non-authoritative reporting helper in its header, in the
+  catalog, and in `docs/08`, and it fails closed on inputs that assert nothing:
+  empty or non-object `needs_json`, empty `required_jobs`, a required job absent
+  from `needs`, an entry without a `result`, and a `required_jobs` list that
+  omits a job present in `needs` (which let a failing job be dropped by
+  shrinking the list). Two inputs still pass and always will — a fabricated
+  all-success object, and fabricated job names — because no validation inside a
+  reusable can distinguish those from genuine caller data;
+  `scripts/check_gate_contract.py` asserts that too, so the limitation stays
+  visible instead of being rediscovered by a consumer.
+
+  `examples/quality/caller-native-gate.yml` is the required-check replacement,
+  evaluating the real `needs` context in the caller. `ci.yml` now uses that
+  shape for `ci-gate` itself.
+
+### Fixed
+
+- **A duplicate mapping key in a canonical catalog was accepted silently.**
+  `catalog/runtime-coverage.yml` carried `validator:` twice in two records, and
+  every loader was `yaml.safe_load`, which keeps the last value. Demonstrated:
+  pointing the second copy at a non-existent script left the gate green while
+  the real validator reference was discarded. `scripts/_strict_yaml.py` is now
+  the single loader for every canonical YAML and rejects duplicate keys with
+  file, line, and key; the tree-wide scan and its fixtures run first in the gate.
+
+- **The profile resolver answered 13 of 96 repository shapes.** Named profiles
+  were doing double duty as ergonomics *and* as the semantic domain, so any
+  valid combination nobody had named — Secret-Protection-only, Code-Quality-only,
+  and 81 others — exited with "no named profile covers it". Presets and validity
+  are now separate: `catalog/profiles.yml` declares the plan gates and the
+  derivation rules, and `resolve_profile.py` synthesizes a deterministic
+  programme with a derivation trace for any shape a plan gate does not forbid.
+  72 shapes resolve (13 preset, 59 derived) and 24 are refused with a stated
+  reason (Code Quality below a Team plan). A derived mode compiles **no** cost —
+  a costed envelope is a verified decision, not an inference. The exhaustive
+  96-shape matrix is now an invariant in `validate_all`.
+
+- **One required job coupled product invariants to the calendar.** All 22
+  validators ran in a single blocking gate, including the expiry sweep over
+  external product facts. Reproduced: a one-line comment change in `java-ci.yml`
+  became unmergeable because a third-party runner vendor's pricing fact reached
+  its expiry date.
+
+  `validate_all.py` now runs three tiers. **core** is blocking and holds only
+  properties of the tree. **touched** is blocking but scoped — a fact is checked
+  for expiry only when the changed capability declares it, a waiver only when its
+  workflow was touched. **scheduled** is advisory and runs in the new
+  `maintenance.yml`, which files a single tracking issue rather than leaving
+  findings in a run log. Verified by advancing the clock to 2026-11-01 with 30
+  facts and 4 waivers past due: core and touched stay green for an unrelated
+  bugfix, scheduled reports the debt, and a change to a capability that *depends*
+  on a stale fact is still blocked. `release.yml` runs the full sweep, because a
+  release must not ship carrying an expired claim.
+
+- **`required-gate` owed no evidence.** The proof obligation covered `release`
+  and `security-blocking` only, so workflows whose entire job is deciding whether
+  a merge proceeds could rest at `unverified` — which is where `gate.yml` sat.
+  `required-gate` joins the obligated tiers and its five members are pinned.
+  Resolved honestly: `monorepo-changed-paths.yml` to `static-only` behind its
+  hermetic Git-DAG fixtures, `gate.yml` reclassified to `supporting` behind
+  `check_gate_contract.py` (pinned at its new tier so the change is deliberate
+  rather than a quiet relabel), and dated waivers for `coverage-gate.yml`,
+  `pr-hygiene.yml` and `private-static.yml`, staggered against the existing wall.
+  No record in an obligated tier is `unverified` any more.
+
+- **The GDS projection fix is drafted but not claimed here.** The correction —
+  a repository-tier override plus this module claiming it — is prepared in
+  NDDev-it-com/github-device-sync#150 and blocked on the estate's
+  content-addressed provenance: adding a policy *source* stales every generated
+  projection in the same commit, and regenerating them needs a registered device
+  identity. This module therefore does **not** yet list the `ci-workflows`
+  profile; `gds compile policy` fails closed with `GDS_POLICY_PROFILE_MISSING`
+  when a declared profile has no source, so claiming it early would break the
+  estate rather than fix it. `docs/08` records the diagnosis and the remedy.
+
+- **Governance was described in four places that disagreed.** Settled against
+  the live API: the repository allows `merge` only (`allow_squash_merge: false`),
+  which matches `.github/rulesets/branch-main.json`.
+  `.github/branch-protection/main.json` claimed to record the same ruleset while
+  describing `squash` and linear history; nothing read it and no validator
+  compared it to anything. Deleted — two files describing one object is the
+  defect. `docs/08` now carries an ownership table and records that
+  `.gds/compiled-policy.json` is **also wrong** (`allow_squash_merge: true`
+  under `management: managed`) and **cannot be fixed here**: it is generated,
+  its sources live outside this repository, and the policy itself forbids
+  editing generated projections.
+
+- **The instruction surfaces contradicted each other and the CI they describe.**
+  `AGENTS.md`, `.claude/CLAUDE.md`, `CONTRIBUTING.md` and a skill all told
+  contributors to run `python3 -m pip install`, while the estate policy forbids
+  `pip`/`pipx` and mutable resolution (`go install ...@latest`, also documented)
+  and CI actually ran `uv pip install --system`. All four now match CI.
+  `AGENTS.md` is rewritten as a compact map (179 → 118 lines) built around a
+  change-impact map and a table of contracts pointing at the executable
+  validator that owns each; `.claude/CLAUDE.md` is a 19-line delta (was 125) and
+  states that `AGENTS.md` is not auto-loaded in Claude Code. Both said "eight
+  portable skills" against nine in `EXPECTED_SKILLS`.
+
+- **`catalog/tools.yml` was factually wrong about its own consumers.**
+  `actions/checkout` declared 9 workflows and was used in 46; `setup-python` 3 of
+  6; `upload-artifact` 2 of 7 — and four actions used on disk had no entry at all
+  (`cargo-deny-action`, `taiki-e/install-action`, both
+  `clusterfuzzlite/actions/*`), because the pin validators check pin format and
+  never catalog membership. `used_by` is the list a reviewer reads to answer
+  "which workflows does this SHA bump affect?". Corrected and now derived from
+  the tree by `scripts/check_tool_registry.py`.
+
+- **Caller commands did not fail fast.** 47 sites across 23 workflows ran
+  `bash -c "$COMMAND"`; the inner shell inherits nothing from the step, so a
+  caller passing `lint; test` or `build | tee log` got exit 0 from a failing
+  first command and the reusable reported success. The fail-fast contract
+  existed but was written for `private-static.yml` alone; it now applies
+  everywhere a caller's command is executed, enforced by
+  `check_workflow_contracts.py`.
+
+- **README compiled a public cost the catalog forbids compiling.** It stated
+  flatly that public repositories are "not free" for Code Quality, while the
+  fact ledger records the public rate as **disputed between GitHub's own
+  sources** and says not to compile one in either direction. The fact also
+  contradicted itself — its `conditions` recorded the dispute while a later
+  `notes` entry resolved it — so both were corrected: the licence requirement is
+  stated, the rate stays account-observed.
+
+- **Three reusables shipped with no caller example** (`gate.yml`,
+  `rust-supply-chain.yml`, `clusterfuzzlite.yml`) despite the rule being written
+  down. Examples added, and `check_examples.py` now enforces coverage.
+
+- **`Last generated: 2026-07-11` was a hard-coded literal** in
+  `generate_docs.py`, printed on documents rendered from a catalog edited in
+  August. Replaced with the newest `last_verified` among the rows each document
+  renders: deterministic, so the drift check stays meaningful, and it answers
+  the question a reader actually has.
+
+- **A release-path cache-poisoning vector** (zizmor, high): `setup-uv` caches by
+  default, which would make the Actions cache an input to a release build. The
+  release preflight sets `enable-cache: false`.
+
 ### Fixed
 
 - **The zizmor invocation is now pinned to the version CI runs.** AGENTS.md said

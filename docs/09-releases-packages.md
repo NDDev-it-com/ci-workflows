@@ -12,16 +12,69 @@ supply-chain reusable.
 
 ```text
 push tag X.Y.Z
-  └─ release.yml (resolve + validate)
-      ├─ release-promotion-gate.yml (NDDev exact-SHA eligibility)
-      └─ release-supply-chain.yml (needs: promotion)
-          ├─ tracked-source archive
-          ├─ exact-payload SPDX SBOM
-          ├─ canonical release notes
-          ├─ manifest + SHA256SUMS
-          ├─ Sigstore attestations
-          └─ immutable GitHub Release
+  └─ release.yml
+      └─ resolve      version vs VERSION + CHANGELOG      (contents: read)
+          └─ promotion    release-promotion-gate.yml       (contents: read)
+              └─ authorize    environment: release         (permissions: {})
+                  └─ publish  release-supply-chain.yml     (contents/id-token/
+                      ├─ tracked-source archive             attestations: write)
+                      ├─ exact-payload SPDX SBOM
+                      ├─ canonical release notes
+                      ├─ manifest + SHA256SUMS
+                      ├─ Sigstore attestations
+                      └─ immutable GitHub Release
 ```
+
+Every write scope lives on `publish`, and `publish` cannot start until both
+gates pass: the machine gate (`promotion`) verifies the tag carries a
+control-plane promotion record for that exact commit, and the human gate
+(`authorize`) is a protected environment whose required reviewer is the release
+authority. A GitHub-verified signature proves **who signed**, never that the
+signer may ship — the two questions are answered by two different jobs.
+
+`environment:` cannot be declared on a job that calls a reusable workflow, so the
+approval sits in its own unprivileged `authorize` job rather than on `publish`.
+`scripts/check_release_graph.py` walks the `needs` graph and fails if any job
+holding a release write scope can be reached without both gates, so this diagram
+and the workflow cannot drift apart again.
+
+### Producing the promotion record
+
+The record is not written by hand and not produced by this repository. The
+control plane owns it: `scripts/promotion_record.py` in
+`NDDev-it-com/nddev-harnesses` builds and verifies it against the same
+`nddev-release-promotion/v1` schema the gate enforces, including the nine
+required evidence roles.
+
+```bash
+# in the control plane, against the exact candidate commit
+python3 scripts/promotion_record.py create \
+  --module ci-workflows \
+  --evidence-manifest <manifest.json> \
+  --output promotion.json
+python3 scripts/promotion_record.py verify --module ci-workflows --input promotion.json
+```
+
+Then make that file the annotation of the signed tag — the gate reads the record
+out of the tag object's signed payload, not out of a file in the repository:
+
+```bash
+git tag -s X.Y.Z -F promotion.json
+git push origin X.Y.Z
+```
+
+Three properties the gate checks that are easy to get wrong:
+
+- The annotation must be **canonical compact sorted-key JSON plus exactly one
+  LF**. A pretty-printed record is rejected.
+- The record expires. `expires_at` must be in the future and within 168 hours of
+  `generated_at`, and every evidence observation must fall in the same window —
+  a record generated last month cannot authorize today's tag.
+- `public_commit` must equal the commit the tag points at, and every evidence
+  entry must name that same commit and the same control-plane root commit.
+
+A GitHub-verified signature proves who signed; it does not prove they may ship.
+The protected `release` environment answers the second question.
 
 `release.yml` validates three things before publishing:
 

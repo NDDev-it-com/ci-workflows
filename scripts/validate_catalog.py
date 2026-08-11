@@ -12,6 +12,8 @@ from pathlib import Path
 
 import yaml
 
+from _strict_yaml import strict_load
+
 from _workflow_yaml import SELF_WORKFLOWS
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -49,7 +51,7 @@ def _load(name: str, problems: list[str]):
         problems.append(f"missing catalog file: {name}")
         return None
     try:
-        return yaml.safe_load(path.read_text(encoding="utf-8"))
+        return strict_load(path)
     except yaml.YAMLError as exc:
         problems.append(f"{name}: invalid YAML: {exc}")
         return None

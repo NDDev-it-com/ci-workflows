@@ -68,12 +68,12 @@ jobs:
         if: ${{ inputs.build_command != '' }}
         env:
           BUILD_COMMAND: ${{ inputs.build_command }}
-        run: bash -c "$BUILD_COMMAND"
+        run: bash -euo pipefail -c "$BUILD_COMMAND"
 
       - name: Run tests
         env:
           TEST_COMMAND: ${{ inputs.test_command }}
           GO_VER: ${{ inputs.go_version }}
         run: |
-          bash -c "$TEST_COMMAND"
+          bash -euo pipefail -c "$TEST_COMMAND"
           echo "Go ${GO_VER} build + tests passed." >> "$GITHUB_STEP_SUMMARY"

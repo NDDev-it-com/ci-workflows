@@ -61,6 +61,41 @@ def _events(doc: dict[str, Any]) -> set[str]:
     return set()
 
 
+def _coverage() -> list[str]:
+    """Every reusable workflow must have at least one caller example.
+
+    AGENTS.md has always required "an example under `examples/`" for a new
+    workflow, and nothing checked it. Three reusables shipped without one —
+    `gate.yml`, `rust-supply-chain.yml`, `clusterfuzzlite.yml` — so the rule
+    held only for as long as whoever wrote the workflow remembered it. An
+    example is the only executable statement of a workflow's caller contract:
+    the permissions it needs, the inputs it requires, and the runner the caller
+    must name for itself.
+    """
+    from _workflow_yaml import SELF_WORKFLOWS, WORKFLOWS_DIR, get_on, load_yaml
+
+    reusables = set()
+    for path in sorted(WORKFLOWS_DIR.glob("*.yml")):
+        if path.name in SELF_WORKFLOWS:
+            continue
+        on = get_on(load_yaml(path))
+        if isinstance(on, dict) and "workflow_call" in on:
+            reusables.add(path.name)
+
+    called: set[str] = set()
+    for example in sorted(EXAMPLES_DIR.rglob("*.yml")):
+        text = example.read_text(encoding="utf-8")
+        for name in reusables:
+            if f"/.github/workflows/{name}@" in text:
+                called.add(name)
+
+    return [
+        f"examples/: no caller example references {name} — a reusable without "
+        "one has no executable statement of its caller contract"
+        for name in sorted(reusables - called)
+    ]
+
+
 def check() -> list[str]:
     problems: list[str] = []
     if not EXAMPLES_DIR.is_dir():
@@ -123,7 +158,7 @@ def check() -> list[str]:
                 )
         if rel.endswith("dependency-review.yml") and events != {"pull_request"}:
             problems.append(f"{rel}: dependency-review example must use pull_request only")
-    return problems
+    return problems + _coverage()
 
 
 def main() -> int:

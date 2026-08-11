@@ -24,6 +24,8 @@ from urllib.parse import urlparse
 
 import yaml
 
+from _strict_yaml import strict_load
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 LEDGER = REPO_ROOT / "catalog" / "product-facts.yml"
 CAPABILITIES = REPO_ROOT / "catalog" / "capabilities.yml"
@@ -61,8 +63,16 @@ def _iso(value: object) -> dt.date | None:
     return dt.date.fromisoformat(str(value))
 
 
-def validate_ledger(data: object, as_of: dt.date) -> list[str]:
-    """Validate a parsed ledger document as of a fixed date."""
+def validate_ledger(data: object, as_of: dt.date,
+                    expiry_scope: set[str] | None = None) -> list[str]:
+    """Validate a parsed ledger document as of a fixed date.
+
+    ``expiry_scope`` limits the *calendar* rule to the named fact ids; every
+    structural rule always applies. This is what lets an unrelated third party's
+    tariff go stale without making a Java CI bugfix unmergeable, while a stale
+    fact the change actually depends on still blocks. Pass ``None`` for the full
+    sweep (the scheduled refresh and the release path).
+    """
     problems: list[str] = []
     if not isinstance(data, dict):
         return ["product-facts: top-level document must be a mapping"]
@@ -117,7 +127,11 @@ def validate_ledger(data: object, as_of: dt.date) -> list[str]:
         if expiry is None:
             if not deprecated:
                 problems.append(f"{where}: expires_after is required for a live fact")
-        elif expiry < as_of and not deprecated:
+        elif (
+            expiry < as_of
+            and not deprecated
+            and (expiry_scope is None or str(fid) in expiry_scope)
+        ):
             problems.append(
                 f"{where}: EXPIRED on {expiry} (as of {as_of}); re-verify against "
                 "source_urls and bump verified_at/expires_after"
@@ -194,7 +208,7 @@ def _capability_references(ledger_ids: set[str]) -> list[str]:
     problems: list[str] = []
     if not CAPABILITIES.is_file():
         return problems
-    doc = yaml.safe_load(CAPABILITIES.read_text(encoding="utf-8"))
+    doc = strict_load(CAPABILITIES)
     for cap in (doc or {}).get("capabilities", []):
         if not isinstance(cap, dict):
             continue
@@ -277,20 +291,55 @@ def _fixture_tests() -> list[str]:
     return problems
 
 
-def check() -> list[str]:
+def facts_reached_by(changed: set[str]) -> set[str] | None:
+    """The fact ids a change actually depends on, or None for "all of them".
+
+    A change to the ledger or to the capability catalog can invalidate any fact,
+    so those return None and take the full sweep. Otherwise the reachable set is
+    derived: changed workflow or example path -> the capabilities that declare
+    it -> those capabilities' `product_facts`. A workflow whose capability links
+    no fact reaches none, which is the common case and the point.
+    """
+    if any(
+        path in {"catalog/product-facts.yml", "catalog/capabilities.yml"}
+        for path in changed
+    ):
+        return None
+    doc = strict_load(CAPABILITIES) if CAPABILITIES.is_file() else {}
+    reached: set[str] = set()
+    for cap in (doc or {}).get("capabilities") or []:
+        if not isinstance(cap, dict):
+            continue
+        owned = {str(cap.get("workflow") or ""), str(cap.get("example") or "")}
+        if owned & changed:
+            reached.update(str(f) for f in cap.get("product_facts") or [])
+    return reached
+
+
+def check(expiry_scope: set[str] | None = None) -> list[str]:
     if not LEDGER.is_file():
         return [f"missing product-fact ledger: {LEDGER.relative_to(REPO_ROOT)}"]
     try:
-        data = yaml.safe_load(LEDGER.read_text(encoding="utf-8"))
+        data = strict_load(LEDGER)
     except yaml.YAMLError as exc:
         return [f"product-facts: invalid YAML: {exc}"]
-    problems = validate_ledger(data, dt.date.today())
+    problems = validate_ledger(data, dt.date.today(), expiry_scope)
     ledger_ids = {
         str(f.get("id")) for f in (data or {}).get("facts", []) if isinstance(f, dict)
     }
     problems += _capability_references(ledger_ids)
     problems += _fixture_tests()
     return problems
+
+
+def check_structural() -> list[str]:
+    """Everything except the calendar. Safe to block any pull request on."""
+    return check(expiry_scope=set())
+
+
+def check_for_paths(changed: set[str]) -> list[str]:
+    """Structural rules, plus expiry for the facts this change depends on."""
+    return check(expiry_scope=facts_reached_by(changed))
 
 
 def main() -> int:

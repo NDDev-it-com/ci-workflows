@@ -9,7 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import yaml
+from _strict_yaml import strict_load
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
@@ -19,10 +19,12 @@ WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
 # runtime-coverage, or generated-inventory entry.
 SELF_WORKFLOWS = {
     "ci.yml",
+    "maintenance.yml",
     "codeql.yml",
     "dependency-review.yml",
     "gitleaks.yml",
     "release.yml",
+    "runtime-fixtures.yml",
     "scorecard.yml",
 }
 
@@ -32,8 +34,7 @@ def workflow_files() -> list[Path]:
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
-    with path.open(encoding="utf-8") as fh:
-        data = yaml.safe_load(fh)
+    data = strict_load(path)
     return data if isinstance(data, dict) else {}
 
 

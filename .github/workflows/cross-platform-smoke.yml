@@ -121,7 +121,7 @@ jobs:
         shell: bash
         env:
           INSTALL_COMMAND: ${{ inputs.install_command }}
-        run: bash -c "$INSTALL_COMMAND"
+        run: bash -euo pipefail -c "$INSTALL_COMMAND"
 
       - name: Run smoke command
         shell: bash
@@ -137,4 +137,4 @@ jobs:
             Windows) selected="${WINDOWS_COMMAND:-$SMOKE_COMMAND}" ;;
             *) selected="$SMOKE_COMMAND" ;;
           esac
-          bash -c "$selected"
+          bash -euo pipefail -c "$selected"

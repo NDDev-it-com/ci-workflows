@@ -1,0 +1,40 @@
+# gate.yml used correctly: a NON-BLOCKING summary check.
+#
+# This reusable cannot authenticate its own input. A reusable workflow cannot
+# read its caller's `needs` context, so the results arrive as the caller-authored
+# `needs_json` string — it can check that string is self-consistent, never that
+# the jobs ran. Do NOT point branch protection at the context it produces; use
+# `examples/quality/caller-native-gate.yml` for that.
+#
+# What it is good for: one stable, readable name over a set of reusable jobs
+# whose own names are shaped like "rust (1.94.0)" or "CodeQL (rust)".
+name: ci
+on:
+  pull_request: { branches: [main] }
+permissions: {}
+jobs:
+  lint:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/actionlint.yml@<sha>
+    with:
+      runner: ubuntu-latest
+
+  test:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/python-ci.yml@<sha>
+    with:
+      runner: ubuntu-latest
+      test_command: "uv run pytest -q"
+
+  summary:
+    needs: [lint, test]
+    if: always()
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/gate.yml@<sha>
+    with:
+      runner: ubuntu-latest
+      check_name: CI summary
+      # Every job in `needs` must appear in required_jobs: the reusable rejects
+      # a list that omits one, so a failing job cannot be dropped from the report.
+      needs_json: ${{ toJSON(needs) }}
+      required_jobs: "lint,test"

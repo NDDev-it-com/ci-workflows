@@ -59,18 +59,18 @@ jobs:
         if: ${{ inputs.restore_command != '' }}
         env:
           RESTORE_COMMAND: ${{ inputs.restore_command }}
-        run: bash -c "$RESTORE_COMMAND"
+        run: bash -euo pipefail -c "$RESTORE_COMMAND"
 
       - name: Build
         if: ${{ inputs.build_command != '' }}
         env:
           BUILD_COMMAND: ${{ inputs.build_command }}
-        run: bash -c "$BUILD_COMMAND"
+        run: bash -euo pipefail -c "$BUILD_COMMAND"
 
       - name: Test
         env:
           TEST_COMMAND: ${{ inputs.test_command }}
           DOTNET_VER: ${{ inputs.dotnet_version }}
         run: |
-          bash -c "$TEST_COMMAND"
+          bash -euo pipefail -c "$TEST_COMMAND"
           echo ".NET ${DOTNET_VER} build + tests passed." >> "$GITHUB_STEP_SUMMARY"

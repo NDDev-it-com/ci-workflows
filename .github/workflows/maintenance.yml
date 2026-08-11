@@ -1,0 +1,137 @@
+name: maintenance
+
+# Advisory sweep. Never blocks a pull request.
+#
+# This runs the checks whose failure is maintenance debt rather than a defect in
+# somebody's change: the full calendar sweep of the external product-fact ledger
+# and the runtime-coverage waivers, plus the broad documentation link audit.
+#
+# They used to sit in the required `ci-gate`, which meant an external vendor's
+# tariff reaching its expiry date made every unrelated pull request unmergeable.
+# Moving them here is not a downgrade of the rule — the ledger still expires
+# closed, and a change that *depends* on a stale fact is still blocked by the
+# `touched` tier in ci.yml. What changed is who pays: the maintainer on a timer,
+# not whoever happened to open the next pull request.
+#
+# The result is filed as a single tracking issue rather than left in a run log,
+# because an advisory nobody reads is the failure mode this is meant to avoid.
+
+on:
+  schedule:
+    # Mondays 07:00 UTC, an hour after the Dependabot window, so a fact refresh
+    # and a pin bump land in the same review sitting.
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: maintenance-${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    name: advisory sweep
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write   # file/update the single tracking issue
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920  # v2.20.0
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            agent.api.stepsecurity.io:443
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            raw.githubusercontent.com:443
+            astral.sh:443
+            pypi.org:443
+            files.pythonhosted.org:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        with:
+          version: 0.11.30
+
+      - name: Install validator dependencies
+        run: uv pip install --system --require-hashes -r requirements-ci.txt
+
+      - name: Run the advisory sweep
+        id: sweep
+        run: |
+          set -uo pipefail
+          # Deliberately not `set -e`: a finding is the expected outcome and
+          # must be reported, not abort the job before it can be filed.
+          python3 scripts/validate_all.py --tier scheduled > sweep.txt 2>&1
+          status=$?
+          cat sweep.txt
+          printf 'status=%s\n' "$status" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Advisory sweep"
+            echo
+            echo '```'
+            cat sweep.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: File or update the tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SWEEP_STATUS: ${{ steps.sweep.outputs.status }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          title="Maintenance: advisory sweep findings"
+          existing="$(gh issue list --state open --search "$title in:title" \
+            --json number --jq '.[0].number // empty')"
+
+          if [ "$SWEEP_STATUS" = "0" ]; then
+            if [ -n "$existing" ]; then
+              gh issue close "$existing" \
+                --comment "Advisory sweep is clean as of ${RUN_URL}."
+              echo "closed tracking issue #${existing}"
+            else
+              echo "sweep clean; nothing to file"
+            fi
+            exit 0
+          fi
+
+          {
+            echo "The scheduled advisory sweep reported findings."
+            echo
+            echo "These do **not** block pull requests. They are maintenance debt:"
+            echo "expired external product facts, runtime-coverage waivers past"
+            echo "their date, or broken local documentation links."
+            echo
+            echo "Refreshing a fact means re-reading its \`source_urls\` and"
+            echo "correcting it. Bumping the date alone is exactly what the"
+            echo "freshness gate exists to prevent. Stagger the new expiries."
+            echo
+            echo "Run: ${RUN_URL}"
+            echo
+            echo '```'
+            cat sweep.txt
+            echo '```'
+          } > body.md
+
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file body.md
+            echo "commented on tracking issue #${existing}"
+          else
+            gh issue create --title "$title" --body-file body.md --label maintenance
+          fi

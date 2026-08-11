@@ -63,7 +63,7 @@ jobs:
 
       - name: Set up Swift
         if: ${{ inputs.swift_version != '' }}
-        uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9  # v3
+        uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9  # v3.0.0-beta.1
         with:
           swift-version: ${{ inputs.swift_version }}
 
@@ -81,11 +81,11 @@ jobs:
         if: ${{ inputs.build_command != '' }}
         env:
           BUILD_COMMAND: ${{ inputs.build_command }}
-        run: bash -c "$BUILD_COMMAND"
+        run: bash -euo pipefail -c "$BUILD_COMMAND"
 
       - name: Test
         env:
           TEST_COMMAND: ${{ inputs.test_command }}
         run: |
-          bash -c "$TEST_COMMAND"
+          bash -euo pipefail -c "$TEST_COMMAND"
           echo "Swift build + test passed." >> "$GITHUB_STEP_SUMMARY"

@@ -69,4 +69,4 @@ jobs:
         if: ${{ inputs.command != '' }}
         env:
           DOCS_COMMAND: ${{ inputs.command }}
-        run: bash -c "$DOCS_COMMAND"
+        run: bash -euo pipefail -c "$DOCS_COMMAND"

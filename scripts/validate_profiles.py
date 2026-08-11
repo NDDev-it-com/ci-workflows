@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import yaml
+from _strict_yaml import strict_load
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PROFILES = REPO_ROOT / "catalog" / "profiles.yml"
@@ -44,7 +44,7 @@ CODE_QUALITY_PLANS = {"team", "enterprise-cloud"}
 
 
 def _load(path: Path) -> Any:
-    return yaml.safe_load(path.read_text(encoding="utf-8"))
+    return strict_load(path)
 
 
 def validate_profiles(doc: Any, capability_ids: set[str], fact_ids: set[str],

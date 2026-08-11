@@ -1,37 +1,66 @@
 name: gate
 
-# Reusable caller-named gate job for branch-protection required-check contexts.
+# Reusable caller-named REPORTING helper. NOT an authorization primitive.
 #
-# Reusable workflows produce job names like "rust (1.94.0)" or "CodeQL (rust)"
-# that don't match the short, exact required-check context names that branch
-# protection rules expect (e.g. "CI", "CodeQL", "Scorecard"). This workflow
-# emits a single job whose `name:` is exactly the caller-supplied check name,
-# runs `if: always()`, and validates that every declared upstream job result
-# is "success" (with an optional allow-list for "skipped").
+# ---------------------------------------------------------------------------
+# What this workflow can and cannot prove
 #
-# IMPORTANT: reusable workflows cannot access the caller's `needs` context.
-# The caller MUST pass the needs results as a JSON string via the
-# `needs_json` input, using `toJSON(needs)` in the caller workflow:
+# A reusable workflow cannot read its caller's `needs` context, so the results
+# arrive as the `needs_json` string input. That string is authored by the
+# caller. This workflow can check that the JSON is internally consistent with
+# what the caller *declared*; it can never establish that the JSON describes
+# real check runs, that the named jobs are genuine dependencies, or that jobs
+# omitted from `required_jobs` ran at all.
+#
+# Therefore: **do not make this workflow's job your required status check.**
+# Use a caller-native gate, which evaluates the real `needs` context in the same
+# run — see `docs/08-governance-rulesets.md`:
 #
 #   ci-gate:
+#     name: ci-gate
+#     needs: [check, test, clippy, fmt]
+#     if: always()
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 5
+#     permissions: { contents: read }
+#     steps:
+#       - env:
+#           RESULTS: ${{ toJSON(needs) }}
+#         run: |
+#           ...fail unless every needs.*.result is success...
+#
+# This repository's own `ci.yml` uses exactly that pattern.
+# ---------------------------------------------------------------------------
+#
+# Reusable workflows produce job names like "rust (1.94.0)" or "CodeQL (rust)"
+# that don't match short required-check context names. This workflow emits a
+# single job whose `name:` is exactly the caller-supplied check name, so a
+# dashboard or a non-blocking summary can carry a stable label.
+#
+#   report:
 #     needs: [check, test, clippy, fmt]
 #     if: always()
 #     uses: NDDev-it-com/ci-workflows/.github/workflows/gate.yml@<sha>
 #     with:
-#       check_name: CI
+#       check_name: CI summary
 #       needs_json: ${{ toJSON(needs) }}
 #       required_jobs: "check,test,clippy,fmt"
 #       allow_skipped: "coverage"
+#
+# The verifier below fails closed on inputs that assert nothing: an empty
+# `required_jobs`, an empty or non-object `needs_json`, a required job absent
+# from `needs`, or an entry carrying no `result`. Those were all silently
+# green before, which is how a "gate" ended up passing on `{}` + `""`.
 
 on:
   workflow_call:
     inputs:
       check_name:
-        description: 'Exact branch-protection required-check context name. The gate job will be named this.'
+        description: 'Display name for the reporting job. Do not use this as a required status check; see the header.'
         type: string
         required: true
       needs_json:
-        description: 'JSON string of the caller needs context. Pass via toJSON(needs). Required — reusable workflows cannot read needs directly.'
+        description: 'JSON object of the caller needs context via toJSON(needs). Caller-authored and therefore unverified: this workflow reports, it does not attest.'
         type: string
         required: true
       required_jobs:
@@ -73,10 +102,51 @@ jobs:
           import os
           import sys
 
-          needs = json.loads(os.environ["NEEDS_JSON"])
-          required = [j.strip() for j in os.environ["REQUIRED_JOBS"].split(",") if j.strip()]
-          allow_skipped = {j.strip() for j in os.environ["ALLOW_SKIPPED"].split(",") if j.strip()}
           check_name = os.environ["CHECK_NAME"]
+
+          def fail(message):
+              print(f"gate '{check_name}': {message}", file=sys.stderr)
+              raise SystemExit(1)
+
+          # Fail closed on an input that asserts nothing. Every one of these
+          # combinations previously exited 0, so a caller could obtain a green
+          # named check while declaring no dependency at all.
+          raw = os.environ["NEEDS_JSON"].strip()
+          if not raw:
+              fail("needs_json is empty; pass ${{ toJSON(needs) }}")
+          try:
+              needs = json.loads(raw)
+          except ValueError as exc:
+              fail(f"needs_json is not JSON: {exc}")
+          if not isinstance(needs, dict):
+              fail("needs_json must be a JSON object of job id -> result")
+          if not needs:
+              fail(
+                  "needs_json is an empty object: the calling job declares no "
+                  "`needs:`, so there is nothing to report on"
+              )
+
+          required = [j.strip() for j in os.environ["REQUIRED_JOBS"].split(",") if j.strip()]
+          if not required:
+              fail(
+                  "required_jobs is empty: name the upstream jobs this report "
+                  "covers, or the report covers nothing"
+              )
+          allow_skipped = {j.strip() for j in os.environ["ALLOW_SKIPPED"].split(",") if j.strip()}
+
+          unknown_allow = sorted(allow_skipped - set(required))
+          if unknown_allow:
+              fail(f"allow_skipped names jobs that are not required: {unknown_allow}")
+
+          # Every declared dependency must be accounted for. Reporting on a
+          # subset while `needs` carries more is how a real failure gets
+          # excluded by shrinking the list.
+          unreported = sorted(set(needs) - set(required))
+          if unreported:
+              fail(
+                  f"needs contains {unreported} which required_jobs omits; list "
+                  "every dependency so a failing one cannot be dropped"
+              )
 
           failures = []
           for job_id in required:
@@ -84,7 +154,10 @@ jobs:
               if entry is None:
                   failures.append(f"  {job_id}: NOT FOUND in needs (typo or missing dependency?)")
                   continue
-              result = entry.get("result", "unknown")
+              if not isinstance(entry, dict) or "result" not in entry:
+                  failures.append(f"  {job_id}: no result field; this is not a needs context entry")
+                  continue
+              result = entry["result"]
               if result == "success":
                   continue
               if result == "skipped" and job_id in allow_skipped:
@@ -97,5 +170,9 @@ jobs:
                   print(f, file=sys.stderr)
               sys.exit(1)
 
-          print(f"gate '{check_name}' PASSED — all required jobs succeeded.")
+          print(
+              f"gate '{check_name}': all {len(required)} declared jobs report success.\n"
+              "NOTE: this is a report over caller-supplied data, not an "
+              "attestation that those jobs ran. Do not use it as a required check."
+          )
           PY

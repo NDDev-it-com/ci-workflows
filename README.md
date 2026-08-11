@@ -22,11 +22,19 @@ See [`docs/01-public-oss-free.md`](docs/01-public-oss-free.md),
 [`docs/02-private-free.md`](docs/02-private-free.md), and
 [`docs/03-private-paid-ghas.md`](docs/03-private-paid-ghas.md).
 
-**GitHub Code Quality sits outside these three.** It is billed per active
-committer at *any* visibility — public repositories are **not** free — on a
-licence GHAS does not include, and committers are counted once per organization
-rather than per repository. Both free tiers exclude it; enable it deliberately
-via the org-level **Repository access** control. See
+**GitHub Code Quality sits outside these three.** It is a separate licence that
+GHAS does not include, requires a Team or Enterprise plan, and bills per active
+committer counted once per organization rather than per repository — so enabling
+one repository already bills the whole active committer set.
+
+Its **public** per-committer rate is disputed between GitHub's own sources: the
+product page states `$0` for public repositories, while the billing
+documentation grants no visibility exemption and states no rate. This library
+therefore compiles no public cost from it **in either direction**; the rate stays
+account-observed until an invoice settles it. Both free tiers exclude Code
+Quality, and it is enabled deliberately via the org-level **Repository access**
+control. The authoritative record is the `github-code-quality-transition` entry
+in [`catalog/product-facts.yml`](catalog/product-facts.yml). See
 [`docs/16-code-quality.md`](docs/16-code-quality.md).
 
 **The NDDev estate is not on the free plan.** The three tiers above describe what

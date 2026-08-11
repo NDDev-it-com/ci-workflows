@@ -122,7 +122,7 @@ jobs:
         if: ${{ inputs.build_command != '' }}
         env:
           BUILD_COMMAND: ${{ inputs.build_command }}
-        run: bash -c "$BUILD_COMMAND"
+        run: bash -euo pipefail -c "$BUILD_COMMAND"
 
       - name: Analyze
         if: ${{ inputs.output_directory == '' }}
@@ -150,4 +150,4 @@ jobs:
         if: ${{ always() && inputs.post_analyze_command != '' }}
         env:
           POST_ANALYZE_COMMAND: ${{ inputs.post_analyze_command }}
-        run: bash -c "$POST_ANALYZE_COMMAND"
+        run: bash -euo pipefail -c "$POST_ANALYZE_COMMAND"
