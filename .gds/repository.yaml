@@ -27,6 +27,10 @@ policy:
     - "repository-default"
     - "organization-default"
     - "public-module"
+    # Repository-tier override: the base default is squash-only and this
+    # repository takes merge commits. Without this the compiled projection
+    # contradicted live state under `management: managed`.
+    - "ci-workflows"
   rollout_ring: "canary-modules"
 
 git:
