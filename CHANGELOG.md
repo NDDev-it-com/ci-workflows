@@ -2,6 +2,32 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **The GDS projection no longer contradicts live governance.** For most of this
+  repository's life `.gds/compiled-policy.json` declared `allow_squash_merge:
+  true` and `allow_merge_commit: false` under `management: managed`, while the
+  live repository is the opposite — managed *intent* disagreeing with reality, so
+  a reconcile run would have flipped a governance model the ruleset, the
+  instruction docs and the contributor guide all describe correctly.
+
+  It was fixed where it belongs: a repository-tier override in the control plane
+  (NDDev-it-com/github-device-sync#150), in the same shape as the one
+  `github-actions` already carries, plus this module claiming it. The base policy
+  stays squash-only for the rest of the estate. `gds compile policy` now resolves
+  four sources and reports `allow_merge_commit: true`, matching the live API.
+
+  Two properties of that system are recorded in `docs/08`, because both cost a CI
+  round trip to learn: a policy source and its projections move in one commit
+  (adding the override staled four generated files at once and failed
+  `gds context` on a digest mismatch), and a module must never claim a profile
+  whose source has not landed (`gds compile policy` fails closed with
+  `GDS_POLICY_PROFILE_MISSING`).
+
+  An earlier note in this changelog called the projection "wrong and fixable only
+  upstream". The first half was right; the second was half-right — upstream is
+  where the fix belongs, and it was reachable.
+
 ### Added
 
 - **Caller commands must be shell-parseable, checked by `shlex`.** An unbalanced

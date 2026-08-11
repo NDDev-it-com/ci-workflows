@@ -97,7 +97,7 @@ have to re-derive it:
 | `.github/rulesets/branch-main.json` | this repository | Canonical desired state for ruleset `18506136`. Verified against the live API: `allowed_merge_methods: ["merge"]`, `ci-gate` strict, signed commits, thread resolution, zero approvals. |
 | `.github/rulesets/tag-semver.json`, `push-hygiene.json` | this repository | Canonical desired state for the repository's own tag and push rules. |
 | `NDDev baseline: *` rulesets | the estate control plane | Applied on top, not tracked here. Deleting or editing them from this repository would fight the reconciler. |
-| `.gds/compiled-policy.json` | GDS, generated | **Not authoritative for this repository and currently wrong** — see below. |
+| `.gds/compiled-policy.json` | GDS, generated | Generated from the estate policy sources; agrees with live state since the repository-tier override landed. Never edit it here. |
 
 `.github/branch-protection/main.json` used to sit alongside these. It claimed to
 record ruleset `18506136` while describing `merge_methods: ["squash"]` and
@@ -106,46 +106,42 @@ and sets no linear-history rule. Nothing read the file and no validator compared
 it to anything, so it contradicted the tracked ruleset silently. It has been
 deleted rather than corrected: two files describing one object is the defect.
 
-### The GDS projection disagrees, and cannot be fixed here
+### The GDS projection used to disagree
 
-`.gds/compiled-policy.json` declares `allow_squash_merge: true` and
-`allow_merge_commit: false` under `management: managed`. The live repository is
-the opposite — `allow_merge_commit: true`, `allow_squash_merge: false` — and
-merge-commit-only is the deliberate model (squash and rebase are disabled so
-`main` keeps merge commits). It also lists `pip` and `pipx` as forbidden
-executables while this repository's own documented setup used both.
+For most of this repository's life `.gds/compiled-policy.json` declared
+`allow_squash_merge: true` and `allow_merge_commit: false` under
+`management: managed`, while the live repository is the opposite. That is not
+stale documentation but *managed intent* disagreeing with reality: a reconcile
+run would have flipped a governance model the ruleset, the instruction docs and
+the contributor guide all describe correctly.
 
-That file is generated: its header marks it `DO NOT EDIT DIRECTLY`, its sources
-(`policies/base/repository-default.yaml`, `policies/roles/public-module.yaml`)
-live outside this repository, and the compiled policy itself sets
-`agent.generated_projection_edit: forbidden`. Correcting it here would be
-reverted by the next `gds` run — which is exactly what happened when the
-projection was last regenerated. **The fix belongs in the GDS policy source**,
-and until it lands, `.gds/**` is repository data, not an instruction surface for
-anyone working in this repository.
+It could not be corrected from here, and the reason is worth keeping: the file
+is generated, its sources live in the estate control plane, and the compiled
+policy itself sets `agent.generated_projection_edit: forbidden`. Editing it here
+is reverted by the next `gds` run.
 
-The fix is prepared and blocked on a prerequisite this repository does not own.
-The estate's base policy is squash-only by design, and the mechanism for an
-exception already exists — `policies/repositories/github-actions.yaml` carries
-the same exception for the same reason — so the correction is a repository-tier
-override plus a `"ci-workflows"` entry in this module's `.gds/repository.yaml`
-profiles. Both are drafted in NDDev-it-com/github-device-sync#150.
+The fix was therefore made where it belongs. The estate base policy is
+squash-only by design, so the correction is a repository-tier override —
+`policies/repositories/ci-workflows.yaml` in the control plane, in the same
+shape as the one `github-actions` already carries — plus this module claiming it
+in `.gds/repository.yaml`. Both have landed
+(NDDev-it-com/github-device-sync#150), and `gds compile policy` now resolves
+four sources and reports `allow_merge_commit: true`, matching the live API.
 
-What blocks it is the estate's content-addressed provenance, and the failure is
-worth recording because it is the same shape as this repository's own
-`proven_digest` rule: adding a policy **source** changes the canonical
-source-tree digest, so every generated projection — `AGENTS.md`,
-`.claude/CLAUDE.md`, `.github/workflows/gds-ci.yml`, the bundle lock — goes
-stale in the same commit, and `gds context` fails with
-`GDS_CONTEXT_POLICY_SOURCE_DIGEST_MISMATCH`. The remedy is to regenerate them
-alongside the source (`gds generate repository --plan` then `--apply`), which
-requires a canonical device identity and a local GDS state database. Minting one
-for the occasion would put a fabricated identity into the estate's provenance
-chain, so that step belongs to an operator whose device is registered.
+Two properties of that system are worth carrying, because both cost a CI round
+trip to learn:
 
-Until both land, this module must **not** claim the `ci-workflows` policy
-profile: `gds compile policy` fails closed with `GDS_POLICY_PROFILE_MISSING`
-when a declared profile has no source.
+- **A policy source and its projections move in one commit.** Adding the
+  override changed the canonical source-tree digest, so `AGENTS.md`,
+  `.claude/CLAUDE.md`, `.github/workflows/gds-ci.yml` and the bundle lock all
+  went stale at once and `gds context` failed with
+  `GDS_CONTEXT_POLICY_SOURCE_DIGEST_MISMATCH`. Regenerate with
+  `gds generate repository --plan` then `--apply`; `--check` prints the expected
+  digests beforehand, so the result is verifiable before it is trusted.
+- **A module must not claim a profile whose source has not landed.**
+  `gds compile policy` fails closed with `GDS_POLICY_PROFILE_MISSING`, so
+  claiming it early breaks every `gds` invocation rather than anticipating the
+  fix. Merge the source first.
 
 ## A required check must be caller-native
 
