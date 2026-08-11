@@ -116,14 +116,20 @@ environment. `check_release_graph.py` enforces that shape.
    LF-terminated line. `CHANGELOG.md` gets exactly one `## [X.Y.Z]` heading,
    with `[Unreleased]` emptied above it. Run the full sweep, not just core — a
    release must not ship carrying an expired fact.
-2. **Cut the signed tag** after that PR merges, on the merge commit:
-   `git tag -s X.Y.Z -m "..."` then push the tag. Numeric SemVer only, no `v`.
-3. **Approve** the `release` environment when the promotion gate has passed.
-4. **Verify** the release publishes exactly five checksummed assets in one
+2. **Build the promotion record** in the control plane —
+   `scripts/promotion_record.py create --module ci-workflows` in
+   `nddev-harnesses`. It already exists and enforces the same schema the gate
+   does; do not hand-write one.
+3. **Cut the signed tag** with that record as the annotation:
+   `git tag -s X.Y.Z -F promotion.json`, then push the tag. Numeric SemVer only,
+   no `v`. The annotation must be canonical compact JSON plus one LF, and the
+   record expires within 168 hours of generation.
+4. **Approve** the `release` environment when the promotion gate has passed.
+5. **Verify** the release publishes exactly five checksummed assets in one
    create call, and that the attestations verify with
    `scripts/verify_attestations.sh`. Releases are immutable: never
    `gh release upload --clobber`, never republish.
-5. **Re-promote** the runtime-coverage record for `release-supply-chain.yml`
+6. **Re-promote** the runtime-coverage record for `release-supply-chain.yml`
    afterwards — that run is real evidence, so record its URL and digest.
 
 If the promotion gate fails, the tag is not authorized. Fix the cause; do not

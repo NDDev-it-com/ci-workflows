@@ -4,6 +4,17 @@
 
 ### Changed
 
+- **The release procedure now says how to produce the promotion record.**
+  `docs/09` described the gate and the record's shape without saying who builds
+  it, which read as though the record had to be hand-written. It does not:
+  `scripts/promotion_record.py` in the control plane already builds and verifies
+  it against the same `nddev-release-promotion/v1` schema and the same nine
+  evidence roles the gate enforces. Documented with the exact `create` / `verify`
+  invocation, the `git tag -s -F` step that puts it in the signed annotation, and
+  the three properties easiest to get wrong: canonical compact JSON plus one LF,
+  the 168-hour freshness window, and the commit identity every evidence entry
+  must agree on.
+
 - **Three repository-operation skills became one.** `nddev-repo-orientation`,
   `nddev-change-flow` and `nddev-release-flow` described a single workflow across
   three files that had to be kept in step with each other *and* with `AGENTS.md`,
