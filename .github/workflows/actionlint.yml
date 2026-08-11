@@ -157,4 +157,4 @@ jobs:
         if: ${{ inputs.post_command != '' }}
         env:
           POST_COMMAND: ${{ inputs.post_command }}
-        run: bash -c "$POST_COMMAND"
+        run: bash -euo pipefail -c "$POST_COMMAND"

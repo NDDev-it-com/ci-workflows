@@ -82,11 +82,11 @@ jobs:
         if: ${{ inputs.install_command != '' }}
         env:
           INSTALL_COMMAND: ${{ inputs.install_command }}
-        run: bash -c "$INSTALL_COMMAND"
+        run: bash -euo pipefail -c "$INSTALL_COMMAND"
 
       - name: Run mutation testing
         env:
           MUTATION_COMMAND: ${{ inputs.mutation_command }}
         run: |
-          bash -c "$MUTATION_COMMAND"
+          bash -euo pipefail -c "$MUTATION_COMMAND"
           echo "Mutation testing passed." >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,34 @@
+# ClusterFuzzLite — PR fuzzing plus a longer scheduled batch run.
+#
+# PR mode fuzzes only what the pull request changed and is meant to finish in
+# minutes; batch mode runs the whole corpus on a schedule. Keep them in one file
+# but pass different modes, because a PR-length budget finds nothing deep and a
+# batch-length budget blocks every merge.
+#
+# `runner: ubuntu-latest` is explicit — see the note in the other examples.
+name: fuzzing
+on:
+  pull_request: { branches: [main] }
+  schedule:
+    - cron: "43 5 * * *"
+permissions: {}
+jobs:
+  pr-fuzz:
+    if: github.event_name == 'pull_request'
+    permissions: { contents: read, security-events: write, actions: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/clusterfuzzlite.yml@<sha>
+    with:
+      runner: ubuntu-latest
+      mode: code-change
+      fuzz_seconds: 300
+      sanitizer: address
+
+  batch-fuzz:
+    if: github.event_name == 'schedule'
+    permissions: { contents: read, security-events: write, actions: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/clusterfuzzlite.yml@<sha>
+    with:
+      runner: ubuntu-latest
+      mode: batch
+      fuzz_seconds: 3600
+      sanitizer: address

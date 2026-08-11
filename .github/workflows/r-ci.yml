@@ -67,7 +67,7 @@ jobs:
         if: ${{ inputs.install_command != '' }}
         env:
           INSTALL_COMMAND: ${{ inputs.install_command }}
-        run: bash -c "$INSTALL_COMMAND"
+        run: bash -euo pipefail -c "$INSTALL_COMMAND"
 
       - name: Lint
         if: ${{ inputs.lint }}
@@ -77,5 +77,5 @@ jobs:
         env:
           TEST_COMMAND: ${{ inputs.test_command }}
         run: |
-          bash -c "$TEST_COMMAND"
+          bash -euo pipefail -c "$TEST_COMMAND"
           echo "R checks passed." >> "$GITHUB_STEP_SUMMARY"

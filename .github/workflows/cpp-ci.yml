@@ -105,13 +105,13 @@ jobs:
         if: ${{ inputs.configure_command != '' }}
         env:
           CONFIGURE_COMMAND: ${{ inputs.configure_command }}
-        run: bash -c "$CONFIGURE_COMMAND"
+        run: bash -euo pipefail -c "$CONFIGURE_COMMAND"
 
       - name: Build
         if: ${{ inputs.build_command != '' }}
         env:
           BUILD_COMMAND: ${{ inputs.build_command }}
-        run: bash -c "$BUILD_COMMAND"
+        run: bash -euo pipefail -c "$BUILD_COMMAND"
 
       - name: cppcheck
         if: ${{ inputs.cppcheck }}
@@ -125,7 +125,7 @@ jobs:
         if: ${{ inputs.test_command != '' }}
         env:
           TEST_COMMAND: ${{ inputs.test_command }}
-        run: bash -c "$TEST_COMMAND"
+        run: bash -euo pipefail -c "$TEST_COMMAND"
 
       - name: Summary
         run: echo "C/C++ CI (configure + build + test) passed." >> "$GITHUB_STEP_SUMMARY"

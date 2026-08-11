@@ -12,16 +12,31 @@ supply-chain reusable.
 
 ```text
 push tag X.Y.Z
-  └─ release.yml (resolve + validate)
-      ├─ release-promotion-gate.yml (NDDev exact-SHA eligibility)
-      └─ release-supply-chain.yml (needs: promotion)
-          ├─ tracked-source archive
-          ├─ exact-payload SPDX SBOM
-          ├─ canonical release notes
-          ├─ manifest + SHA256SUMS
-          ├─ Sigstore attestations
-          └─ immutable GitHub Release
+  └─ release.yml
+      └─ resolve      version vs VERSION + CHANGELOG      (contents: read)
+          └─ promotion    release-promotion-gate.yml       (contents: read)
+              └─ authorize    environment: release         (permissions: {})
+                  └─ publish  release-supply-chain.yml     (contents/id-token/
+                      ├─ tracked-source archive             attestations: write)
+                      ├─ exact-payload SPDX SBOM
+                      ├─ canonical release notes
+                      ├─ manifest + SHA256SUMS
+                      ├─ Sigstore attestations
+                      └─ immutable GitHub Release
 ```
+
+Every write scope lives on `publish`, and `publish` cannot start until both
+gates pass: the machine gate (`promotion`) verifies the tag carries a
+control-plane promotion record for that exact commit, and the human gate
+(`authorize`) is a protected environment whose required reviewer is the release
+authority. A GitHub-verified signature proves **who signed**, never that the
+signer may ship — the two questions are answered by two different jobs.
+
+`environment:` cannot be declared on a job that calls a reusable workflow, so the
+approval sits in its own unprivileged `authorize` job rather than on `publish`.
+`scripts/check_release_graph.py` walks the `needs` graph and fails if any job
+holding a release write scope can be reached without both gates, so this diagram
+and the workflow cannot drift apart again.
 
 `release.yml` validates three things before publishing:
 

@@ -11,7 +11,7 @@ import argparse
 from pathlib import Path
 from typing import Any
 
-import yaml
+from _strict_yaml import strict_load
 
 from _workflow_yaml import SELF_WORKFLOWS
 
@@ -23,17 +23,17 @@ PRODUCT_FACTS = REPO_ROOT / "catalog" / "product-facts.yml"
 
 
 def _load_capabilities() -> list[dict[str, Any]]:
-    doc = yaml.safe_load(CATALOG.read_text(encoding="utf-8"))
+    doc = strict_load(CATALOG)
     return list(doc.get("capabilities", []))
 
 
 def _load_profiles() -> dict[str, Any]:
-    raw = yaml.safe_load((REPO_ROOT / "catalog" / "profiles.yml").read_text(encoding="utf-8"))
+    raw = strict_load(REPO_ROOT / "catalog" / "profiles.yml")
     return raw or {}
 
 
 def _load_product_facts() -> list[dict[str, Any]]:
-    doc = yaml.safe_load(PRODUCT_FACTS.read_text(encoding="utf-8"))
+    doc = strict_load(PRODUCT_FACTS)
     return list(doc.get("facts", []))
 
 
@@ -45,6 +45,28 @@ def _availability(value: str) -> str:
         "conditional": "conditional",
         "available": "available",
     }.get(value, value)
+
+
+def _source_verified_through(items: list[dict[str, Any]]) -> str:
+    """The newest `last_verified` among the rows a document renders.
+
+    This replaces a hard-coded "Last generated: 2026-07-11" that sat in two
+    places and had not moved since July, on documents rendered from a catalog
+    edited in August. It said nothing true and nothing checkable — the exact
+    shape of claim ADR 0001 exists to prevent, inside the generator that ADR
+    points at.
+
+    A wall-clock stamp is not the fix either: it would change on every run and
+    make `--check` fail for no reason. The newest source date is deterministic,
+    so the drift check stays meaningful, and it answers the question a reader
+    actually has — how current is the data underneath this table.
+    """
+    dates = sorted(
+        str(item.get("last_verified"))
+        for item in items
+        if isinstance(item, dict) and item.get("last_verified")
+    )
+    return dates[-1] if dates else "unknown"
 
 
 def capability_matrix(caps: list[dict[str, Any]]) -> str:
@@ -71,7 +93,10 @@ def capability_matrix(caps: list[dict[str, Any]]) -> str:
                 example=example,
             )
         )
-    lines.extend(["", "---", "Last generated: 2026-07-11", ""])
+    lines.extend([
+        "", "---",
+        f"Source data verified through: {_source_verified_through(caps)}", "",
+    ])
     return "\n".join(lines)
 
 
@@ -98,7 +123,10 @@ def workflow_inventory(caps: list[dict[str, Any]]) -> str:
             ids = ", ".join(f"`{cap['id']}`" for cap in caps_for_workflow) or "MISSING"
             statuses = ", ".join(sorted({cap["status"] for cap in caps_for_workflow})) or "MISSING"
         lines.append(f"| `{rel}` | {ids} | {statuses} |")
-    lines.extend(["", "---", "Last generated: 2026-07-11", ""])
+    lines.extend([
+        "", "---",
+        f"Source data verified through: {_source_verified_through(caps)}", "",
+    ])
     return "\n".join(lines)
 
 

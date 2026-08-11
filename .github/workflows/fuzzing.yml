@@ -59,11 +59,11 @@ jobs:
         if: ${{ inputs.install_command != '' }}
         env:
           INSTALL_COMMAND: ${{ inputs.install_command }}
-        run: bash -c "$INSTALL_COMMAND"
+        run: bash -euo pipefail -c "$INSTALL_COMMAND"
 
       - name: Run fuzzing
         env:
           FUZZ_COMMAND: ${{ inputs.fuzz_command }}
         run: |
-          bash -c "$FUZZ_COMMAND"
+          bash -euo pipefail -c "$FUZZ_COMMAND"
           echo "Fuzzing run completed." >> "$GITHUB_STEP_SUMMARY"

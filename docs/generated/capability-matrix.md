@@ -11,7 +11,7 @@
 | Docs CI (`docs-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/docs-ci.yml` | `examples/infra/docs.yml` |
 | Docs quality (links, spelling, markdown) (`docs-quality`) | actions-core | ga | free | free | available | `.github/workflows/docs-quality.yml` | `examples/quality/docs-quality.yml` |
 | .NET CI (`dotnet-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/dotnet-ci.yml` | `examples/languages/dotnet.yml` |
-| Caller-named gate job for branch-protection contexts (`gate`) | actions-core | ga | free | free | available | `.github/workflows/gate.yml` | `-` |
+| Caller-named reporting job for aggregated upstream results (`gate`) | actions-core | ga | free | free | available | `.github/workflows/gate.yml` | `examples/quality/gate-report.yml` |
 | Go CI (`go-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/go-ci.yml` | `examples/languages/go.yml` |
 | Java CI (`java-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/java-ci.yml` | `examples/languages/java.yml` |
 | Kotlin/Android CI (`kotlin-android-ci`) | actions-core | ga | free | conditional | available | `.github/workflows/kotlin-android-ci.yml` | `examples/languages/kotlin-android.yml` |
@@ -36,7 +36,7 @@
 | Actions cache security (read-only untrusted cache) (`actions-cache-security`) | governance | ga | free | free | available | `-` | `-` |
 | Branch protection (classic) (`branch-protection-classic`) | governance | deprecated | free | conditional | available | `-` | `-` |
 | Merge queue (`merge-queue`) | governance | ga | conditional | unavailable | conditional | `-` | `-` |
-| Repository rulesets (`rulesets`) | governance | ga | free | conditional | available | `-` | `-` |
+| Repository rulesets (`rulesets`) | governance | ga | free | conditional | available | `-` | `examples/quality/caller-native-gate.yml` |
 | Workflow execution protections (`workflow-execution-protections`) | governance | preview | free | conditional | conditional | `-` | `-` |
 | Performance benchmark + regression alert (history publish) (`benchmark`) | observability | ga | free | conditional | available | `.github/workflows/benchmark.yml` | `examples/testing/benchmark.yml` |
 | Performance benchmark regression check (read-only compare) (`benchmark-compare`) | observability | ga | free | conditional | available | `.github/workflows/benchmark-compare.yml` | `examples/testing/benchmark-compare.yml` |
@@ -52,7 +52,7 @@
 | RHEL 9/10 larger-runner images (`rhel-larger-runner-images`) | runners | preview | paid | unavailable | conditional | `-` | `-` |
 | Self-hosted runners (`self-hosted-runners`) | runners | ga | conditional | free | available | `-` | `-` |
 | Standard GitHub-hosted runners (`standard-hosted-runners`) | runners | ga | free | conditional | available | `-` | `-` |
-| ClusterFuzzLite fuzzing (PR code-change + batch) (`clusterfuzzlite-fuzzing`) | security-scanning | ga | free | free | available | `.github/workflows/clusterfuzzlite.yml` | `-` |
+| ClusterFuzzLite fuzzing (PR code-change + batch) (`clusterfuzzlite-fuzzing`) | security-scanning | ga | free | free | available | `.github/workflows/clusterfuzzlite.yml` | `examples/testing/clusterfuzzlite.yml` |
 | CodeQL code scanning (`codeql-code-scanning`) | security-scanning | ga | free | unavailable | available | `.github/workflows/public-codeql.yml` | `-` |
 | Container build and Trivy scan (`container-scan-trivy`) | security-scanning | ga | free | free | available | `.github/workflows/container-ci.yml` | `examples/infra/container.yml` |
 | Copilot Autofix for code scanning (`copilot-autofix`) | security-scanning | ga | free | unavailable | available | `-` | `-` |
@@ -64,7 +64,7 @@
 | GitHub native secret scanning (`native-secret-scanning`) | security-scanning | ga | free | unavailable | available | `-` | `-` |
 | OpenSSF Scorecard SARIF (`ossf-scorecard`) | security-scanning | ga | free | unavailable | conditional | `.github/workflows/public-scorecard.yml` | `examples/public-oss/scorecard-sarif.yml` |
 | OpenSSF Scorecard JSON artifact (`ossf-scorecard-json`) | security-scanning | ga | free | unavailable | conditional | `.github/workflows/public-scorecard-json.yml` | `examples/public-oss/scorecard.yml` |
-| Rust supply-chain checks (cargo-deny + cargo-audit + cargo-machete) (`rust-supply-chain`) | security-scanning | ga | free | free | available | `.github/workflows/rust-supply-chain.yml` | `-` |
+| Rust supply-chain checks (cargo-deny + cargo-audit + cargo-machete) (`rust-supply-chain`) | security-scanning | ga | free | free | available | `.github/workflows/rust-supply-chain.yml` | `examples/security/rust-supply-chain.yml` |
 | Semgrep OSS SAST (`semgrep-sast`) | security-scanning | ga | free | free | available | `.github/workflows/semgrep-ci.yml` | `examples/security/semgrep.yml` |
 | zizmor workflow security scanner (`zizmor`) | security-scanning | ga | free | free | available | `.github/workflows/zizmor-sarif.yml` | `-` |
 | zizmor workflow security scanner (no SARIF) (`zizmor-no-sarif`) | security-scanning | ga | free | free | available | `.github/workflows/zizmor-no-sarif.yml` | `examples/private-free/security.yml` |
@@ -79,4 +79,4 @@
 | SLSA build provenance (`slsa-build-provenance`) | supply-chain | ga | free | paid | conditional | `.github/workflows/release-supply-chain.yml` | `-` |
 
 ---
-Last generated: 2026-07-11
+Source data verified through: 2026-08-10

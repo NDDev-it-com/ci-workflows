@@ -528,7 +528,7 @@ facts:
   notes:
   - 'GA + paid transition completed 2026-07-20 as scheduled; no longer time-critical.'
   - 'Re-verified 2026-07-21 against the billing docs: standalone per-active-committer license ($10/active committer/month), CodeQL scans consume Actions minutes, AI features consume AI credits at $0.01/credit, independent of Advanced Security licenses; Team + Enterprise Cloud.'
-  - 'Re-verified 2026-08-01: visibility does not gate the licence. Unlike CodeQL/GHAS, a public repository does NOT make Code Quality free — public repos only avoid the Actions-minutes component (standard runners are unmetered on public). This is why the tier docs exclude Code Quality from both free tiers instead of folding it into the public tier.'
+  - 'Re-verified 2026-08-01: visibility does not gate the licence REQUIREMENT — a public repository still consumes one Code Quality licence per active committer, and only avoids the Actions-minutes component (standard runners are unmetered on public). That is why the tier docs exclude Code Quality from both free tiers instead of folding it into the public tier. This note does NOT settle the public RATE and must not be read as overriding the DISPUTED condition above. An earlier revision said flatly that public repositories are not free, README compiled that into a headline claim, and the dispute recorded in the same fact was quietly resolved in prose. State the licence requirement; leave the rate account-observed.'
 - id: gitlab-free-hosted
   provider: GitLab
   product: GitLab.com Free compute

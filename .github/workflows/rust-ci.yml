@@ -87,7 +87,7 @@ jobs:
         if: ${{ inputs.build_command != '' }}
         env:
           BUILD_COMMAND: ${{ inputs.build_command }}
-        run: bash -c "$BUILD_COMMAND"
+        run: bash -euo pipefail -c "$BUILD_COMMAND"
 
       - name: Run tests (single OS)
         if: ${{ inputs.test_matrix_os == '' }}
@@ -95,7 +95,7 @@ jobs:
           TEST_COMMAND: ${{ inputs.test_command }}
           RUST_TOOLCHAIN: ${{ inputs.toolchain }}
         run: |
-          bash -c "$TEST_COMMAND"
+          bash -euo pipefail -c "$TEST_COMMAND"
           echo "Rust ${RUST_TOOLCHAIN} build + tests passed." >> "$GITHUB_STEP_SUMMARY"
 
   test-matrix:
@@ -126,7 +126,7 @@ jobs:
       - name: Run tests
         env:
           TEST_COMMAND: ${{ inputs.test_command }}
-        run: bash -c "$TEST_COMMAND"
+        run: bash -euo pipefail -c "$TEST_COMMAND"
 
   fmt:
     name: rustfmt
@@ -153,7 +153,7 @@ jobs:
       - name: Check formatting
         env:
           FMT_COMMAND: ${{ inputs.fmt_command }}
-        run: bash -c "$FMT_COMMAND"
+        run: bash -euo pipefail -c "$FMT_COMMAND"
 
   clippy:
     name: clippy
@@ -180,7 +180,7 @@ jobs:
       - name: Run clippy
         env:
           CLIPPY_COMMAND: ${{ inputs.clippy_command }}
-        run: bash -c "$CLIPPY_COMMAND"
+        run: bash -euo pipefail -c "$CLIPPY_COMMAND"
 
   msrv:
     name: msrv (${{ inputs.msrv_toolchain }})
@@ -206,4 +206,4 @@ jobs:
       - name: MSRV check
         env:
           MSRV_COMMAND: ${{ inputs.msrv_command }}
-        run: bash -c "$MSRV_COMMAND"
+        run: bash -euo pipefail -c "$MSRV_COMMAND"

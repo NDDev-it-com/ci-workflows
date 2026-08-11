@@ -22,6 +22,8 @@ from pathlib import Path
 
 import yaml
 
+from _strict_yaml import strict_load
+
 from _workflow_yaml import SELF_WORKFLOWS, WORKFLOWS_DIR
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -40,7 +42,12 @@ VALID_CRITICALITY = {"release", "security-blocking", "required-gate", "supportin
 # default, and the honest label for "nobody has run this" — is not an accepted
 # resting state: prove it, name the executable contract validator that stands
 # in for a run, or take a dated waiver that someone owns and that expires.
-PROOF_REQUIRED_CRITICALITY = {"release", "security-blocking"}
+# `required-gate` joined this set: a workflow whose whole job is to decide
+# whether a merge may proceed owes evidence for exactly the same reason a
+# release publisher does. It was exempt while `gate.yml` — the reusable named
+# after that role — sat `required-gate` / `unverified`, which is the shape of
+# the problem this tier was created to make visible.
+PROOF_REQUIRED_CRITICALITY = {"release", "security-blocking", "required-gate"}
 # Without this, the obligation above is trivially dodged: relabel the workflow
 # `supporting` and the requirement evaporates, with nothing but review to catch
 # it. Pinning the classification makes a downgrade a visible, deliberate edit
@@ -60,6 +67,17 @@ PINNED_CRITICALITY = {
     "zizmor-sarif.yml": "security-blocking",
     "zizmor-no-sarif.yml": "security-blocking",
     "rust-supply-chain.yml": "security-blocking",
+    "actionlint.yml": "required-gate",
+    "coverage-gate.yml": "required-gate",
+    "monorepo-changed-paths.yml": "required-gate",
+    "pr-hygiene.yml": "required-gate",
+    "private-static.yml": "required-gate",
+    # Pinned at its NEW classification. gate.yml was `required-gate` while it
+    # was sold as a branch-protection primitive; it is now a reporting helper
+    # that cannot authenticate its own input, so `supporting` is the honest
+    # tier. Pinning it here means the reclassification was a deliberate edit to
+    # this file rather than a quiet relabel — which is the whole point of the pin.
+    "gate.yml": "supporting",
 }
 # A runtime-proven record must cite a real Actions run in THIS repository — not
 # an arbitrary https URL (the previous check accepted example.invalid, a docs
@@ -93,7 +111,16 @@ def _reusable_workflows() -> set[str]:
 
 
 def validate_coverage(data: object, reusables: set[str], as_of: dt.date,
-                      digest_for=_file_digest) -> list[str]:
+                      digest_for=_file_digest,
+                      calendar_scope: set[str] | None = None) -> list[str]:
+    """Validate the ledger.
+
+    ``calendar_scope`` limits the waiver-*expiry* rule to the named workflow
+    paths; completeness, evidence discipline, digest binding and the criticality
+    obligation always apply. A waiver coming due is a dated debt that belongs to
+    whoever touches that workflow or to the scheduled sweep — it is not a reason
+    to block an unrelated change. Pass ``None`` for the full sweep.
+    """
     problems: list[str] = []
     if not isinstance(data, dict):
         return ["runtime-coverage: top-level document must be a mapping"]
@@ -183,7 +210,11 @@ def validate_coverage(data: object, reusables: set[str], as_of: dt.date,
                 except ValueError:
                     problems.append(f"{where}: waiver.expires_after is not a date")
                 else:
-                    if expiry < as_of:
+                    in_scope = (
+                        calendar_scope is None
+                        or str(entry.get("workflow")) in calendar_scope
+                    )
+                    if expiry < as_of and in_scope:
                         problems.append(
                             f"{where}: waiver EXPIRED on {expiry}; re-test the "
                             "workflow or renew the waiver"
@@ -280,16 +311,27 @@ def _fixture_tests() -> list[str]:
     return problems
 
 
-def check() -> list[str]:
+def check(calendar_scope: set[str] | None = None) -> list[str]:
     if not COVERAGE.is_file():
         return [f"missing runtime-coverage ledger: {COVERAGE.relative_to(REPO_ROOT)}"]
     try:
-        data = yaml.safe_load(COVERAGE.read_text(encoding="utf-8"))
+        data = strict_load(COVERAGE)
     except yaml.YAMLError as exc:
         return [f"runtime-coverage: invalid YAML: {exc}"]
-    problems = validate_coverage(data, _reusable_workflows(), dt.date.today())
+    problems = validate_coverage(data, _reusable_workflows(), dt.date.today(),
+                                 calendar_scope=calendar_scope)
     problems += _fixture_tests()
     return problems
+
+
+def check_structural() -> list[str]:
+    """Everything except waiver expiry. Safe to block any pull request on."""
+    return check(calendar_scope=set())
+
+
+def check_for_paths(changed: set[str]) -> list[str]:
+    """Structural rules, plus waiver expiry for the workflows this change touches."""
+    return check(calendar_scope={p for p in changed if p.startswith(".github/workflows/")})
 
 
 def _counts(data: dict) -> dict[str, int]:
@@ -308,7 +350,7 @@ def main() -> int:
         for problem in problems:
             print(f"  - {problem}", file=sys.stderr)
         return 1
-    data = yaml.safe_load(COVERAGE.read_text(encoding="utf-8"))
+    data = strict_load(COVERAGE)
     print(f"validate_runtime_coverage: OK {_counts(data)}")
     return 0
 

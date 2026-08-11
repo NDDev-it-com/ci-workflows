@@ -80,12 +80,12 @@ jobs:
         if: ${{ inputs.lint_command != '' }}
         env:
           LINT_COMMAND: ${{ inputs.lint_command }}
-        run: bash -c "$LINT_COMMAND"
+        run: bash -euo pipefail -c "$LINT_COMMAND"
 
       - name: Build
         env:
           BUILD_COMMAND: ${{ inputs.build_command }}
           JAVA_VER: ${{ inputs.java_version }}
         run: |
-          bash -c "$BUILD_COMMAND"
+          bash -euo pipefail -c "$BUILD_COMMAND"
           echo "Kotlin/Android (JDK ${JAVA_VER}) build passed." >> "$GITHUB_STEP_SUMMARY"

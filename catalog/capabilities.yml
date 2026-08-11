@@ -492,7 +492,7 @@ capabilities:
     private_free: conditional
     private_paid: available
     workflow: null
-    example: null
+    example: examples/quality/caller-native-gate.yml
     required_permissions: []
     required_settings:
       - "Admin access to create rulesets (REST: POST /repos/{owner}/{repo}/rulesets)"
@@ -1569,19 +1569,20 @@ capabilities:
       - "https://github.com/changesets/action"
 
   - id: gate
-    name: Caller-named gate job for branch-protection contexts
+    name: Caller-named reporting job for aggregated upstream results
     cluster: actions-core
     status: ga
     public_oss: free
     private_free: free
     private_paid: available
     workflow: .github/workflows/gate.yml
-    example: null
+    example: examples/quality/gate-report.yml
     required_permissions:
       - "contents: read"
     required_settings: []
     risks:
-      - "The gate validates needs.<job_id>.result; a typo in required_jobs will fail the gate with a NOT FOUND error"
+      - "NOT AUTHORITATIVE: this reusable is not a required-check primitive. A reusable workflow cannot read its caller's needs context, so results arrive as the caller-authored needs_json string. It can prove the JSON is self-consistent; it can never prove the jobs ran. Use the caller-native gate in examples/quality/caller-native-gate.yml for a protected merge context"
+      - "The reusable fails closed on inputs that assert nothing (empty needs_json, empty required_jobs, a required job absent from needs, an entry with no result, or required_jobs omitting a job present in needs) — but a fabricated all-success object still passes and always will"
       - "allow_skipped only tolerates 'skipped' — it does NOT tolerate 'failure' or 'cancelled'"
     deprecations: null
     last_verified: "2026-08-04"
@@ -1596,7 +1597,7 @@ capabilities:
     private_free: free
     private_paid: available
     workflow: .github/workflows/rust-supply-chain.yml
-    example: null
+    example: examples/security/rust-supply-chain.yml
     required_permissions:
       - "contents: read"
     required_settings: []
@@ -1619,7 +1620,7 @@ capabilities:
     private_free: free
     private_paid: available
     workflow: .github/workflows/clusterfuzzlite.yml
-    example: null
+    example: examples/testing/clusterfuzzlite.yml
     required_permissions:
       - "actions: read"
       - "contents: read"

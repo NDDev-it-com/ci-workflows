@@ -126,6 +126,40 @@ entitlement_matrix:
     posture: Full paid mode
     fallbacks: []
 
+# Named profiles are ergonomics, not the semantic domain. A repository shape may
+# be perfectly valid and still have nobody who has bothered to name it — three
+# visibilities x four plans x eight masks is 96 shapes, and there are four
+# profiles. Before this block the resolver answered 13 of those 96 and told the
+# other 83 to "add a profile", which makes a supported customer state
+# unresolvable for a naming reason.
+#
+# So validity is declared here, separately from presets. Anything the plan gates
+# do not forbid is valid and MUST resolve; `scripts/resolve_profile.py`
+# synthesizes the controls below for a shape no preset covers and marks the
+# result `source: derived` with a derivation trace.
+derivation:
+  # The only reasons a shape is genuinely invalid. These are plan gates taken
+  # from the products themselves, not house style.
+  plan_gates:
+    code_quality: [team, enterprise-cloud]
+    private_attestations: [enterprise-cloud]
+
+  # Controls that follow from the axes for an unnamed shape.
+  default_controls:
+    code_quality_ai: disabled      # metered with no included allowance
+    coverage_mode: gated
+    runner_mode: github-hosted-standard
+    enforcement: report            # nothing has observed this mode's contexts yet
+
+  # Controls computed from the shape rather than fixed:
+  #   codeql_mode        default where CodeQL resolves in the mode, else none
+  #   release_provenance attestations where the plan permits, else checksums
+  computed_controls: [codeql_mode, release_provenance]
+
+  # Controls the axes genuinely do not determine. A derived mode leaves these
+  # unset rather than inventing an answer; a caller adopting the mode chooses.
+  undetermined: [governance_mode]
+
 profiles:
   - id: public-free-standalone
     name: Public OSS, no paid add-ons

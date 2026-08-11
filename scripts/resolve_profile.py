@@ -26,7 +26,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import yaml
+from _strict_yaml import strict_load
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PROFILES = REPO_ROOT / "catalog" / "profiles.yml"
@@ -39,7 +39,7 @@ CONDITIONAL = {"conditional"}
 
 
 def _load(path: Path) -> Any:
-    return yaml.safe_load(path.read_text(encoding="utf-8"))
+    return strict_load(path)
 
 
 # `private_paid` in the catalog means "private repository on a paid **Advanced
@@ -113,6 +113,9 @@ def resolve(profiles_doc: dict[str, Any], capabilities: list[dict[str, Any]],
     return {
         "profile": profile.get("id"),
         "name": profile.get("name"),
+        "source": "derived" if profile.get("_derived") else "preset",
+        "derivation": profile.get("_derivation") or [],
+        "undetermined_controls": profile.get("_undetermined") or [],
         "tier_column": column,
         "visibility": visibility,
         "base_plan": (profile.get("selectors") or {}).get("base_plan", []),
@@ -129,8 +132,12 @@ def resolve(profiles_doc: dict[str, Any], capabilities: list[dict[str, Any]],
 
 def select(profiles_doc: dict[str, Any], visibility: str, plan: str,
            entitlements: dict[str, bool]) -> dict[str, Any] | None:
-    """The declared profile matching a repository's shape, if one exists."""
-    mask = "".join("1" if entitlements.get(k) else "0" for k in ENTITLEMENT_KEYS)
+    """The declared *preset* matching a repository's shape, if one exists.
+
+    A preset is ergonomics — a name, a rationale, and a costed envelope. Its
+    absence never means the shape is unsupported; see ``synthesize``.
+    """
+    mask = mask_of(entitlements)
     for profile in profiles_doc.get("profiles") or []:
         sel = profile.get("selectors") or {}
         if visibility not in (sel.get("visibility") or []):
@@ -143,20 +150,144 @@ def select(profiles_doc: dict[str, Any], visibility: str, plan: str,
     return None
 
 
+def mask_of(entitlements: dict[str, bool]) -> str:
+    return "".join("1" if entitlements.get(k) else "0" for k in ENTITLEMENT_KEYS)
+
+
+def _derivation(profiles_doc: dict[str, Any]) -> dict[str, Any]:
+    return profiles_doc.get("derivation") or {}
+
+
+def invalid_reason(profiles_doc: dict[str, Any], plan: str,
+                   entitlements: dict[str, bool]) -> str | None:
+    """Why this shape cannot exist, or None if it can.
+
+    Only a real product plan gate makes a shape invalid, and every gate the
+    catalog declares is a *plan* gate — visibility is deliberately not a
+    parameter here. Everything else must resolve, because a customer can be in
+    that shape whether or not anyone named it.
+    """
+    gates = _derivation(profiles_doc).get("plan_gates") or {}
+    cq_plans = [str(p) for p in gates.get("code_quality") or []]
+    if entitlements.get("code_quality") and cq_plans and plan not in cq_plans:
+        return (f"Code Quality requires a {' or '.join(cq_plans)} plan; "
+                f"this shape declares {plan}")
+    if mask_of(entitlements) not in {
+        str(row.get("mask")) for row in profiles_doc.get("entitlement_matrix") or []
+    }:
+        return f"entitlement mask {mask_of(entitlements)} is not in the entitlement matrix"
+    return None
+
+
+def synthesize(profiles_doc: dict[str, Any], capabilities: list[dict[str, Any]],
+               visibility: str, plan: str,
+               entitlements: dict[str, bool]) -> dict[str, Any]:
+    """Build a profile for a valid shape that no preset names.
+
+    The controls come from ``derivation`` in the catalog, not from this file, so
+    the rule stays reviewable where the rest of the model lives. Controls the
+    axes do not determine are left out rather than guessed.
+    """
+    spec = _derivation(profiles_doc)
+    mask = mask_of(entitlements)
+    controls: dict[str, Any] = dict(spec.get("default_controls") or {})
+    trace: list[str] = []
+
+    column = tier_column(visibility, entitlements)
+    trace.append(f"tier column {column} from visibility={visibility}, mask={mask}")
+
+    # codeql_mode: on where CodeQL actually resolves in this mode.
+    codeql_free = any(
+        str(c.get("id")) == "codeql-code-scanning" and str(c.get(column)) == "free"
+        for c in capabilities
+    )
+    codeql_on = codeql_free or (column == "private_paid" and entitlements.get("code_security"))
+    controls["codeql_mode"] = "default" if codeql_on else "none"
+    trace.append(
+        f"codeql_mode={controls['codeql_mode']} because CodeQL is "
+        f"{'resolvable' if codeql_on else 'not entitled'} in this mode"
+    )
+
+    # release_provenance: attestations only where the plan permits them.
+    att_plans = [str(p) for p in (spec.get("plan_gates") or {}).get("private_attestations") or []]
+    attest_ok = visibility == "public" or plan in att_plans
+    controls["release_provenance"] = "attestations" if attest_ok else "checksums"
+    trace.append(
+        f"release_provenance={controls['release_provenance']} because artifact "
+        f"attestations on {visibility} repositories "
+        + ("are unrestricted" if visibility == "public" else f"require {' or '.join(att_plans)}")
+    )
+
+    undetermined = [str(k) for k in spec.get("undetermined") or []]
+    if undetermined:
+        trace.append(
+            "left unset (the axes do not determine them): " + ", ".join(undetermined)
+        )
+
+    posture, fallbacks = "", []
+    for row in profiles_doc.get("entitlement_matrix") or []:
+        if str(row.get("mask")) == mask:
+            posture = str(row.get("posture") or "")
+            fallbacks = [str(f) for f in row.get("fallbacks") or []]
+
+    return {
+        "id": f"derived:{visibility}/{plan}/{mask}",
+        "name": f"Derived mode — {visibility}, {plan}, mask {mask}",
+        "selectors": {"visibility": [visibility], "base_plan": [plan]},
+        "entitlements": dict(entitlements),
+        "entitlement_mask": mask,
+        "controls": controls,
+        # No cost is compiled for a derived mode. A costed envelope is a decision
+        # somebody made and verified against billing, not something to infer.
+        "cost": {},
+        "rationale": posture,
+        "_derived": True,
+        "_derivation": trace,
+        "_undetermined": undetermined,
+        "_fallbacks": fallbacks,
+    }
+
+
+def resolve_shape(profiles_doc: dict[str, Any], capabilities: list[dict[str, Any]],
+                  visibility: str, plan: str,
+                  entitlements: dict[str, bool]) -> dict[str, Any]:
+    """Resolve any repository shape: preset if one exists, derived otherwise.
+
+    Raises ``ValueError`` only for a shape a plan gate forbids.
+    """
+    reason = invalid_reason(profiles_doc, plan, entitlements)
+    if reason is not None:
+        raise ValueError(reason)
+    profile = select(profiles_doc, visibility, plan, entitlements)
+    if profile is None:
+        profile = synthesize(profiles_doc, capabilities, visibility, plan, entitlements)
+    return resolve(profiles_doc, capabilities, profile)
+
+
 def _render(result: dict[str, Any]) -> str:
     lines = [
         f"profile: {result['profile']}  ({result['name']})",
+        f"  source:       {result['source']}",
         f"  shape:        {result['visibility']} / {', '.join(result['base_plan'])} / mask {result['entitlement_mask']}",
         f"  tier column:  {result['tier_column']}",
         "  controls:",
     ]
     for key, value in result["controls"].items():
         lines.append(f"    {key}: {value}")
+    for key in result.get("undetermined_controls") or []:
+        lines.append(f"    {key}: (unset — the axes do not determine this; choose it)")
     cost = result["cost"]
-    fixed = cost.get("fixed_usd")
-    lines.append(f"  fixed cost:   {'free' if not fixed else f'${fixed:g}/month'}")
+    if result["source"] == "derived":
+        lines.append("  fixed cost:   not compiled for a derived mode")
+    else:
+        fixed = cost.get("fixed_usd")
+        lines.append(f"  fixed cost:   {'free' if not fixed else f'${fixed:g}/month'}")
     if cost.get("metered_lines"):
         lines.append(f"  metered:      {', '.join(cost['metered_lines'])}")
+    if result.get("derivation"):
+        lines.append("  derivation:")
+        for step in result["derivation"]:
+            lines.append(f"    - {step}")
 
     def block(title: str, rows: list[dict[str, Any]]) -> None:
         lines.append(f"\n{title} ({len(rows)}):")
@@ -262,6 +393,82 @@ def check() -> list[str]:
                     "zero-entitlement public profile excludes it"
                 )
 
+    # TOTALITY. Every shape a plan gate does not forbid must resolve. This is
+    # the invariant the model claimed and did not hold: presets named 13 of the
+    # 96 shapes and the resolver refused the other 83, so a supported customer
+    # state was unresolvable for a naming reason. Exhaustive rather than
+    # sampled, because the failures were spread across the space.
+    axes = profiles_doc.get("axes") or {}
+    visibilities = [str(v) for v in (axes.get("visibility") or {}).get("values") or []]
+    plans = [str(p) for p in (axes.get("base_plan") or {}).get("values") or []]
+    if not visibilities or not plans:
+        problems.append("resolve-profile: axes declare no visibility/base_plan values")
+    unresolved: list[str] = []
+    inconsistent: list[str] = []
+    for visibility in visibilities:
+        for plan in plans:
+            for bits in range(8):
+                ents = {
+                    key: bool(bits & (1 << (2 - index)))
+                    for index, key in enumerate(ENTITLEMENT_KEYS)
+                }
+                shape_id = f"{visibility}/{plan}/{mask_of(ents)}"
+                if invalid_reason(profiles_doc, plan, ents) is not None:
+                    # Forbidden by a plan gate: refusing is the correct answer,
+                    # but it must be a *stated* refusal, not a lookup miss.
+                    continue
+                try:
+                    result = resolve_shape(profiles_doc, capabilities, visibility,
+                                           plan, ents)
+                except ValueError as exc:
+                    unresolved.append(f"{shape_id}: {exc}")
+                    continue
+                if not result["included"]:
+                    unresolved.append(f"{shape_id}: resolves to an empty programme")
+                    continue
+                # Determinism: the same shape must resolve identically twice.
+                again = resolve_shape(profiles_doc, capabilities, visibility, plan, ents)
+                if again != result:
+                    inconsistent.append(shape_id)
+    if unresolved:
+        problems.append(
+            f"resolve-profile: {len(unresolved)} valid shape(s) do not resolve — "
+            "presets must not decide validity; first: " + unresolved[0]
+        )
+    if inconsistent:
+        problems.append(
+            f"resolve-profile: resolution is not deterministic for {inconsistent[:3]}"
+        )
+
+    # A shape a plan gate forbids must be refused with a reason, never silently
+    # resolved: Code Quality on Free/Pro is not a mode anyone can buy.
+    forbidden = {"code_security": False, "secret_protection": False, "code_quality": True}
+    if invalid_reason(profiles_doc, "pro", forbidden) is None:
+        problems.append(
+            "resolve-profile: Code Quality on a Pro plan resolved — the "
+            "plan gate in catalog/profiles.yml is not being applied"
+        )
+
+    # A derived mode must never invent a costed envelope; a cost is a verified
+    # decision, and the $80 drift is exactly what happens when one is inferred.
+    try:
+        derived = resolve_shape(profiles_doc, capabilities, "private", "team",
+                                {"code_security": False, "secret_protection": True,
+                                 "code_quality": False})
+    except ValueError as exc:
+        # A broken resolver must be reported, not raised: validate_all collects
+        # problems from every check and a crash here would hide the rest.
+        return problems + [f"resolve-profile: an unnamed valid shape raised: {exc}"]
+    if derived["source"] != "derived":
+        problems.append("resolve-profile: an unnamed shape did not report source=derived")
+    if derived["cost"]:
+        problems.append(
+            "resolve-profile: a derived mode compiled a cost — cost is a verified "
+            "decision, not something to infer from the axes"
+        )
+    if not derived["derivation"]:
+        problems.append("resolve-profile: a derived mode carries no derivation trace")
+
     # Two profiles sharing a tier column must still differ, or entitlements are
     # not actually influencing resolution.
     a, b = resolved.get("public-free-standalone"), resolved.get("public-enterprise-max")
@@ -305,17 +512,18 @@ def main() -> int:
             "secret_protection": args.secret_protection,
             "code_quality": args.code_quality,
         }
-        profile = select(profiles_doc, args.visibility, args.plan, entitlements)
-        if profile is None:
-            mask = "".join("1" if entitlements[k] else "0" for k in ENTITLEMENT_KEYS)
+        try:
+            result = resolve_shape(profiles_doc, capabilities, args.visibility,
+                                   args.plan, entitlements)
+        except ValueError as exc:
             print(
-                f"no declared profile matches {args.visibility}/{args.plan}/mask {mask}.\n"
-                "That combination is valid — every mask is in the entitlement matrix — "
-                "but no named profile covers it. Read the matrix row for the posture and "
-                "its free fallbacks, or add a profile to catalog/profiles.yml.",
+                f"{args.visibility}/{args.plan}/mask "
+                f"{mask_of(entitlements)} is not a valid shape: {exc}",
                 file=sys.stderr,
             )
-            return 1
+            return 2
+        print(json.dumps(result, indent=2) if args.json else _render(result))
+        return 0
 
     result = resolve(profiles_doc, capabilities, profile)
     print(json.dumps(result, indent=2) if args.json else _render(result))

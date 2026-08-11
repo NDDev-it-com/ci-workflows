@@ -74,7 +74,7 @@ jobs:
         if: ${{ inputs.pub_get_command != '' }}
         env:
           PUB_GET_COMMAND: ${{ inputs.pub_get_command }}
-        run: bash -c "$PUB_GET_COMMAND"
+        run: bash -euo pipefail -c "$PUB_GET_COMMAND"
 
       - name: Format check
         if: ${{ inputs.format_check }}
@@ -89,5 +89,5 @@ jobs:
           TEST_COMMAND: ${{ inputs.test_command }}
           FLUTTER_CHANNEL: ${{ inputs.flutter_channel }}
         run: |
-          bash -c "$TEST_COMMAND"
+          bash -euo pipefail -c "$TEST_COMMAND"
           echo "Flutter ${FLUTTER_CHANNEL} format + analyze + tests passed." >> "$GITHUB_STEP_SUMMARY"

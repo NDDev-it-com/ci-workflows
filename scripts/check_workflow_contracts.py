@@ -12,6 +12,7 @@ Authorization headers cannot combine with actions/checkout's scoped token.
 """
 from __future__ import annotations
 
+import re
 import sys
 
 from _workflow_yaml import SELF_WORKFLOWS, get_on, is_reusable, load_yaml, workflow_files
@@ -183,6 +184,35 @@ printf 'GIT_CONFIG_GLOBAL=%s\\n' "$isolated_config" >> "$GITHUB_ENV"
             problems.append(
                 f"private-static.yml: {name!r} must use the fail-fast runner {expected!r}"
             )
+
+    # The fail-fast contract above was written for private-static.yml alone
+    # while 47 other caller-command sites across 23 workflows ran plain
+    # `bash -c "$CMD"`. That inner shell inherits nothing from the step's
+    # shell, so a caller passing `lint; test` or `build | tee log` got exit 0
+    # from a failing first command — the reusable reported success for a build
+    # that did not succeed. The rule is the same everywhere a caller's command
+    # is executed, so it is enforced everywhere.
+    problems += _fail_fast_caller_commands()
+    return problems
+
+
+BARE_BASH_C = re.compile(r'\bbash -c "(\$\{?[A-Za-z_][A-Za-z0-9_]*\}?)"')
+
+
+def _fail_fast_caller_commands() -> list[str]:
+    """Any `bash -c "$VAR"` running a caller command must set -euo pipefail."""
+    problems: list[str] = []
+    for path in workflow_files():
+        for lineno, line in enumerate(
+            path.read_text(encoding="utf-8").splitlines(), start=1
+        ):
+            match = BARE_BASH_C.search(line)
+            if match:
+                problems.append(
+                    f"{path.name}:{lineno}: `bash -c \"{match.group(1)}\"` does not "
+                    "fail fast; use `bash -euo pipefail -c` so a caller command "
+                    "like `a; b` or `a | b` cannot report success after failing"
+                )
     return problems
 
 

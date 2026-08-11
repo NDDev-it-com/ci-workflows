@@ -65,5 +65,5 @@ jobs:
           JAVA_VER: ${{ inputs.java_version }}
           JAVA_DIST: ${{ inputs.distribution }}
         run: |
-          bash -c "$TEST_COMMAND"
+          bash -euo pipefail -c "$TEST_COMMAND"
           echo "Java ${JAVA_VER} (${JAVA_DIST}) build + tests passed." >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,27 @@
+# cargo-deny + cargo-audit + cargo-machete for a Rust crate or workspace.
+#
+# `runner: ubuntu-latest` is stated explicitly: the reusables default `runner`
+# to a private self-hosted label, and a default belongs to the pinned commit,
+# not to you. A pin bump must never be able to move your build onto
+# infrastructure you did not choose.
+name: rust-supply-chain
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+  schedule:
+    # Advisories land continuously; a weekly sweep catches one that appeared
+    # after the last commit.
+    - cron: "17 4 * * 2"
+permissions: {}
+jobs:
+  supply-chain:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/rust-supply-chain.yml@<sha>
+    with:
+      runner: ubuntu-latest
+      toolchain: stable
+      enable_deny: true
+      enable_audit: true
+      enable_machete: true
+      # cargo-deny needs a deny.toml at the working directory.
+      deny_command: "check bans licenses advisories sources"

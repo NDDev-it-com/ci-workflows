@@ -14,7 +14,7 @@ import re
 import sys
 from pathlib import Path
 
-import yaml
+from _strict_yaml import strict_loads
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CANONICAL = REPO_ROOT / ".agents" / "skills"
@@ -43,13 +43,13 @@ VOLATILE_QUOTA_RE = re.compile(
 )
 
 
-def _frontmatter(text: str) -> dict:
+def _frontmatter(text: str, origin: str = "<skill>") -> dict:
     if not text.startswith("---\n"):
         raise ValueError("missing YAML frontmatter")
     end = text.find("\n---\n", 4)
     if end < 0:
         raise ValueError("unterminated YAML frontmatter")
-    return yaml.safe_load(text[4:end]) or {}
+    return strict_loads(text[4:end], origin) or {}
 
 
 def _guard_selftest() -> list[str]:
@@ -82,7 +82,7 @@ def check() -> list[str]:
             continue
         text = source.read_text(encoding="utf-8")
         try:
-            meta = _frontmatter(text)
+            meta = _frontmatter(text, str(source))
         except ValueError as exc:
             problems.append(f"{where}: {exc}")
             continue

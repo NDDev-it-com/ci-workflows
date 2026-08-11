@@ -41,10 +41,14 @@ entries:
     waiver: null
   - workflow: .github/workflows/coverage-gate.yml
     criticality: required-gate
-    status: unverified
+    status: waived
     evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
     last_run: null
-    waiver: null
+    waiver:
+      owner: rldyourmnd
+      reason: >-
+        Coverage threshold gate. The threshold comparison, the artifact upload and the optional Codecov/Coveralls lanes have no fixture and no observed run, so the number it enforces is unexercised.
+      expires_after: "2026-10-08"
   - workflow: .github/workflows/cpp-ci.yml
     criticality: supporting
     status: unverified
@@ -133,9 +137,9 @@ entries:
     waiver: null
   - workflow: .github/workflows/monorepo-changed-paths.yml
     criticality: required-gate
-    status: unverified
+    status: static-only
     validator: scripts/check_monorepo_routing.py
-    evidence: 'Executable contract validator exercises the embedded program(s); no live workflow_call run.'
+    evidence: 'The validator extracts the exact embedded router and runs it against hermetic temporary Git repositories: invalid bases fail, uncertain push bases report every group changed, wildcards are rejected. That is behaviour, not lint, so it stands in for a run — but no observed workflow_call has started this workflow.'
     last_run: null
     waiver: null
   - workflow: .github/workflows/mutation-testing.yml
@@ -162,16 +166,24 @@ entries:
       expires_after: "2026-10-31"
   - workflow: .github/workflows/pr-hygiene.yml
     criticality: required-gate
-    status: unverified
+    status: waived
     evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
     last_run: null
-    waiver: null
+    waiver:
+      owner: rldyourmnd
+      reason: >-
+        PR title/label/stale hygiene across four jobs. The pull-requests and issues write scopes are unproven by any observed run.
+      expires_after: "2026-11-05"
   - workflow: .github/workflows/private-static.yml
     criticality: required-gate
-    status: unverified
+    status: waived
     evidence: 'Per-job Git-config isolation is statically enforced; no observed consumer run yet proves checkout on a persistent self-hosted runner.'
     last_run: null
-    waiver: null
+    waiver:
+      owner: rldyourmnd
+      reason: >-
+        Private-free static validation lane. check_workflow_contracts pins its fail-fast command runners, but nothing proves workflow_call startup or checkout on a persistent self-hosted runner.
+      expires_after: "2026-12-03"
   - workflow: .github/workflows/public-codeql.yml
     criticality: security-blocking
     status: waived
@@ -234,14 +246,12 @@ entries:
     criticality: release
     status: static-only
     validator: scripts/check_release_supply_chain.py
-    validator: scripts/check_release_supply_chain.py
     evidence: 'Executable contract validator exercises the embedded program(s); no live workflow_call run.'
     last_run: null
     waiver: null
   - workflow: .github/workflows/release-supply-chain.yml
     criticality: release
     status: static-only
-    validator: scripts/check_release_supply_chain.py
     validator: scripts/check_release_supply_chain.py
     evidence: 'Executable contract validator exercises the embedded program(s). The
       runtime proof lapsed when actions/attest and actions/checkout were bumped: this
@@ -323,9 +333,10 @@ entries:
         Workflow static analysis with SARIF upload. The security-events permission path is unproven by any observed run.
       expires_after: "2026-11-15"
   - workflow: .github/workflows/gate.yml
-    criticality: required-gate
-    status: unverified
-    evidence: 'Redesigned to accept needs_json input (reusable workflows cannot read caller needs context). Awaiting first live run.'
+    criticality: supporting
+    status: static-only
+    validator: scripts/check_gate_contract.py
+    evidence: 'Reclassified from required-gate to supporting because the workflow is no longer a required-check primitive: a reusable cannot read its caller needs context, so needs_json is caller-authored and unverifiable. The validator executes the embedded verifier against an adversarial matrix — empty inputs, a non-object payload, a required job absent from needs, and a failing job dropped by shrinking required_jobs all fail closed — and asserts that the two inputs no reusable can ever authenticate still pass, so the limitation stays visible.'
     last_run: null
     waiver: null
   - workflow: .github/workflows/rust-supply-chain.yml

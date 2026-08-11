@@ -86,6 +86,74 @@ because GitHub does not allow an author to approve their own pull request.
 Projects with an independent reviewer should use the recommendation above.
 `ci-gate` is the aggregate gate job in `ci.yml`.
 
+## Who owns which governance surface
+
+Governance was previously described in four places that disagreed. The live API
+settles it, and this table records who owns what so the next reader does not
+have to re-derive it:
+
+| Surface | Owner | Status |
+| --- | --- | --- |
+| `.github/rulesets/branch-main.json` | this repository | Canonical desired state for ruleset `18506136`. Verified against the live API: `allowed_merge_methods: ["merge"]`, `ci-gate` strict, signed commits, thread resolution, zero approvals. |
+| `.github/rulesets/tag-semver.json`, `push-hygiene.json` | this repository | Canonical desired state for the repository's own tag and push rules. |
+| `NDDev baseline: *` rulesets | the estate control plane | Applied on top, not tracked here. Deleting or editing them from this repository would fight the reconciler. |
+| `.gds/compiled-policy.json` | GDS, generated | **Not authoritative for this repository and currently wrong** — see below. |
+
+`.github/branch-protection/main.json` used to sit alongside these. It claimed to
+record ruleset `18506136` while describing `merge_methods: ["squash"]` and
+`require_linear_history: true`; the live ruleset allows the `merge` method only
+and sets no linear-history rule. Nothing read the file and no validator compared
+it to anything, so it contradicted the tracked ruleset silently. It has been
+deleted rather than corrected: two files describing one object is the defect.
+
+### The GDS projection disagrees, and cannot be fixed here
+
+`.gds/compiled-policy.json` declares `allow_squash_merge: true` and
+`allow_merge_commit: false` under `management: managed`. The live repository is
+the opposite — `allow_merge_commit: true`, `allow_squash_merge: false` — and
+merge-commit-only is the deliberate model (squash and rebase are disabled so
+`main` keeps merge commits). It also lists `pip` and `pipx` as forbidden
+executables while this repository's own documented setup used both.
+
+That file is generated: its header marks it `DO NOT EDIT DIRECTLY`, its sources
+(`policies/base/repository-default.yaml`, `policies/roles/public-module.yaml`)
+live outside this repository, and the compiled policy itself sets
+`agent.generated_projection_edit: forbidden`. Correcting it here would be
+reverted by the next `gds` run — which is exactly what happened when the
+projection was last regenerated. **The fix belongs in the GDS policy source**,
+and until it lands, `.gds/**` is repository data, not an instruction surface for
+anyone working in this repository.
+
+## A required check must be caller-native
+
+Point branch protection at a context produced by a job **in the caller**, whose
+`needs:` is the real dependency graph of that run. Copy
+[`examples/quality/caller-native-gate.yml`](../examples/quality/caller-native-gate.yml);
+this repository's own `ci.yml` uses the same shape.
+
+Do **not** require the context produced by
+[`gate.yml`](../.github/workflows/gate.yml). A reusable workflow cannot read its
+caller's `needs` context, so that reusable receives the results as the
+caller-authored `needs_json` string. It fails closed on inputs that assert
+nothing — an empty object, an empty `required_jobs`, a required job missing from
+`needs`, or a `required_jobs` list that omits a job present in `needs` — but a
+fabricated all-success object still passes, and no validation inside a reusable
+can change that. It is a reporting helper for dashboards and summaries.
+
+Two properties matter for any required context, caller-native or not:
+
+- **`if: always()`**, or the context never appears when an upstream job fails
+  and the pull request waits forever.
+- **a `merge_group` trigger** on the workflow, or an enabled merge queue waits
+  for a status that can never arrive.
+
+And never require a context from a **push- or schedule-only** workflow. OSSF
+Scorecard is the standing trap: it supports `push` and `schedule` on the default
+branch only, so as a required context it can never report on a pull-request head
+— it protects nothing while blocking every merge. That requirement can also live
+in *classic* branch protection rather than a ruleset, so a ruleset-shaped
+investigation finds nothing.
+
 ## Tag rulesets
 
 Protect release tags with a **tag ruleset** targeting SemVer tags:

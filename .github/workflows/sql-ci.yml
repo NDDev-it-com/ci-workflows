@@ -78,4 +78,4 @@ jobs:
         if: ${{ inputs.extra_command != '' }}
         env:
           EXTRA_COMMAND: ${{ inputs.extra_command }}
-        run: bash -c "$EXTRA_COMMAND"
+        run: bash -euo pipefail -c "$EXTRA_COMMAND"
