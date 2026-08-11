@@ -13,12 +13,25 @@
 # Two scans are NOT configured by this file and must be set per repository, or
 # they keep consuming metered minutes regardless of what is written here:
 #   * CodeQL default setup  -> PATCH /repos/{owner}/{repo}/code-scanning/default-setup
-#                              with runner_type=labeled, runner_label=<label>
+#                              with runner_type=labeled, runner_label=nddev-linux-standard
 #   * Code Quality          -> repository Settings -> Code quality -> Labeled runner
 # See docs/05-runners.md#visibility-routing.
 #
-# Replace @<sha> with a pinned full commit SHA of ci-workflows, and <label> with
-# the self-hosted runner label used by your estate.
+# Replace @<sha> with a pinned full commit SHA of ci-workflows. The runner
+# labels below are the estate's real scale-set classes, documented in
+# `github-actions/docs/architecture.md`:
+#
+#   nddev-linux-fast         format, lint, typecheck, short unit tests
+#                            (no job credential, no Docker)
+#   nddev-linux-standard     normal builds and tests, repository-scoped credentials
+#   nddev-linux-integration  Docker, Compose, databases, browsers
+#   nddev-linux-release      signing, publish, deploy (isolated, OIDC-only)
+#
+# The class is not cosmetic. `secret-scan` runs gitleaks as a digest-pinned
+# container, so it needs the class that has a Docker daemon; on
+# `nddev-linux-standard` it fails at `docker run`. Everything else here is a
+# scanner that uploads SARIF, so it needs repository-scoped credentials and
+# belongs on `nddev-linux-standard` rather than the credential-free fast class.
 name: security
 on:
   push: { branches: [main] }
@@ -33,29 +46,29 @@ jobs:
     uses: NDDev-it-com/ci-workflows/.github/workflows/public-codeql.yml@<sha>
     with:
       languages: '["python","actions"]'
-      runner: <label>
+      runner: nddev-linux-standard
   secret-scan:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/secret-scan.yml@<sha>
     with:
-      runner: <label>
+      runner: nddev-linux-integration  # gitleaks runs as a container
   actionlint:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/actionlint.yml@<sha>
     with:
-      runner: <label>
+      runner: nddev-linux-standard
   zizmor:
     permissions: { actions: read, contents: read, security-events: write }
     uses: NDDev-it-com/ci-workflows/.github/workflows/zizmor-sarif.yml@<sha>
     with:
-      runner: <label>
+      runner: nddev-linux-standard
   dependency-review:
     permissions: { contents: read, pull-requests: write }
     uses: NDDev-it-com/ci-workflows/.github/workflows/public-dependency-review.yml@<sha>
     with:
-      runner: <label>
+      runner: nddev-linux-standard
   osv-scan:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/osv-scan.yml@<sha>
     with:
-      runner: <label>
+      runner: nddev-linux-standard

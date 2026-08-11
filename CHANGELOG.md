@@ -19,6 +19,15 @@
   default as `amsterdam` was; an estate caller names its class explicitly, which
   is what the rule required all along.
 
+  The estate example now names the real classes instead of a `<label>`
+  placeholder, and the routing is not cosmetic: `secret-scan` runs gitleaks as a
+  digest-pinned container, so it needs `nddev-linux-integration` (the class with
+  a Docker daemon) while every other scanner uploads SARIF and belongs on
+  `nddev-linux-standard` (repository-scoped credentials) rather than the
+  credential-free `nddev-linux-fast`. Put the container job on the standard class
+  and it fails at `docker run`; put the SARIF jobs on the fast class and they
+  fail for want of a token.
+
   `catalog/profiles.yml` therefore keeps `runner_mode: self-hosted-persistent`
   on the two private profiles, and `docs/17` keeps its routing model: private
   work still runs on the estate's own runners and still bypasses the metered
