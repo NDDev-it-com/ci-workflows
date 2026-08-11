@@ -2,6 +2,30 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **The `runner` default is `ubuntu-latest`; the `amsterdam` fleet is gone.**
+  Thirty-nine reusables defaulted to a private self-hosted label. ADR 0004
+  described exactly what that costs an external consumer — "the label resolves to
+  nothing, so the job queues against a runner that will never appear" — and
+  deliberately left the default alone, because flipping it would have moved ~10
+  private callers onto metered hosted runners, a cost decision the library may
+  not make for its consumers.
+
+  That objection died with the fleet. The estate moved to its own GitHub App for
+  CI and retired the label, so there is nothing left to move those callers off,
+  and the default stopped being wrong-by-default and became broken: every caller
+  inheriting it now queues forever. All 39 defaults are `ubuntu-latest`.
+
+  The migration was one edit precisely because ADR 0004's rule held: callers were
+  already required to name their runner, so no example and no compliant consumer
+  depended on the default. A caller on its own fleet still names its label —
+  and now must, since a hosted default meters silently.
+
+  ADR 0004 records the supersession rather than being rewritten; `docs/05`
+  carries the history, because "the default is safe today" is a fact with a date
+  on it.
+
 ### Added
 
 - **A consumer fixture estate, and it immediately found four defects static

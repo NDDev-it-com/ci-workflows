@@ -9,7 +9,7 @@ on:
     inputs:
       runner:
         type: string
-        default: 'amsterdam'
+        default: 'ubuntu-latest'
       python_version:
         type: string
         default: '3.13'

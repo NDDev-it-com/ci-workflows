@@ -19,7 +19,7 @@ on:
       runner:
         description: 'Trusted Linux runner label used for the read-only verification job.'
         type: string
-        default: 'amsterdam'
+        default: 'ubuntu-latest'
 
 permissions: {}
 
