@@ -4,6 +4,31 @@
 
 ### Added
 
+- **A workflow now states what it needs from the machine.** `required_permissions`
+  answered what the token needs and `required_settings` what the repository
+  needs; nothing answered what the *host* needs, so a caller choosing between
+  self-hosted classes had to read the workflow and guess — and guessing wrong
+  fails at runtime with a missing socket rather than anything naming the real
+  problem.
+
+  `runtime_requirements` in `catalog/capabilities.yml` states it, and the surface
+  turns out to be small enough that knowing it is the useful part: **of 46
+  reusables, 44 need nothing but a shell.** Two need a container runtime —
+  `secret-scan`, whose gitleaks is a digest-pinned image, and `container-ci`,
+  whose Trivy action shells out to Docker.
+
+  `check_runtime_requirements.py` derives the requirement from the workflow and
+  compares it with the catalog, so the two cannot drift in either direction: add
+  `docker run` and the gate fails until the catalog says so; remove it and the
+  gate fails too, because an overstated requirement pushes callers onto a
+  scarcer class than they need.
+
+  Deliberately **not** a `runner_class` input. An input would have to name a
+  private label taxonomy inside a public library — the thing ADR 0004 forbids —
+  and would sit beside `runner` as a second way to choose one machine. A
+  requirement is durable; a class name belongs to whoever runs the fleet and
+  changes when they do.
+
 - **The negative gates now block the merge.** They were green and ran on every
   pull request, but nothing required them — a gate could stop refusing bad input
   and the merge would go through. `shell-gates` and `dockerfile-gate` now live

@@ -32,7 +32,12 @@ CAP_FIELDS = {
 # `product_facts` links a capability's tier claims to fact IDs in
 # `product-facts.yml`; validate_product_facts.py checks those references
 # resolve and that the facts are not expired.
-CAP_OPTIONAL_FIELDS = {"product_facts"}
+CAP_OPTIONAL_FIELDS = {"product_facts",
+    # Host capabilities the workflow actually uses, derived from the
+    # workflow and cross-checked by check_runtime_requirements.py. Optional
+    # because 44 of 46 reusables need nothing but a shell.
+    "runtime_requirements",
+}
 VALID_STATUS = {"ga", "preview", "deprecated", "retiring", "planned"}
 VALID_TIER_AVAIL = {"free", "paid", "unavailable", "conditional"}
 VALID_PRIVATE_PAID = {"available", "unavailable", "conditional"}
