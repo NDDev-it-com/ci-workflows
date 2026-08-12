@@ -484,6 +484,70 @@ jobs:
       runner: ${{ matrix.os }}
       working_directory: tests/fixtures/web
 
+  # supporting — the benchmark pair, both halves. external_data_json_path makes
+  # the action store history in a file instead of a branch, which is the only
+  # way either lane can run here: the writing twin would otherwise commit to
+  # gh-pages (a fixture estate must not change its own repository) and the
+  # read-only twin would otherwise fail fetching a gh-pages branch that has
+  # never existed. fail_on_alert is off because a first run has no baseline.
+  fixture-benchmark:
+    name: fixture / benchmark
+    permissions:
+      contents: read
+    uses: ./.github/workflows/benchmark.yml
+    with:
+      runner: ubuntu-latest
+      language: go
+      working_directory: tests/fixtures/go
+      bench_command: "go test -bench=. -benchmem -run=XXX_no_tests ./... | tee output.txt"
+      tool: go
+      # Repo-root-relative: `working-directory` governs `run:` steps, and the
+      # action that reads this file is a `uses:` step.
+      output_file_path: tests/fixtures/go/output.txt
+      external_data_json_path: tests/fixtures/go/benchmark-data.json
+      fail_on_alert: false
+
+  fixture-benchmark-compare:
+    name: fixture / benchmark-compare
+    permissions:
+      contents: read
+    uses: ./.github/workflows/benchmark-compare.yml
+    with:
+      runner: ubuntu-latest
+      language: go
+      working_directory: tests/fixtures/go
+      bench_command: "go test -bench=. -benchmem -run=XXX_no_tests ./... | tee output.txt"
+      tool: go
+      output_file_path: tests/fixtures/go/output.txt
+      external_data_json_path: tests/fixtures/go/benchmark-data.json
+      fail_on_alert: false
+
+  # supporting — R lane. use_public_rspm (the default) serves precompiled
+  # binaries, so installing testthat is a download rather than a compile.
+  fixture-r-ci:
+    name: fixture / r-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/r-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/r
+
+  # supporting — mutation testing over the Rust fixture. cargo-mutants is used
+  # rather than a Python or JS mutator because the crate is dependency-free, so
+  # the only install is the mutator itself.
+  fixture-mutation-testing:
+    name: fixture / mutation-testing
+    permissions:
+      contents: read
+    uses: ./.github/workflows/mutation-testing.yml
+    with:
+      runner: ubuntu-latest
+      language: rust
+      working_directory: tests/fixtures/rust
+      install_command: "cargo install cargo-mutants --locked"
+      mutation_command: "cargo mutants --no-shuffle --test-tool=cargo -j 2"
+
   # One place to read the outcome, and the digests to paste into the ledger when
   # promoting a record. Never required; this is a report, not a gate.
   evidence:
@@ -522,6 +586,10 @@ jobs:
       - fixture-terraform-ci-os
       - fixture-sql-ci-os
       - fixture-web-ci-os
+      - fixture-benchmark
+      - fixture-benchmark-compare
+      - fixture-r-ci
+      - fixture-mutation-testing
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -571,6 +639,10 @@ jobs:
               "fixture-java-ci": "java-ci.yml",
               "fixture-dotnet-ci": "dotnet-ci.yml",
               "fixture-swift-ci": "swift-ci.yml",
+              "fixture-benchmark": "benchmark.yml",
+              "fixture-benchmark-compare": "benchmark-compare.yml",
+              "fixture-r-ci": "r-ci.yml",
+              "fixture-mutation-testing": "mutation-testing.yml",
           }
           results = json.loads(os.environ["RESULTS"])
           run_url = os.environ["RUN_URL"]

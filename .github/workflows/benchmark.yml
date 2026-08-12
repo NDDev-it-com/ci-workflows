@@ -51,6 +51,15 @@ on:
       fail_on_alert:
         type: boolean
         default: true
+      external_data_json_path:
+        description: >-
+          JSON file holding benchmark history. When set, the action stores data
+          in this file and NO LONGER USES A GIT BRANCH at all, which is the only
+          way this lane can run without a gh-pages branch existing. Empty keeps
+          the gh-pages behaviour. Persist the file yourself (actions/cache) if
+          you want history across runs.
+        type: string
+        default: ''
       timeout_minutes:
         type: number
         default: 30
@@ -122,4 +131,5 @@ jobs:
           alert-threshold: ${{ inputs.alert_threshold }}
           fail-on-alert: ${{ inputs.fail_on_alert }}
           auto-push: true
+          external-data-json-path: ${{ inputs.external_data_json_path }}
           comment-on-alert: false
