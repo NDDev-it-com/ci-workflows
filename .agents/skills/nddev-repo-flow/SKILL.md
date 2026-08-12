@@ -83,9 +83,17 @@ is faster than reasoning from the YAML.
 
 Editing a workflow the ledger marks `runtime-proven` invalidates its
 `proven_digest`, and the gate fails. There is no way to keep the label without
-new evidence, which is the point. Either re-run the reusable and record the new
-run URL plus `shasum -a 256 <workflow>`, or drop the record to `static-only`
-naming a validator that actually exists. Never leave a stale run as proof.
+new evidence, which is the point.
+
+There is now a way to supply it. Push a `fixtures/**` branch:
+`runtime-fixtures.yml` calls nine reusables the way a consumer would, and its
+evidence job prints the run URL and each workflow's new sha256 ready to paste
+into the ledger. Only a `success` row is evidence — a failed or skipped row
+proves nothing and says so. Re-proving a change that touched every workflow is
+one push.
+
+If a workflow has no fixture, drop its record to `static-only` naming a validator
+that actually exists. Never leave a stale run as proof.
 
 `release`, `security-blocking` and `required-gate` may not rest at `unverified`:
 prove, stand in with a validator, or take a dated waiver with an owner. Stagger

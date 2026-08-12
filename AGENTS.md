@@ -9,7 +9,7 @@ contracts below are strict.
 
 | | |
 | --- | --- |
-| `.github/workflows/*.yml` | The product. `on: workflow_call` reusables, plus the self workflows `ci.yml`, `release.yml`, `maintenance.yml`, `codeql.yml`, `dependency-review.yml`, `gitleaks.yml`, `scorecard.yml`. |
+| `.github/workflows/*.yml` | The product: 46 `on: workflow_call` reusables. Plus eight self workflows — `ci.yml`, `release.yml`, `maintenance.yml` (scheduled advisory sweep), `runtime-fixtures.yml` (the evidence estate), `codeql.yml`, `dependency-review.yml`, `gitleaks.yml`, `scorecard.yml`. |
 | `catalog/*.yml` | Source of truth. One concern each: `capabilities` (what exists, per tier), `tools` (pins + `used_by`), `product-facts` (volatile external plan/price/quota facts, dated and expiring), `runtime-coverage` (what is actually proven to run), `profiles` (operating modes), `deprecations`. |
 | `scripts/` | The validators. `validate_all.py` aggregates them. |
 | `docs/generated/*` | Rendered from the catalog. Never hand-edit. |
@@ -53,8 +53,10 @@ Touch this → also do this:
 - **a workflow** → catalog entry, `tools.yml` `used_by`, an `examples/` caller,
   regenerate docs, `CHANGELOG.md` under `[Unreleased]`.
 - **a *proven* workflow** (`runtime-coverage.yml` says `runtime-proven`) → the
-  `proven_digest` no longer matches. Re-run and re-record, or drop to
-  `static-only`. Never leave a stale run masquerading as proof.
+  `proven_digest` no longer matches and the gate says so. Push a `fixtures/**`
+  branch: `runtime-fixtures.yml` calls nine reusables as a consumer would, and its
+  evidence job prints the run URL and each new digest ready to paste back. Or drop
+  the record to `static-only`. Never leave a stale run masquerading as proof.
 - **a catalog file** → `python3 scripts/generate_docs.py`.
 - **a skill** → `python3 scripts/sync_skills.py`.
 - **a product fact** → re-read its `source_urls` and correct it. Bumping the
@@ -80,6 +82,10 @@ the named script — its fixtures say what the contract is.
 | Runtime bundle ⊆ source archive | `check_release_supply_chain.py` |
 | Every valid repository shape resolves to a programme | `resolve_profile.py` |
 | Blocking workflows owe runtime evidence | `validate_runtime_coverage.py` |
+| Every action is registered, and `used_by` matches the tree | `check_tool_registry.py` |
+| Every reusable has a caller example, which states its runner | `check_examples.py` |
+| No estate inventory or observed spend in public prose | `check_public_docs.py` |
+| A caller command is shell-parseable and fails fast | `check_workflow_contracts.py` |
 
 Two rules no validator can catch for you:
 
@@ -95,6 +101,12 @@ Two rules no validator can catch for you:
 Artifact Attestations: free on public repositories on any plan; private and
 internal require **Enterprise Cloud** (Code Security does not unlock them).
 Private-free repositories release with `release-supply-chain-free.yml`.
+
+Runners: **standard** hosted runners are unmetered on public repositories;
+**larger** ones (`-N-cores`, `-large`, `-xlarge`) are billed from the first minute
+there too. Hosted is not the same as free. A public repository must never route to
+self-hosted hardware — a forked pull request there is remote code execution on it.
+`docs/05` teaches the routing; the amounts live in `catalog/product-facts.yml`.
 
 Code Quality is a separate licence needing Team or Enterprise, billed per active
 committer counted once per organization. **Its public per-committer rate is
