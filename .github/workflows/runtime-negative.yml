@@ -113,7 +113,8 @@ jobs:
           python3 -I scripts/negative_gate_probe.py \
             --workflow .github/workflows/python-ci.yml --job python \
             --step 'Run tests' \
-            --bad tests/fixtures/negative/python --good tests/fixtures/python
+            --bad tests/fixtures/negative/python --good tests/fixtures/python \
+            --input test_command='python -m pytest -q'
 
   dockerfile-gate:
     name: hadolint refuses an unpinned image
