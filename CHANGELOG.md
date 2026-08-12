@@ -13,11 +13,26 @@
   assertion in Go and in pytest, misaligned HCL — and asserts each one refuses
   it. All six refused on the first run.
 
-  Its run conclusion is `failure` by design and is not evidence; `verdict` is.
-  `continue-on-error` is rejected on a job that calls a reusable with `uses:`,
-  so an expected failure cannot be absorbed the way it can for a normal step.
-  Because a permanently red workflow would drown a real failure, it never runs
-  on push — monthly and on demand only.
+  It does this **without a red run**. Calling the reusable and letting the job
+  fail was the first design and was replaced: `continue-on-error` is rejected on
+  a job that calls a reusable with `uses:`, so every expected failure turned the
+  whole run red, and a permanently red workflow teaches people to stop reading
+  the badge. Instead `scripts/negative_gate_probe.py` lifts the gating step out
+  of the workflow — its own `run:` text and `env:` block, paraphrasing nothing —
+  and executes it in an ordinary job where an exit code is just data.
+
+  Every probe runs both directions, and the second half earned its place: the
+  first local run reported "gate refused as required" when the real reason was
+  `terraform: command not found`. Without the accepting case a missing toolchain
+  is indistinguishable from a working gate, so exit 127 is now an error either
+  way. The probe found two more of its own gaps on first contact with CI — a
+  missing PyYAML and `$GITHUB_PATH` not carrying a downloaded binary between
+  steps — and in both cases refused to report a verdict rather than inventing
+  one.
+
+  Five gates covered: `terraform-ci`, `go-ci`, `sql-ci`, `python-ci`,
+  `hadolint-ci`. `docs-quality` has none — all three of its gates are `uses:`
+  steps, and an action cannot be lifted out of its runner.
 
 - **`benchmark-compare`, `r-ci` and `mutation-testing` are proven**, taking the
   ledger to 29 of 46 and leaving seven unverified.
