@@ -24,6 +24,15 @@ REUSABLE_RE = re.compile(
 # Runner labels every GitHub account can resolve. Anything else is somebody's
 # private fleet.
 HOSTED_RUNNER_PREFIXES = ("ubuntu-", "macos-", "windows-")
+# Hosted is not the same as free. `github-actions-public-standard` in the fact
+# ledger is `public-unmetered` for **standard** runners only, and
+# `github-actions-larger-runners` is `paid-only` — "always billed, including
+# public repositories and despite standard-runner quota", metered from the first
+# minute. So `ubuntu-latest-8-cores` passes any prefix test for "hosted" and
+# still bills an OSS repository that believed its CI was free.
+#
+# Larger runners are named by a size suffix: `-N-cores`, `-large`, `-xlarge`.
+LARGER_RUNNER_SUFFIXES = ("-cores", "-large", "-xlarge")
 # Only an example that says in its own filename that it targets a private
 # repository may name a non-hosted runner. Public repositories get free unmetered
 # hosted minutes, and pointing one at self-hosted hardware turns a forked pull
@@ -152,6 +161,14 @@ def check() -> list[str]:
                     problems.append(
                         f"{rel}: job `{job_id}` must set `runner` explicitly — a "
                         "default belongs to the pinned commit, not to the caller"
+                    )
+                elif str(chosen).endswith(LARGER_RUNNER_SUFFIXES):
+                    problems.append(
+                        f"{rel}: job `{job_id}` names the larger runner {chosen!r}. "
+                        "Hosted is not the same as free: standard runners are "
+                        "unmetered on public repositories, larger ones are billed "
+                        "from the first minute there too. An example must not put "
+                        "a cost on a repository that copies it"
                     )
                 elif not str(chosen).startswith(HOSTED_RUNNER_PREFIXES) \
                         and rel not in SELF_HOSTED_EXAMPLES:

@@ -4,6 +4,16 @@
 
 ### Fixed
 
+- **Hosted is not the same as free.** `docs/05` taught routing with the sentence
+  "minutes are free and unlimited on public repositories" — true only for
+  **standard** runners. Larger ones (`-N-cores`, `-large`, `-xlarge`) are billed
+  from the first minute on public repositories too, and the standard allowance
+  does not offset them, so a public repository reaching for
+  `ubuntu-latest-8-cores` because "Actions is free on OSS" starts paying at once.
+  The prose now says which, sourced to the two facts that own it, and
+  `check_examples.py` rejects a larger runner in any example so this repository
+  cannot ship the trap it warns about.
+
 - **Public repositories must be on hosted runners, and the rule that said so had
   gone vacuous.** `check_examples.py` required an explicit `runner` only when the
   reusable's default was *non-hosted*. That was written when the default was
