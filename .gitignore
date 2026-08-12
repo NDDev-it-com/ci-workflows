@@ -13,3 +13,8 @@ dist/
 
 # macOS Finder metadata
 .DS_Store
+
+# Rust fixture build output (tests/fixtures/rust)
+tests/fixtures/rust/target/
+tests/fixtures/terraform/.terraform/
+tests/fixtures/terraform/.terraform.lock.hcl

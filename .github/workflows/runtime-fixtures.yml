@@ -156,6 +156,173 @@ jobs:
       needs_json: ${{ toJSON(needs) }}
       required_jobs: "fixture-actionlint,fixture-docs-ci"
 
+
+  # --- Language lanes -------------------------------------------------------
+  # Each of these calls a reusable exactly as a consumer would, against a real
+  # minimal project under tests/fixtures/. The projects are deliberately
+  # dependency-free: a fixture that downloads a package tree proves the network
+  # works, not that the workflow does.
+
+  # supporting — Go build/vet/test lane against a module with a test, a
+  # benchmark and a fuzz target.
+  fixture-go-ci:
+    name: fixture / go-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/go-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/go
+
+  # supporting — Python lane. test_command is required by the contract, so this
+  # also proves the required-input path.
+  fixture-python-ci:
+    name: fixture / python-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/python-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/python
+      install_command: "uv pip install --system -e . pytest"
+      test_command: "python -m pytest -q"
+
+  # supporting — Node lane under bun.
+  fixture-node-ci:
+    name: fixture / node-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/node-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/node
+      test_command: "bun test"
+
+  # supporting — Rust build/test/fmt/clippy lanes. The fixture ships a
+  # hand-written Cargo.lock so the default `--locked` commands are exercised as
+  # written rather than relaxed for the fixture's convenience.
+  fixture-rust-ci:
+    name: fixture / rust-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/rust-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/rust
+      fmt_command: "cargo fmt --all -- --check"
+      clippy_command: "cargo clippy --locked --all-targets -- -D warnings"
+
+  # supporting — C++ configure/build/test lanes through CMake and ctest.
+  fixture-cpp-ci:
+    name: fixture / cpp-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/cpp-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/cpp
+
+  # supporting — Terraform fmt/init/validate. The fixture declares no provider,
+  # so init stays offline and the lane cannot fail on a registry outage.
+  fixture-terraform-ci:
+    name: fixture / terraform-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/terraform-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/terraform
+
+  # supporting — sqlfluff lint on the ansi dialect.
+  fixture-sql-ci:
+    name: fixture / sql-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/sql-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/sql
+
+  # supporting — the three docs lanes at once: lychee, typos and markdownlint.
+  # The fixture's only link is relative and committed alongside it, so the link
+  # checker cannot fail on someone else's outage.
+  fixture-docs-quality:
+    name: fixture / docs-quality
+    permissions:
+      contents: read
+    uses: ./.github/workflows/docs-quality.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/docs
+
+  # supporting — hadolint against a Dockerfile that is clean at the default
+  # `warning` threshold: digest-pinned base, pinned package version, non-root.
+  fixture-hadolint:
+    name: fixture / hadolint-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/hadolint-ci.yml
+    with:
+      runner: ubuntu-latest
+      dockerfile: tests/fixtures/docker/Dockerfile
+
+  # supporting — stylelint and htmlhint. The fixture carries its own
+  # .stylelintrc.json because stylelint hard-errors without a configuration,
+  # which the default lint command otherwise hides behind a working directory.
+  fixture-web-ci:
+    name: fixture / web-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/web-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/web
+
+  # supporting — Trivy filesystem scan, pointed at the fixture estate rather
+  # than the whole repository so the lane is fast and its subject is stable.
+  fixture-container-ci:
+    name: fixture / container-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/container-ci.yml
+    with:
+      runner: ubuntu-latest
+      scan_type: fs
+      scan_ref: tests/fixtures
+
+  # supporting — the three-OS matrix. Standard hosted runners are unmetered on
+  # public repositories in all three operating systems, so proving the macOS and
+  # Windows lanes here costs nothing; on a private repository this same job
+  # would bill macOS at 10.33x, which is why the record notes the tier.
+  fixture-cross-platform-smoke:
+    name: fixture / cross-platform-smoke
+    permissions:
+      contents: read
+    uses: ./.github/workflows/cross-platform-smoke.yml
+
+  # supporting — the read-only half of the benchmark pair. Deliberately
+  # benchmark-compare and NOT benchmark: the writing twin hard-wires
+  # `auto-push: true`, so proving it would commit benchmark history to a
+  # gh-pages branch. A fixture estate must not change the repository it runs
+  # in, so benchmark.yml keeps an honest unverified record instead.
+  #
+  # output_file_path is repo-root-relative on purpose. `working_directory`
+  # applies to `run:` steps only, so the bench command writes inside the fixture
+  # while the action step that reads the file resolves from the workspace root.
+  fixture-benchmark-compare:
+    name: fixture / benchmark-compare
+    permissions:
+      contents: read
+    uses: ./.github/workflows/benchmark-compare.yml
+    with:
+      runner: ubuntu-latest
+      language: go
+      working_directory: tests/fixtures/go
+      bench_command: "go test -bench=. -benchmem -run=XXX_no_tests ./... | tee output.txt"
+      tool: go
+      output_file_path: tests/fixtures/go/output.txt
+      fail_on_alert: false
+
   # One place to read the outcome, and the digests to paste into the ledger when
   # promoting a record. Never required; this is a report, not a gate.
   evidence:
@@ -170,6 +337,19 @@ jobs:
       - fixture-semgrep
       - fixture-docs-ci
       - fixture-gate-report
+      - fixture-go-ci
+      - fixture-python-ci
+      - fixture-node-ci
+      - fixture-rust-ci
+      - fixture-cpp-ci
+      - fixture-terraform-ci
+      - fixture-sql-ci
+      - fixture-docs-quality
+      - fixture-hadolint
+      - fixture-web-ci
+      - fixture-container-ci
+      - fixture-cross-platform-smoke
+      - fixture-benchmark-compare
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -204,6 +384,19 @@ jobs:
               "fixture-semgrep": "semgrep-ci.yml",
               "fixture-docs-ci": "docs-ci.yml",
               "fixture-gate-report": "gate.yml",
+              "fixture-go-ci": "go-ci.yml",
+              "fixture-python-ci": "python-ci.yml",
+              "fixture-node-ci": "node-ci.yml",
+              "fixture-rust-ci": "rust-ci.yml",
+              "fixture-cpp-ci": "cpp-ci.yml",
+              "fixture-terraform-ci": "terraform-ci.yml",
+              "fixture-sql-ci": "sql-ci.yml",
+              "fixture-docs-quality": "docs-quality.yml",
+              "fixture-hadolint": "hadolint-ci.yml",
+              "fixture-web-ci": "web-ci.yml",
+              "fixture-container-ci": "container-ci.yml",
+              "fixture-cross-platform-smoke": "cross-platform-smoke.yml",
+              "fixture-benchmark-compare": "benchmark-compare.yml",
           }
           results = json.loads(os.environ["RESULTS"])
           run_url = os.environ["RUN_URL"]

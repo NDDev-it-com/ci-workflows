@@ -1,0 +1,11 @@
+{
+  "//": "Core rules only, no `extends`: pulling stylelint-config-standard would make this fixture install a package tree on every run, and the point is to prove web-ci starts and reports, not to test a shared config.",
+  "rules": {
+    "block-no-empty": true,
+    "color-no-invalid-hex": true,
+    "declaration-block-no-duplicate-properties": true,
+    "no-duplicate-selectors": true,
+    "property-no-unknown": true,
+    "unit-no-unknown": true
+  }
+}
