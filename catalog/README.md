@@ -16,7 +16,9 @@ references).
 | `capabilities.yml` | `capabilities:` | Every CI/CD, security, supply-chain, and governance capability with tier availability. |
 | `tools.yml` | `tools:` | External actions, CLIs, containers, and services referenced by the workflows, with pins. |
 | `deprecations.yml` | `deprecations:` | Retiring, deprecated, and removed capabilities and the migration path. |
+| `workflow-routing.yml` | `groups:` | Estate-neutral supported OS and machine requirements for every reusable workflow. |
 | `schema/capability.schema.yaml` | JSON Schema | Machine-readable shape for `capabilities.yml`; `scripts/validate_catalog.py` is the enforcing validator. |
+| `schema/workflow-routing.schema.yaml` | JSON Schema | Machine-readable shape for OS/capability routing; `scripts/check_runner_routing.py` is the enforcing validator. |
 
 ## Naming note
 
@@ -31,6 +33,7 @@ stack packs are materialized workflows, not placeholders.
 
 - `docs/generated/capability-matrix.md`
 - `docs/generated/workflow-inventory.md`
+- `docs/generated/workflow-routing.md`
 
 Run `python3 scripts/generate_docs.py --check` before release; `ci.yml` runs it
 through `scripts/validate_all.py` so generated docs cannot drift from the

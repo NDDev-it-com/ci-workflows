@@ -32,6 +32,7 @@ from _runners import HOSTED_RUNNER_PREFIXES, LARGER_RUNNER_SUFFIXES
 # naming a fleet label is a defect, not a preference.
 SELF_HOSTED_EXAMPLES = (
     "examples/nddev/security-private-selfhosted.yml",
+    "examples/nddev/os-capability-routing.yml",
     "examples/personal/security-selfhosted.yml",
 )
 

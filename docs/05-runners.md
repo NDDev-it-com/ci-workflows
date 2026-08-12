@@ -203,6 +203,44 @@ and it would sit beside `runner` as a second way to choose one machine. A
 requirement is durable; a class name belongs to whoever operates the fleet and
 changes when they do.
 
+### Compile the route before dispatch
+
+`catalog/workflow-routing.yml` completes the contract with a supported OS set
+for every reusable. `scripts/check_runner_routing.py` combines that public,
+estate-neutral declaration with an operator mapping. The NDDev example is
+[`examples/nddev/runner-routing.yaml`](../examples/nddev/runner-routing.yaml):
+
+| Requested route | Concrete backend |
+| --- | --- |
+| Linux `hosted` | `ubuntu-latest`, standard GitHub-hosted/public-safe |
+| Linux `fast` | `nddev-linux-fast`, shell-only |
+| Linux `standard` | `nddev-linux-standard`, normal build/test |
+| Linux `integration` | `nddev-linux-integration`, container runtime |
+| macOS `hosted` | `macos-latest`, standard GitHub-hosted |
+| Windows `hosted` | `windows-latest`, standard GitHub-hosted |
+
+Resolve during adoption or generation, then commit the final label in the
+caller. Do not create an Actions "routing job": that job has already entered a
+runner queue and therefore cannot enforce pre-queue routing.
+
+```bash
+python3 scripts/check_runner_routing.py \
+  --workflow .github/workflows/secret-scan.yml \
+  --platform linux --class integration --visibility private
+```
+
+Invalid combinations fail closed: container work on fast/standard, Swift on
+Linux, Linux-only workflows on Windows, a Linux class requested for macOS, and
+any public repository mapped to a self-hosted backend. The compiled caller in
+[`examples/nddev/os-capability-routing.yml`](../examples/nddev/os-capability-routing.yml)
+is checked against the mapping on every gate run.
+
+The generated [workflow routing matrix](generated/workflow-routing.md) keeps
+supported OS separate from runtime-proven OS. A static routing check is not a
+live run: only `proven_os` in `catalog/runtime-coverage.yml` is runtime evidence.
+macOS and Windows stay hosted until a future native backend is independently
+reviewed and proves the same lifecycle contract.
+
 Reusables here default `runner` to `ubuntu-latest`. A default is a property of
 **the commit you pinned**, not of your caller, so a caller that omits `runner`
 silently adopts whatever the next pin says. Name it anyway — and if you run your
