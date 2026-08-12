@@ -309,6 +309,45 @@ jobs:
       contents: read
     uses: ./.github/workflows/cross-platform-smoke.yml
 
+
+  # supporting — Maven compile and package. The POM declares no test dependency,
+  # so `mvn -B verify` runs the default lifecycle without resolving an artifact
+  # tree; a JUnit dependency would make this a Maven Central availability test.
+  fixture-java-ci:
+    name: fixture / java-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/java-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/java
+
+  # supporting — the .NET restore, build and run lanes. test_command is
+  # overridden to `dotnet run` because the fixture is a console app: a real test
+  # project would need the test SDK plus a framework package, and the point here
+  # is the workflow's plumbing, not NuGet's.
+  fixture-dotnet-ci:
+    name: fixture / dotnet-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/dotnet-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/dotnet
+      test_command: "dotnet run --no-build --configuration Release"
+
+  # supporting — swift build and swift test on macOS. XCTest ships with the
+  # toolchain, so the package resolves nothing. This runs on macos-latest, which
+  # is a standard hosted runner and therefore unmetered here; the same job on a
+  # private repository would bill at 10.33x Linux.
+  fixture-swift-ci:
+    name: fixture / swift-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/swift-ci.yml
+    with:
+      working_directory: tests/fixtures/swift
+
   # One place to read the outcome, and the digests to paste into the ledger when
   # promoting a record. Never required; this is a report, not a gate.
   evidence:
@@ -335,6 +374,9 @@ jobs:
       - fixture-web-ci
       - fixture-container-ci
       - fixture-cross-platform-smoke
+      - fixture-java-ci
+      - fixture-dotnet-ci
+      - fixture-swift-ci
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -381,6 +423,9 @@ jobs:
               "fixture-web-ci": "web-ci.yml",
               "fixture-container-ci": "container-ci.yml",
               "fixture-cross-platform-smoke": "cross-platform-smoke.yml",
+              "fixture-java-ci": "java-ci.yml",
+              "fixture-dotnet-ci": "dotnet-ci.yml",
+              "fixture-swift-ci": "swift-ci.yml",
           }
           results = json.loads(os.environ["RESULTS"])
           run_url = os.environ["RUN_URL"]
