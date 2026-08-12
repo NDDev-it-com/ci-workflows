@@ -10,6 +10,16 @@ on:
       runner:
         type: string
         default: 'ubuntu-latest'
+      exclude_glob:
+        description: >-
+          Glob of Markdown files to skip, or empty to skip none. A repository
+          that keeps deliberately broken fixtures — to prove its own link
+          checker still fails — cannot use the repo-wide default without the
+          fixtures failing the very lane they exist to test. This is that
+          escape hatch, and it is narrow on purpose: one glob, no regex, no
+          ignore file.
+        type: string
+        default: ''
       docs_glob:
         description: 'Glob of Markdown files to check.'
         type: string
