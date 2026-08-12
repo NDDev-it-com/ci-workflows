@@ -16,7 +16,7 @@ import re
 import shlex
 import sys
 
-from _runners import is_standard_hosted
+from _runners import is_standard_hosted, resolve_runner_labels
 from _workflow_yaml import SELF_WORKFLOWS, get_on, is_reusable, load_yaml, workflow_files
 
 
@@ -118,15 +118,27 @@ printf 'GIT_CONFIG_GLOBAL=%s\\n' "$isolated_config" >> "$GITHUB_ENV"
                     "standard hosted runner explicitly — inheriting the reusable's "
                     "default can route public pull-request code to a private fleet"
                 )
-            elif not is_standard_hosted(chosen):
+                continue
+            labels = resolve_runner_labels(chosen, job)
+            if labels is None:
                 problems.append(
-                    f"{filename}: public self-call job {job_name!r} selects "
-                    f"{chosen!r}, which is not a standard hosted runner. Standard "
-                    "runners are unmetered on public repositories in all three "
-                    "operating systems; larger runners are billed there from the "
-                    "first minute, and a self-hosted label makes a forked pull "
-                    "request remote code execution on that hardware"
+                    f"{filename}: public self-call job {job_name!r} selects runner "
+                    f"{chosen!r}, which this check cannot resolve to concrete "
+                    "labels. Use a literal or `${{ matrix.KEY }}` with the values "
+                    "listed in the job's own strategy.matrix — an unresolvable "
+                    "expression is not evidence that the runner is free"
                 )
+                continue
+            for label in labels:
+                if not is_standard_hosted(label):
+                    problems.append(
+                        f"{filename}: public self-call job {job_name!r} can run on "
+                        f"{label!r}, which is not a standard hosted runner. Standard "
+                        "runners are unmetered on public repositories in all three "
+                        "operating systems; larger runners are billed there from the "
+                        "first minute, and a self-hosted label makes a forked pull "
+                        "request remote code execution on that hardware"
+                    )
 
     ci = load_yaml((workflow_files()[0].parent / "ci.yml"))
     jobs = ci.get("jobs", {}) or {}
@@ -306,6 +318,36 @@ def _runner_selftest() -> list[str]:
             problems.append(
                 f"_runners.is_standard_hosted({value!r}) accepted a non-string"
             )
+    # Matrix resolution: a self-call may pick its runner from its own matrix,
+    # but the check must see the values behind the expression. The dangerous
+    # cases are an include: entry smuggling a fleet label past a clean `os:`
+    # list, and an expression pointing at a matrix that does not exist — which
+    # must read as "cannot tell", never as "fine".
+    matrix_cases = [
+        ({"strategy": {"matrix": {"os": ["ubuntu-latest", "windows-latest",
+                                         "macos-latest"]}}},
+         ["ubuntu-latest", "windows-latest", "macos-latest"]),
+        ({"strategy": {"matrix": {"os": ["ubuntu-latest"],
+                                  "include": [{"os": "nddev-linux-fast"}]}}},
+         ["ubuntu-latest", "nddev-linux-fast"]),
+        ({"strategy": {"matrix": {"other": ["ubuntu-latest"]}}}, None),
+        ({}, None),
+        ({"strategy": {"matrix": {"os": []}}}, None),
+    ]
+    for job, expected in matrix_cases:
+        got = resolve_runner_labels("${{ matrix.os }}", job)
+        if got != expected:
+            problems.append(
+                f"resolve_runner_labels(matrix.os, {job!r}) is {got!r}, "
+                f"expected {expected!r}"
+            )
+    # A literal still resolves to itself; an unknown expression must not.
+    if resolve_runner_labels("ubuntu-latest", {}) != ["ubuntu-latest"]:
+        problems.append("resolve_runner_labels lost a literal label")
+    if resolve_runner_labels("${{ inputs.runner }}", {}) is not None:
+        problems.append(
+            "resolve_runner_labels treated an unresolvable expression as decidable"
+        )
     return problems
 
 
