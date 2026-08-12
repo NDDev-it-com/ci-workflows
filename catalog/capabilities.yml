@@ -1638,6 +1638,7 @@ capabilities:
     risks:
       - "Fuzzing consumes significant CI time; tune fuzz_seconds for PR vs batch"
       - "SARIF upload requires code scanning enabled (free on public repos)"
+      - "The action pin follows a reviewed upstream commit newer than the stale v1 tag; zizmor tag audits are suppressed only on those two steps"
     deprecations: null
     last_verified: "2026-08-04"
     sources:
