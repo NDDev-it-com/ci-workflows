@@ -142,7 +142,7 @@ jobs:
       runner: ubuntu-latest
       # The default glob is repo-wide, which is the point — this lane checks
       # every link this repository ships. It has to skip the negative fixture,
-      # whose link is broken deliberately so runtime-negative.yml can prove the
+      # whose link is broken deliberately so the negative gates in ci.yml can prove the
       # checker still fails. Without the exclusion the two lanes contradict each
       # other, and the positive one loses.
       exclude_glob: 'tests/fixtures/negative/**/*.md'
