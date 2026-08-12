@@ -1,7 +1,7 @@
 # Negative fixtures
 
 Everything here is **deliberately broken**. Each file breaks exactly one gate,
-so `runtime-negative.yml` can prove that gate still fails on bad input.
+so the negative gates in `ci.yml` can prove that gate still fails on bad input.
 
 Do not fix these. A green run of a negative lane is the defect.
 

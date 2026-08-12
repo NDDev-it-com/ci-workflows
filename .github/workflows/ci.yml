@@ -159,9 +159,165 @@ jobs:
       # reviewer reading a permissions block should never have to guess.
       persona: pedantic
 
+  # --- Negative gates -------------------------------------------------------
+  # Proves the gates still REFUSE bad input, not merely that they pass on good
+  # input. A gate that never fails is not a gate, and nothing else here would
+  # notice one silently becoming a no-op.
+  #
+  # These live in ci.yml rather than in a workflow of their own because a
+  # required context must be caller-native: ci-gate's `needs` is this run's real
+  # dependency graph, and nothing may cross a workflow boundary. They cannot be
+  # a called reusable either — a self workflow must not be `on: workflow_call`,
+  # since everything that is becomes part of the product consumers pin.
+  #
+  # Each probe lifts a gate's real step out of its workflow and runs it here,
+  # where an exit code is just data. `continue-on-error` is rejected on a job
+  # that calls a reusable with `uses:`, so calling the reusables and letting
+  # them fail would turn every run red; scripts/negative_gate_probe.py exists to
+  # avoid exactly that. See its docstring for the properties it enforces on
+  # itself.
+
+  shell-gates:
+    name: gates refuse bad input
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e  # v7.0.0
+        with:
+          go-version: '1.24'
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e  # v4.0.1
+        with:
+          terraform_wrapper: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        with:
+          version: 0.11.30
+          python-version: '3.13'
+          activate-environment: true
+          enable-cache: false
+
+      - name: Install the probe's dependency and both Python fixtures
+        run: |
+          set -euo pipefail
+          # The probe reads workflow YAML through the repository's strict
+          # loader, so it needs PyYAML — from the hash-locked file CI already
+          # uses, not an ad-hoc install.
+          uv pip install --require-hashes -r requirements-ci.txt
+          # Both fixture packages must be importable in one environment: the
+          # probe runs the same step twice and only the directory changes.
+          uv pip install -e tests/fixtures/python -e tests/fixtures/negative/python pytest
+
+      - name: terraform-ci must reject unformatted HCL
+        run: |
+          python3 -I scripts/negative_gate_probe.py \
+            --workflow .github/workflows/terraform-ci.yml --job terraform \
+            --step 'Format check' \
+            --bad tests/fixtures/negative/terraform --good tests/fixtures/terraform
+
+      - name: go-ci must report a failing test
+        run: |
+          python3 -I scripts/negative_gate_probe.py \
+            --workflow .github/workflows/go-ci.yml --job go \
+            --step 'Run tests' \
+            --bad tests/fixtures/negative/go --good tests/fixtures/go
+
+      - name: sql-ci must reject SQL the dialect refuses
+        run: |
+          python3 -I scripts/negative_gate_probe.py \
+            --workflow .github/workflows/sql-ci.yml --job sql \
+            --step 'Lint' \
+            --bad tests/fixtures/negative/sql --good tests/fixtures/sql
+
+      - name: python-ci must report a failing test
+        run: |
+          python3 -I scripts/negative_gate_probe.py \
+            --workflow .github/workflows/python-ci.yml --job python \
+            --step 'Run tests' \
+            --bad tests/fixtures/negative/python --good tests/fixtures/python \
+            --input test_command='python -m pytest -q'
+
+      - name: docs-ci must reject a broken relative link
+        run: |
+          python3 -I scripts/negative_gate_probe.py \
+            --workflow .github/workflows/docs-ci.yml --job docs \
+            --step 'Check relative Markdown links' \
+            --bad . --good . \
+            --bad-input docs_glob='tests/fixtures/negative/docs-links/**/*.md' \
+            --good-input docs_glob='tests/fixtures/docs/**/*.md'
+
+      # The token goes through env, never the command line: putting a
+      # credential in an argument is the interpolation pattern zizmor itself
+      # exists to catch, and it would show up in the process list.
+      - name: zizmor must reject a template injection
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 -I scripts/negative_gate_probe.py \
+            --workflow .github/workflows/zizmor-no-sarif.yml --job zizmor \
+            --step 'Run zizmor (plain, enforced)' \
+            --bad . --good . \
+            --context-env github.token=GITHUB_TOKEN \
+            --bad-input target=tests/fixtures/negative/zizmor/injection.yml \
+            --good-input target=tests/fixtures/zizmor-clean/clean.yml
+
+  dockerfile-gate:
+    name: hadolint refuses an unpinned image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        with:
+          version: 0.11.30
+          python-version: '3.13'
+          activate-environment: true
+          enable-cache: false
+
+      - name: Install the probe's dependency
+        run: |
+          set -euo pipefail
+          uv pip install --require-hashes -r requirements-ci.txt
+
+      # hadolint varies by input rather than by directory, and its binary is
+      # installed by an earlier step of the workflow itself, so --before runs
+      # that download instead of assuming a hadolint is already present.
+      - name: hadolint-ci must reject an unpinned base and package
+        run: |
+          python3 -I scripts/negative_gate_probe.py \
+            --workflow .github/workflows/hadolint-ci.yml --job hadolint \
+            --before 'Download hadolint (pinned + checksum-verified)' \
+            --step 'Run hadolint' \
+            --bad . --good . \
+            --bad-input dockerfile=tests/fixtures/negative/docker/Dockerfile \
+            --good-input dockerfile=tests/fixtures/docker/Dockerfile
+
   ci-gate:
     name: ci-gate
-    needs: [validate, validate-touched, actionlint, zizmor]
+    needs: [validate, validate-touched, actionlint, zizmor, shell-gates, dockerfile-gate]
     runs-on: ubuntu-latest
     if: always()
     timeout-minutes: 5

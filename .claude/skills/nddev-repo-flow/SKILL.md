@@ -88,9 +88,10 @@ new evidence, which is the point.
 There is now a way to supply it. Push a `fixtures/**` branch. The estate is
 three workflows: `runtime-fixtures.yml` for the tree-level lanes,
 `runtime-fixtures-languages.yml` for the language and tooling lanes — split
-because one file grew until it stopped starting at all — and
-`runtime-negative.yml`, which proves the gates still refuse bad input. The
-first two call the reusables the way a consumer would, and each prints the run
+because one file grew until it stopped starting at all — . The negative
+gates live in `ci.yml` instead, inside `ci-gate`'s `needs`, so a gate that stops
+refusing bad input blocks the merge that broke it. Both estate files call the
+reusables the way a consumer would, and each prints the run
 URL and every workflow's new sha256 ready to paste into the ledger. Only a `success` row is evidence — a failed or skipped row
 proves nothing and says so. Re-proving a change that touched every workflow is
 one push.

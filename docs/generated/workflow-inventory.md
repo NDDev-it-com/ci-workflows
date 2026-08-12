@@ -47,7 +47,6 @@
 | `.github/workflows/release.yml` | internal | internal |
 | `.github/workflows/runtime-fixtures-languages.yml` | internal | internal |
 | `.github/workflows/runtime-fixtures.yml` | internal | internal |
-| `.github/workflows/runtime-negative.yml` | internal | internal |
 | `.github/workflows/rust-ci.yml` | `rust-ci` | ga |
 | `.github/workflows/rust-supply-chain.yml` | `rust-supply-chain` | ga |
 | `.github/workflows/scorecard.yml` | internal | internal |

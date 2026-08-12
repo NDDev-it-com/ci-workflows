@@ -4,6 +4,23 @@
 
 ### Added
 
+- **The negative gates now block the merge.** They were green and ran on every
+  pull request, but nothing required them — a gate could stop refusing bad input
+  and the merge would go through. `shell-gates` and `dockerfile-gate` now live
+  in `ci.yml` and sit inside `ci-gate`'s `needs`, which is the required context.
+
+  They live in `ci.yml` rather than a workflow of their own for two reasons that
+  both come from this repository's own rules. A required context must be
+  caller-native, so `ci-gate`'s `needs` has to be the run's real dependency graph
+  with nothing crossing a workflow boundary. And they cannot be a called
+  reusable, because a self workflow must not be `on: workflow_call` — everything
+  that is becomes part of the product consumers pin by SHA, and this is internal.
+
+  `runtime-negative.yml` is retired accordingly: keeping it would have meant two
+  copies of the same probe list. The weekly standalone run goes with it, which is
+  the one thing lost — `ci.yml` runs on every pull request and every push to
+  `main`, so drift is caught on the next change rather than the next Sunday.
+
 - **The gates are now proven to fail, not only to pass.** Everything the fixture
   estate did up to now showed that a reusable starts and succeeds on good input.
   That is half a proof: a gate that never fails is not a gate.
