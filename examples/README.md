@@ -5,7 +5,8 @@ Copy-paste caller workflows, grouped by tier. In every example, **replace
 are mutable; Dependabot bumps the SHA for you).
 
 - [`public-oss/`](public-oss/) — full free security suite for public repos.
-- [`private-free/`](private-free/) — zero-cost stack for private repos.
+- [`private-free/`](private-free/) — private stack without paid security add-ons;
+  includes bounded-hosted and zero-GitHub-meter self-hosted callers.
 - [`private-paid-ghas/`](private-paid-ghas/) — GHAS-enabled private repos.
 
 Use-case groups shared by every tier: [`languages/`](languages/),

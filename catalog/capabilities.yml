@@ -42,7 +42,7 @@ capabilities:
     status: ga
     public_oss: paid
     private_free: paid
-    private_paid: conditional
+    private_paid: available
     workflow: null
     example: null
     required_permissions: []
@@ -75,7 +75,7 @@ capabilities:
     status: ga
     public_oss: free
     private_free: unavailable
-    private_paid: conditional
+    private_paid: unavailable
     workflow: .github/workflows/public-scorecard.yml
     example: examples/public-oss/scorecard-sarif.yml
     required_permissions:
@@ -102,7 +102,7 @@ capabilities:
     status: ga
     public_oss: free
     private_free: unavailable
-    private_paid: conditional
+    private_paid: unavailable
     workflow: .github/workflows/public-scorecard-json.yml
     example: examples/public-oss/scorecard.yml
     required_permissions:
@@ -221,7 +221,7 @@ capabilities:
     cluster: security-scanning
     status: ga
     public_oss: free
-    private_free: free
+    private_free: unavailable
     private_paid: available
     workflow: .github/workflows/zizmor-sarif.yml
     example: null

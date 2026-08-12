@@ -76,14 +76,16 @@ facts:
   conditions:
   - 500 MB shared Actions artifact/GitHub Packages storage
   - 10 GB cache per repository
+  - A GitHub Actions budget with Stop paid usage enabled is required to prevent overage when a payment method exists
   payment_method: not-required-until-overage
   overage: blocked without valid payment method; billed when enabled
   status: official
   source_authority: primary
-  verified_at: '2026-08-10'
-  expires_after: '2026-10-09'
+  verified_at: '2026-08-13'
+  expires_after: '2026-10-31'
   source_urls:
   - https://docs.github.com/en/billing/concepts/product-billing/github-actions
+  - https://docs.github.com/en/billing/concepts/budgets-and-alerts
   notes: []
 - id: github-actions-private-pro
   provider: GitHub
@@ -102,14 +104,16 @@ facts:
   conditions:
   - 1 GB shared Actions artifact/GitHub Packages storage
   - 10 GB cache per repository
+  - A GitHub Actions budget with Stop paid usage enabled is required to prevent overage when a payment method exists
   payment_method: not-required-until-overage
   overage: billed when enabled
   status: official
   source_authority: primary
-  verified_at: '2026-08-10'
-  expires_after: '2026-10-09'
+  verified_at: '2026-08-13'
+  expires_after: '2026-11-01'
   source_urls:
   - https://docs.github.com/en/billing/concepts/product-billing/github-actions
+  - https://docs.github.com/en/billing/concepts/budgets-and-alerts
   notes: []
 - id: github-actions-private-free-org
   provider: GitHub
@@ -128,14 +132,16 @@ facts:
   conditions:
   - 500 MB shared Actions artifact/GitHub Packages storage
   - 10 GB cache per repository
+  - A GitHub Actions budget with Stop paid usage enabled is required to prevent overage when a payment method exists
   payment_method: not-required-until-overage
   overage: blocked without valid payment method; billed when enabled
   status: official
   source_authority: primary
-  verified_at: '2026-08-10'
-  expires_after: '2026-10-09'
+  verified_at: '2026-08-13'
+  expires_after: '2026-11-02'
   source_urls:
   - https://docs.github.com/en/billing/concepts/product-billing/github-actions
+  - https://docs.github.com/en/billing/concepts/budgets-and-alerts
   notes: []
 - id: github-actions-private-team
   provider: GitHub
@@ -155,14 +161,16 @@ facts:
   - 2 GB shared Actions artifact/GitHub Packages storage
   - 10 GB cache per repository
   - 75 GB custom image storage
+  - A GitHub Actions budget with Stop paid usage enabled is required to prevent overage when a payment method exists
   payment_method: not-required-until-overage
   overage: billed when enabled
   status: official
   source_authority: primary
-  verified_at: '2026-08-10'
-  expires_after: '2026-10-09'
+  verified_at: '2026-08-13'
+  expires_after: '2026-11-03'
   source_urls:
   - https://docs.github.com/en/billing/concepts/product-billing/github-actions
+  - https://docs.github.com/en/billing/concepts/budgets-and-alerts
   notes: []
 - id: github-actions-private-ghec
   provider: GitHub
@@ -183,14 +191,16 @@ facts:
   - 50 GB shared Actions artifact/GitHub Packages storage
   - 10 GB cache per repository
   - 150 GB custom image storage
+  - A GitHub Actions budget with Stop paid usage enabled is required to prevent overage when the contract permits it
   payment_method: contract-dependent
   overage: billed under enterprise account
   status: official
   source_authority: primary
-  verified_at: '2026-08-10'
-  expires_after: '2026-10-09'
+  verified_at: '2026-08-13'
+  expires_after: '2026-11-04'
   source_urls:
   - https://docs.github.com/en/billing/concepts/product-billing/github-actions
+  - https://docs.github.com/en/billing/concepts/budgets-and-alerts
   notes: []
 - id: github-actions-larger-runners
   provider: GitHub

@@ -33,7 +33,8 @@ PRODUCT_FACTS = REPO_ROOT / "catalog" / "product-facts.yml"
 SCHEMA = "nddev-ci-operating-profiles/v1"
 
 REQUIRED_CONTROLS = {
-    "codeql_mode", "code_quality_ai", "coverage_mode", "runner_mode",
+    "compute_billing", "license_billing", "codeql_mode", "code_quality_ai",
+    "coverage_mode", "runner_mode",
     "governance_mode", "enforcement", "release_provenance",
 }
 ENTITLEMENT_KEYS = ("code_security", "secret_protection", "code_quality")
@@ -218,6 +219,26 @@ def validate_profiles(doc: Any, capability_ids: set[str], fact_ids: set[str],
                 f"{where}: a public profile may not use self-hosted-persistent runners — "
                 "pull_request executes untrusted fork code"
             )
+        if (controls.get("compute_billing") == "public-standard-unmetered"
+                and not sel_vis <= {"public"}):
+            problems.append(
+                f"{where}: public-standard-unmetered is valid only for public repositories"
+            )
+        if (controls.get("compute_billing") == "private-self-hosted"
+                and not str(controls.get("runner_mode", "")).startswith("self-hosted-")):
+            problems.append(
+                f"{where}: private-self-hosted requires a self-hosted runner mode"
+            )
+        if (sel_vis & {"public"}
+                and controls.get("compute_billing") != "public-standard-unmetered"):
+            problems.append(
+                f"{where}: public profiles must declare compute_billing "
+                "public-standard-unmetered"
+            )
+        if controls.get("license_billing") == "fixed-license-envelope" and not fixed:
+            problems.append(
+                f"{where}: fixed-license-envelope requires a non-zero itemised fixed cost"
+            )
 
     duplicates = sorted({i for i in ids if ids.count(i) > 1})
     if duplicates:
@@ -257,6 +278,12 @@ def _fixture_tests() -> list[str]:
                     "code_security": {"values": [True, False], "unlocks": ["codeql-code-scanning"]},
                 },
                 "controls": {
+                    "compute_billing": {"values": ["public-standard-unmetered",
+                                                     "private-self-hosted",
+                                                     "private-hosted-bounded"]},
+                    "license_billing": {"values": ["no-paid-addons",
+                                                     "selected-addons",
+                                                     "fixed-license-envelope"]},
                     "codeql_mode": {"values": ["none", "default", "advanced"]},
                     "code_quality_ai": {"values": ["disabled", "on_push"]},
                     "coverage_mode": {"values": ["off", "report", "gated"]},
@@ -277,7 +304,9 @@ def _fixture_tests() -> list[str]:
         "selectors": {"visibility": ["private"], "base_plan": ["enterprise-cloud"]},
         "entitlements": {"code_security": True, "secret_protection": True, "code_quality": True},
         "entitlement_mask": "111",
-        "controls": {"codeql_mode": "default", "code_quality_ai": "disabled",
+        "controls": {"compute_billing": "private-self-hosted",
+                     "license_billing": "fixed-license-envelope",
+                     "codeql_mode": "default", "code_quality_ai": "disabled",
                      "coverage_mode": "gated", "runner_mode": "self-hosted-persistent",
                      "governance_mode": "solo-agent", "enforcement": "active",
                      "release_provenance": "attestations"},

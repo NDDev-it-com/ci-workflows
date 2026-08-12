@@ -33,7 +33,7 @@ and that matrix disagree, the matrix is right: it is validated, this is not.
 | Tier | What you get | Doc |
 | --- | --- | --- |
 | **Public OSS (free full suite)** | Standard hosted runners, CodeQL, native secret scanning + push protection, dependency review, OSSF Scorecard, artifact attestations/SBOM, GHCR public, Pages, rulesets — all free | [01-public-oss-free.md](01-public-oss-free.md) |
-| **Private-free (zero-cost only)** | actionlint, zizmor (no SARIF upload), gitleaks, static validation, SBOM + checksummed immutable releases (attestations need GHEC on private), OIDC, cross-platform smoke. CodeQL / native secret scanning / dependency review / harden-runner are **paid** and excluded | [02-private-free.md](02-private-free.md) |
+| **Private without paid add-ons** | actionlint, zizmor (no SARIF upload), gitleaks, static validation, SBOM + checksummed immutable releases (attestations need GHEC on private), OIDC, cross-platform smoke. CodeQL / native secret scanning / dependency review / harden-runner are **paid** and excluded. Self-hosted gives zero GitHub runner-meter; hosted uses bounded quota with possible overage. | [02-private-free.md](02-private-free.md) |
 | **Private-paid / GHAS** | Code scanning, secret scanning + push protection, dependency review, Copilot Autofix, delegated governance — requires paid GitHub Code Security / Secret Protection | [03-private-paid-ghas.md](03-private-paid-ghas.md) |
 
 ### The one capability that ignores the model

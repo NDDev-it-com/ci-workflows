@@ -30,19 +30,19 @@ exists.
 
 ## The correction this tier exists to make
 
-[02 private-free] tells a private repo to use GitHub-hosted runners and simply
-accept the 2 000 min/month ceiling. For a *personal-account* repository that
-ceiling is per-user, not per-organization, and there is no committer-pool to
-amortize it across. A single active project with a few minutes of CI per push
-can exhaust the monthly quota in days. **Route every job to a self-hosted
-runner registered on the repository itself.**
+[02 private-free] now makes this choice explicit: GitHub-hosted consumes a
+bounded private allowance and can incur overage; self-hosted guarantees zero
+GitHub Actions compute meter. For a *personal-account* repository the allowance
+is per-user, not per-organization, and there is no committer-pool to amortize it
+across. **Route every job to a self-hosted runner registered on the repository
+itself.**
 
 | Concern | Generic private-free | Personal-account repo |
 | --- | --- | --- |
 | Posture (capabilities) | private-free | **private-free** (same) |
 | CodeQL / secret scanning / dep review | excluded (paid) | **excluded** (no GHAS, same exclusions) |
 | Artifact attestations | `release-supply-chain-free.yml` | **`release-supply-chain-free.yml`** (same) |
-| Runner | GitHub-hosted `ubuntu-latest` | **self-hosted, repo-level registration** |
+| Runner | Explicitly hosted-bounded or self-hosted | **self-hosted, repo-level registration** |
 
 ## Runner registration: org vs personal
 
