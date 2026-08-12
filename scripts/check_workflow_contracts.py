@@ -227,6 +227,7 @@ printf 'GIT_CONFIG_GLOBAL=%s\\n' "$isolated_config" >> "$GITHUB_ENV"
     problems += _fail_fast_caller_commands()
     problems += _balanced_caller_commands()
     problems += _runner_selftest()
+    problems += _job_defaults_pin_the_shell()
     return problems
 
 
@@ -348,6 +349,49 @@ def _runner_selftest() -> list[str]:
         problems.append(
             "resolve_runner_labels treated an unresolvable expression as decidable"
         )
+    return problems
+
+
+def _job_defaults_pin_the_shell() -> list[str]:
+    """A job-level `defaults.run` must name its shell.
+
+    A job-level `defaults.run` REPLACES the workflow-level one rather than
+    merging with it key by key. The documentation describes per-name
+    precedence, so this is easy to get wrong and impossible to see on Linux:
+    twenty-six jobs here declared `defaults: run: working-directory:` and
+    thereby dropped the `shell: bash` their own file declared three lines
+    above. Linux hid it, because bash is the default there anyway.
+
+    Windows does not hide it. A fixture run of python-ci on windows-latest
+    executed its steps under PowerShell, where a bash line continuation and a
+    `>>` redirect are syntax errors and `${VAR}` expands to nothing — the job
+    printed "(requested )" and then failed. cross-platform-smoke.yml, the one
+    workflow written for three operating systems, already set `shell: bash` on
+    every individual step, which is the previous author reaching the same
+    conclusion for one file.
+
+    So: any job that declares `defaults.run` at all must also pin `shell`.
+    """
+    problems: list[str] = []
+    for path in workflow_files():
+        workflow = load_yaml(path)
+        for job_name, job in (workflow.get("jobs", {}) or {}).items():
+            if not isinstance(job, dict):
+                continue
+            run_defaults = ((job.get("defaults") or {}).get("run") or {})
+            if not run_defaults:
+                continue
+            has_run_step = any(
+                isinstance(step, dict) and "run" in step
+                for step in (job.get("steps") or [])
+            )
+            if has_run_step and "shell" not in run_defaults:
+                problems.append(
+                    f"{path.name}: job {job_name!r} declares defaults.run without "
+                    "`shell`. A job-level defaults.run replaces the workflow-level "
+                    "one instead of merging, so this silently drops the file's own "
+                    "`shell: bash` and every run step becomes PowerShell on Windows"
+                )
     return problems
 
 
