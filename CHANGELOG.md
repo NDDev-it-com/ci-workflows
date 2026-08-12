@@ -4,6 +4,62 @@
 
 ### Fixed
 
+- **Hosted is not the same as free.** `docs/05` taught routing with the sentence
+  "minutes are free and unlimited on public repositories" — true only for
+  **standard** runners. Larger ones (`-N-cores`, `-large`, `-xlarge`) are billed
+  from the first minute on public repositories too, and the standard allowance
+  does not offset them, so a public repository reaching for
+  `ubuntu-latest-8-cores` because "Actions is free on OSS" starts paying at once.
+  The prose now says which, sourced to the two facts that own it, and
+  `check_examples.py` rejects a larger runner in any example so this repository
+  cannot ship the trap it warns about.
+
+- **Public repositories must be on hosted runners, and the rule that said so had
+  gone vacuous.** `check_examples.py` required an explicit `runner` only when the
+  reusable's default was *non-hosted*. That was written when the default was
+  `amsterdam`; the moment it became `ubuntu-latest` the check stopped firing
+  anywhere, and thirteen example jobs across seven files had quietly gone back to
+  inheriting — including the estate's **public** variant, which is exempt from the
+  rule precisely so it *may* name the fleet.
+
+  Nothing was broken today, because today's default is safe. That is the whole
+  problem: the protection had become a bet on the current default rather than a
+  contract, and the next default change would have moved every one of those jobs
+  with no diff in any example.
+
+  Two rules replace it, and both are negative-tested. An example must state its
+  runner **whatever the current default is** — a default belongs to the pinned
+  commit, not to the caller. And a non-hosted label is accepted only in a file
+  whose own name declares a private target, because public repositories get free
+  unmetered hosted minutes and a forked pull request on self-hosted hardware is
+  remote code execution on it.
+
+- **The estate fleet is ephemeral, and only two of its four classes have a
+  host.** Reading `modules/github-actions` instead of inferring from a label
+  produced three corrections:
+
+  - `catalog/profiles.yml` recorded `runner_mode: self-hosted-persistent` for the
+    estate profile. The fleet gives every job a fresh VM, runs it once and
+    destroys it, and explicitly does not reuse a VM after that VM has executed
+    workflow code. That is `self-hosted-ephemeral`, and the distinction is the
+    one ADR 0004 named as the condition that would make a public fork safe on
+    self-hosted hardware — so its consequence is updated rather than left saying
+    the condition is unmet.
+
+  - **Declared is not deployed.** The fleet publishes four scale-set classes;
+    `nddev-linux-fast` and `nddev-linux-release` have no host, and the fleet's
+    GARM holds one repository entity, so it serves `NDDev-it-com/github-actions`
+    alone. No `nddev-*` label can take a job from any other estate repository
+    until the organization entity is rolled out. The estate example now says so
+    instead of reading as runnable.
+
+  - The previous entry called the classes a routing fix. They are the *intended*
+    routing; today they are aspirational for every repository but one. Naming a
+    real label is not the same as naming a reachable one, and the failure mode is
+    identical to the retired label's: the job queues rather than fails.
+
+### Fixed
+
 - **Corrected a claim I made about the estate's runners.** The previous entry
   said the `amsterdam` fleet "no longer exists" and that the estate had moved to
   GitHub-hosted runners. Only the first half is right: the **label** was retired,

@@ -9,4 +9,5 @@ jobs:
     permissions: { contents: read, pull-requests: write }
     uses: NDDev-it-com/ci-workflows/.github/workflows/public-dependency-review.yml@<sha>
     with:
+      runner: ubuntu-latest
       fail_on_severity: moderate

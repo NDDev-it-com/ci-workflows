@@ -20,6 +20,7 @@ jobs:
     permissions: { actions: read, contents: read, security-events: write }
     uses: NDDev-it-com/ci-workflows/.github/workflows/public-codeql.yml@<sha>
     with:
+      runner: ubuntu-latest
       languages: '["python","actions"]'
   secret-scan:
     permissions: { contents: read }

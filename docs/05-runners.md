@@ -108,9 +108,19 @@ is neither read nor mutated by those jobs.
 <a id="visibility-routing"></a>
 ## Routing by visibility
 
-Minutes are free and unlimited on public repositories and metered on private
-ones, so the cost-optimal routing is the opposite of what "use our own hardware
-everywhere" would suggest:
+Minutes on **standard** GitHub-hosted runners are free and unlimited on public
+repositories and metered on private ones, so the cost-optimal routing is the
+opposite of what "use our own hardware everywhere" would suggest:
+
+**Standard** is load-bearing in that sentence. Larger runners — anything whose
+label ends in `-N-cores`, `-large` or `-xlarge` — are billed from the first
+minute *including on public repositories*, and the standard-runner allowance does
+not offset them. A public repository that reaches for `ubuntu-latest-8-cores`
+because "Actions is free on OSS" starts paying immediately. The amounts live in
+`catalog/product-facts.yml` (`github-actions-public-standard`,
+`github-actions-larger-runners`); do not copy them into prose.
+`scripts/check_examples.py` rejects a larger runner in any example, so this
+repository cannot ship one by accident.
 
 | Repository visibility | Route to | Why |
 | --- | --- | --- |

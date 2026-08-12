@@ -250,7 +250,11 @@ profiles:
       codeql_mode: default
       code_quality_ai: disabled
       coverage_mode: gated
-      runner_mode: self-hosted-persistent
+      # The estate fleet gives every job a fresh VM, runs it once and destroys
+      # it — it does not reuse a VM after that VM has executed workflow code.
+      # That is `ephemeral`, and the distinction is the one ADR 0004 named as
+      # what would make a public fork safe on self-hosted hardware.
+      runner_mode: self-hosted-ephemeral
       governance_mode: solo-agent
       enforcement: active
       release_provenance: attestations
