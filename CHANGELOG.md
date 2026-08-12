@@ -30,9 +30,18 @@
   steps — and in both cases refused to report a verdict rather than inventing
   one.
 
-  Five gates covered: `terraform-ci`, `go-ci`, `sql-ci`, `python-ci`,
-  `hadolint-ci`. `docs-quality` has none — all three of its gates are `uses:`
-  steps, and an action cannot be lifted out of its runner.
+  Seven gates covered, including `zizmor-no-sarif`, which is
+  `security-blocking`: its rejecting fixture interpolates a pull-request title
+  straight into a shell command and zizmor reports `template-injection` on it.
+  The token reaches the probe through `env:`, never a command-line argument —
+  putting a credential in an argument is the very pattern zizmor exists to
+  catch.
+
+  Two workflows have no lane and the reasons differ. `docs-quality`'s three
+  gates are all `uses:` steps. `actionlint`'s step is a bare `actionlint -color`
+  with no target and it resolves the git project root itself, so aiming it at a
+  fixture would mean giving that fixture its own repository — and the probe runs
+  the step as written rather than a convenient variant of it.
 
 - **`benchmark-compare`, `r-ci` and `mutation-testing` are proven**, taking the
   ledger to 29 of 46 and leaving seven unverified.

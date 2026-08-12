@@ -62,7 +62,8 @@ Touch this → also do this:
 - **a gate's behaviour** → `runtime-negative.yml` runs on every pull request and
   stays green. It lifts each gate's real step out of its workflow with
   `scripts/negative_gate_probe.py` and runs it twice: the broken fixture under
-  `tests/fixtures/negative/` must be rejected and the clean one accepted. A gate
+  `tests/fixtures/negative/` must be rejected and the clean one accepted. Seven
+  gates are covered, `zizmor-no-sarif` among them. A gate
   that never fails is not a gate, and a probe that never passes is not a test.
 - **a catalog file** → `python3 scripts/generate_docs.py`.
 - **a skill** → `python3 scripts/sync_skills.py`.
