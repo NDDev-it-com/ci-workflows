@@ -24,8 +24,12 @@ name: runtime-negative
 # `terraform: command not found`; without the accepting case, a missing
 # toolchain looks exactly like a working gate.
 #
-# docs-quality has no lane here: all three of its gates are `uses:` steps, and
-# an action cannot be lifted out of its runner.
+# Two workflows have no lane and the reason differs. docs-quality's three gates
+# are all `uses:` steps, and an action cannot be lifted out of its runner.
+# actionlint's step is a bare `actionlint -color` with no target: it resolves the
+# git project root itself, so pointing it at a fixture would mean giving that
+# fixture its own repository, and the probe runs the step as written rather than
+# a convenient variant of it.
 
 on:
   pull_request:
@@ -115,6 +119,30 @@ jobs:
             --step 'Run tests' \
             --bad tests/fixtures/negative/python --good tests/fixtures/python \
             --input test_command='python -m pytest -q'
+
+      - name: docs-ci must reject a broken relative link
+        run: |
+          python3 -I scripts/negative_gate_probe.py \
+            --workflow .github/workflows/docs-ci.yml --job docs \
+            --step 'Check relative Markdown links' \
+            --bad . --good . \
+            --bad-input docs_glob='tests/fixtures/negative/docs-links/**/*.md' \
+            --good-input docs_glob='tests/fixtures/docs/**/*.md'
+
+      # The token goes through env, never the command line: putting a
+      # credential in an argument is the interpolation pattern zizmor itself
+      # exists to catch, and it would show up in the process list.
+      - name: zizmor must reject a template injection
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 -I scripts/negative_gate_probe.py \
+            --workflow .github/workflows/zizmor-no-sarif.yml --job zizmor \
+            --step 'Run zizmor (plain, enforced)' \
+            --bad . --good . \
+            --context-env github.token=GITHUB_TOKEN \
+            --bad-input target=tests/fixtures/negative/zizmor/injection.yml \
+            --good-input target=tests/fixtures/zizmor-clean/clean.yml
 
   dockerfile-gate:
     name: hadolint refuses an unpinned image

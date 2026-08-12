@@ -55,12 +55,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _strict_yaml import strict_load  # noqa: E402
 
 INPUT_EXPR = re.compile(r"\$\{\{\s*inputs\.([A-Za-z_][A-Za-z0-9_]*)\s*\}\}")
+CONTEXT_EXPR = re.compile(r"\$\{\{\s*([A-Za-z_][A-Za-z0-9_.]*)\s*\}\}")
 OTHER_EXPR = re.compile(r"\$\{\{(.+?)\}\}")
 
 
-def _resolve(value: str, inputs: dict[str, str]) -> str:
-    """Substitute `${{ inputs.X }}` from `inputs`; refuse anything else."""
-    def replace(match: re.Match[str]) -> str:
+def _resolve(value: str, inputs: dict[str, str], contexts: dict[str, str]) -> str:
+    """Substitute `${{ inputs.X }}`, then explicitly-supplied contexts.
+
+    Anything left is refused. `runner.os`, `matrix.*` and `secrets.*` cannot be
+    reproduced outside a runner, and guessing at them would make the probe test
+    something other than the workflow. `--context` exists for the cases a caller
+    genuinely can supply — `github.token` is a real token in CI — but it stays
+    explicit so the substitution is visible in the workflow that asks for it
+    rather than invented here.
+    """
+    def replace_input(match: re.Match[str]) -> str:
         name = match.group(1)
         if name not in inputs:
             raise SystemExit(
@@ -69,15 +78,21 @@ def _resolve(value: str, inputs: dict[str, str]) -> str:
             )
         return inputs[name]
 
-    resolved = INPUT_EXPR.sub(replace, value)
+    resolved = INPUT_EXPR.sub(replace_input, value)
+
+    def replace_context(match: re.Match[str]) -> str:
+        name = match.group(1)
+        if name in contexts:
+            return contexts[name]
+        return match.group(0)
+
+    resolved = CONTEXT_EXPR.sub(replace_context, resolved)
     leftover = OTHER_EXPR.search(resolved)
     if leftover:
-        # runner.os, matrix.*, secrets.* and friends cannot be reproduced here.
-        # Guessing at them would make the probe test something other than the
-        # workflow, so it stops instead.
         raise SystemExit(
             f"negative_gate_probe: cannot resolve expression "
-            f"'${{{{{leftover.group(1)}}}}}' outside a runner"
+            f"'${{{{{leftover.group(1).strip()}}}}}' outside a runner. If the "
+            f"caller can supply it, pass --context {leftover.group(1).strip()}=<value>."
         )
     return resolved
 
@@ -150,6 +165,21 @@ def main() -> int:
         help="Input override for the accepting case.",
     )
     parser.add_argument(
+        "--context", action="append", default=[], metavar="NAME=VALUE",
+        help="Value for a non-input expression the caller can genuinely supply. "
+             "Explicit on purpose: everything not named here is refused rather "
+             "than guessed. Never use this for a secret — see --context-env.",
+    )
+    parser.add_argument(
+        "--context-env", action="append", default=[], metavar="NAME=ENVVAR",
+        help="Same, but the value is read from an environment variable. This is "
+             "how a token gets in: `--context github.token=<value>` would put a "
+             "credential on the command line and in the process list, which is "
+             "the interpolation pattern zizmor exists to catch. Fails if ENVVAR "
+             "is unset or empty, because an empty token is not the same as no "
+             "token — zizmor rejects the first outright.",
+    )
+    parser.add_argument(
         "--input", action="append", default=[], metavar="NAME=VALUE",
         help="Value for a `${{ inputs.NAME }}` reference in the step's env.",
     )
@@ -159,6 +189,21 @@ def main() -> int:
     for item in args.input:
         name, _, value = item.partition("=")
         inputs[name] = value
+    contexts = {}
+    for item in args.context:
+        name, _, value = item.partition("=")
+        contexts[name] = value
+    for item in args.context_env:
+        name, _, variable = item.partition("=")
+        value = os.environ.get(variable, "")
+        if not value:
+            raise SystemExit(
+                f"negative_gate_probe: --context-env {name}={variable} but "
+                f"${variable} is unset or empty. Supply it in the step's env:. "
+                "An empty value is not a neutral one — zizmor, for instance, "
+                "rejects an empty --gh-token outright while tolerating none."
+            )
+        contexts[name] = value
 
     def parse(pairs: list[str]) -> dict[str, str]:
         out = {}
@@ -173,7 +218,7 @@ def main() -> int:
         merged = {**inputs, **overrides}
         env = dict(os.environ)
         for key, value in (step.get("env") or {}).items():
-            env[key] = _resolve(str(value), merged)
+            env[key] = _resolve(str(value), merged, contexts)
         # Steps append to the job summary; give them somewhere harmless.
         env.setdefault("GITHUB_STEP_SUMMARY", os.devnull)
         return env
@@ -195,7 +240,7 @@ def main() -> int:
             path_file.touch()
             prior_env = dict(os.environ)
             for key, value in (prior.get("env") or {}).items():
-                prior_env[key] = _resolve(str(value), inputs)
+                prior_env[key] = _resolve(str(value), inputs, contexts)
             prior_env.setdefault("GITHUB_STEP_SUMMARY", os.devnull)
             prior_env["GITHUB_PATH"] = str(path_file)
             prior_env.setdefault("RUNNER_TEMP", scratch)
