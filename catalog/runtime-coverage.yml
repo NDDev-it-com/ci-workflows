@@ -67,7 +67,7 @@ entries:
   - workflow: .github/workflows/dart-flutter-ci.yml
     criticality: supporting
     status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    evidence: "Not fixtured. Needs the Flutter SDK, which is a multi-minute provisioning step for one lane; deferred to its own change rather than added to the estate here. No consumer run observed."
     last_run: null
     waiver: null
   - workflow: .github/workflows/docs-ci.yml
@@ -94,7 +94,7 @@ entries:
   - workflow: .github/workflows/fuzzing.yml
     criticality: supporting
     status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    evidence: "Not fixtured. The defaults are Rust nightly plus `cargo install cargo-fuzz`, a several-minute install, and a fuzz sub-crate whose lock file cannot be hand-written the way the rust-ci fixture's can. Running it against Go instead would prove the plumbing while skipping the install lane the defaults describe, which would overstate the record. No consumer run observed."
     last_run: null
     waiver: null
   - workflow: .github/workflows/go-ci.yml
@@ -141,7 +141,7 @@ entries:
   - workflow: .github/workflows/kotlin-android-ci.yml
     criticality: supporting
     status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    evidence: "Not fixtured. Needs the Android SDK and a Gradle project; deferred to its own change. No consumer run observed."
     last_run: null
     waiver: null
   - workflow: .github/workflows/monorepo-changed-paths.yml
@@ -154,7 +154,7 @@ entries:
   - workflow: .github/workflows/mutation-testing.yml
     criticality: supporting
     status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    evidence: "Not fixtured. A mutation run needs a baseline test suite worth mutating and a tool that installs from a package index, so a minimal fixture would prove the installer rather than the workflow. No consumer run observed."
     last_run: null
     waiver: null
   - workflow: .github/workflows/node-ci.yml
@@ -216,7 +216,7 @@ entries:
   - workflow: .github/workflows/public-scorecard.yml
     criticality: supporting
     status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    evidence: "Not fixtured, and not fixturable from a branch. This is the SARIF variant; this repository's scorecard.yml calls the JSON variant instead, and Scorecard evaluates a default branch, so a fixtures/** push cannot exercise it. Its JSON sibling is runtime-proven and shares the analysis step."
     last_run: null
     waiver: null
   - workflow: .github/workflows/python-ci.yml
@@ -229,13 +229,13 @@ entries:
   - workflow: .github/workflows/qt-ci.yml
     criticality: supporting
     status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    evidence: "Not fixtured. Needs a Qt installation, the heaviest provisioning step in the library; deferred to its own change. No consumer run observed."
     last_run: null
     waiver: null
   - workflow: .github/workflows/r-ci.yml
     criticality: supporting
     status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
+    evidence: "Not fixtured. The default install command resolves lintr and testthat from a package repository, so a minimal fixture would be a CRAN availability test. No consumer run observed."
     last_run: null
     waiver: null
   - workflow: .github/workflows/release-promotion-gate.yml
@@ -352,6 +352,6 @@ entries:
   - workflow: .github/workflows/clusterfuzzlite.yml
     criticality: supporting
     status: unverified
-    evidence: 'New reusable workflow; awaiting first live workflow_call run from a consumer.'
+    evidence: "Not fixtured. ClusterFuzzLite needs an OSS-Fuzz-shaped harness — a .clusterfuzzlite directory with its own Dockerfile and build.sh — plus a fuzz target to build. That is a project, not a fixture, and no consumer run has been observed."
     last_run: null
     waiver: null
