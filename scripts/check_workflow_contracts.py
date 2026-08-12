@@ -16,6 +16,7 @@ import re
 import shlex
 import sys
 
+from _runners import is_standard_hosted
 from _workflow_yaml import SELF_WORKFLOWS, get_on, is_reusable, load_yaml, workflow_files
 
 
@@ -77,9 +78,18 @@ printf 'GIT_CONFIG_GLOBAL=%s\\n' "$isolated_config" >> "$GITHUB_ENV"
                 )
 
     # This repository is public. Every local reusable call that exposes a
-    # runner selector must choose a hosted runner explicitly; relying on the
-    # reusable's private-consumer default can route public PR code to the
+    # runner selector must choose a standard hosted runner explicitly; relying
+    # on the reusable's private-consumer default can route public PR code to the
     # private self-hosted fleet when that default changes or remains stale.
+    #
+    # "Standard hosted", not the literal string `ubuntu-latest`. The rule used
+    # to demand that one label, which enforced the property by accident and
+    # forbade `macos-latest` — a standard hosted runner, unmetered on public
+    # repositories exactly like ubuntu. That made `swift-ci.yml`, whose whole
+    # purpose is macOS, impossible to call from this repository's own fixture
+    # estate. What matters is that the choice is explicit and lands on a runner
+    # every account resolves and nobody is billed for; _runners.py holds that
+    # definition, shared with check_examples.py.
     for filename in sorted(SELF_WORKFLOWS):
         caller = load_yaml(workflow_root / filename)
         for job_name, job in (caller.get("jobs", {}) or {}).items():
@@ -101,12 +111,21 @@ printf 'GIT_CONFIG_GLOBAL=%s\\n' "$isolated_config" >> "$GITHUB_ENV"
             if not isinstance(inputs, dict) or "runner" not in inputs:
                 continue
             with_values = job.get("with", {}) or {}
-            if not isinstance(with_values, dict) or with_values.get("runner") != (
-                "ubuntu-latest"
-            ):
+            chosen = with_values.get("runner") if isinstance(with_values, dict) else None
+            if chosen is None:
                 problems.append(
-                    f"{filename}: public self-call job {job_name!r} must select "
-                    "runner: ubuntu-latest explicitly"
+                    f"{filename}: public self-call job {job_name!r} must select a "
+                    "standard hosted runner explicitly — inheriting the reusable's "
+                    "default can route public pull-request code to a private fleet"
+                )
+            elif not is_standard_hosted(chosen):
+                problems.append(
+                    f"{filename}: public self-call job {job_name!r} selects "
+                    f"{chosen!r}, which is not a standard hosted runner. Standard "
+                    "runners are unmetered on public repositories in all three "
+                    "operating systems; larger runners are billed there from the "
+                    "first minute, and a self-hosted label makes a forked pull "
+                    "request remote code execution on that hardware"
                 )
 
     ci = load_yaml((workflow_files()[0].parent / "ci.yml"))
@@ -195,6 +214,7 @@ printf 'GIT_CONFIG_GLOBAL=%s\\n' "$isolated_config" >> "$GITHUB_ENV"
     # is executed, so it is enforced everywhere.
     problems += _fail_fast_caller_commands()
     problems += _balanced_caller_commands()
+    problems += _runner_selftest()
     return problems
 
 
@@ -249,6 +269,43 @@ def _fail_fast_caller_commands() -> list[str]:
                     "fail fast; use `bash -euo pipefail -c` so a caller command "
                     "like `a; b` or `a | b` cannot report success after failing"
                 )
+    return problems
+
+
+def _runner_selftest() -> list[str]:
+    """The shared runner predicate must keep saying no to the expensive answers.
+
+    Widening this rule from the literal `ubuntu-latest` to "standard hosted" is
+    only safe while the three things it was protecting against still fail:
+    a larger runner (hosted, but billed on public repositories from the first
+    minute), a self-hosted fleet label (a forked pull request becomes remote
+    code execution on that hardware), and a missing or non-string value.
+    """
+    expectations = {
+        # standard hosted, all three operating systems, latest and pinned
+        "ubuntu-latest": True, "macos-latest": True, "windows-latest": True,
+        "ubuntu-24.04": True, "macos-14": True, "windows-2022": True,
+        # larger runners: hosted, never free
+        "ubuntu-latest-8-cores": False, "ubuntu-latest-4-cores": False,
+        "macos-latest-large": False, "windows-latest-xlarge": False,
+        # somebody's fleet
+        "nddev-linux-fast": False, "nddev-linux-release": False,
+        "self-hosted": False, "amsterdam": False,
+        # nothing at all
+        "": False,
+    }
+    problems = []
+    for label, expected in expectations.items():
+        if is_standard_hosted(label) is not expected:
+            problems.append(
+                f"_runners.is_standard_hosted({label!r}) is "
+                f"{is_standard_hosted(label)}, expected {expected}"
+            )
+    for value in (None, 123, ["ubuntu-latest"]):
+        if is_standard_hosted(value):
+            problems.append(
+                f"_runners.is_standard_hosted({value!r}) accepted a non-string"
+            )
     return problems
 
 

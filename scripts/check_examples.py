@@ -21,18 +21,10 @@ USES_RE = re.compile(
 REUSABLE_RE = re.compile(
     r"^NDDev-it-com/ci-workflows/\.github/workflows/([^@]+\.ya?ml)@"
 )
-# Runner labels every GitHub account can resolve. Anything else is somebody's
-# private fleet.
-HOSTED_RUNNER_PREFIXES = ("ubuntu-", "macos-", "windows-")
-# Hosted is not the same as free. `github-actions-public-standard` in the fact
-# ledger is `public-unmetered` for **standard** runners only, and
-# `github-actions-larger-runners` is `paid-only` — "always billed, including
-# public repositories and despite standard-runner quota", metered from the first
-# minute. So `ubuntu-latest-8-cores` passes any prefix test for "hosted" and
-# still bills an OSS repository that believed its CI was free.
-#
-# Larger runners are named by a size suffix: `-N-cores`, `-large`, `-xlarge`.
-LARGER_RUNNER_SUFFIXES = ("-cores", "-large", "-xlarge")
+# Runner semantics live in one place so this check and
+# check_workflow_contracts.py cannot drift apart about what "hosted" and
+# "standard" mean. See _runners.py for why the distinction matters.
+from _runners import HOSTED_RUNNER_PREFIXES, LARGER_RUNNER_SUFFIXES
 # Only an example that says in its own filename that it targets a private
 # repository may name a non-hosted runner. Public repositories get free unmetered
 # hosted minutes, and pointing one at self-hosted hardware turns a forked pull
