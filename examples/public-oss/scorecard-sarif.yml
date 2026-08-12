@@ -30,3 +30,5 @@ jobs:
       contents: read
       actions: read
     uses: NDDev-it-com/ci-workflows/.github/workflows/public-scorecard.yml@<sha>
+    with:
+      runner: ubuntu-latest

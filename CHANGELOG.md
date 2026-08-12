@@ -4,6 +4,26 @@
 
 ### Fixed
 
+- **Public repositories must be on hosted runners, and the rule that said so had
+  gone vacuous.** `check_examples.py` required an explicit `runner` only when the
+  reusable's default was *non-hosted*. That was written when the default was
+  `amsterdam`; the moment it became `ubuntu-latest` the check stopped firing
+  anywhere, and thirteen example jobs across seven files had quietly gone back to
+  inheriting — including the estate's **public** variant, which is exempt from the
+  rule precisely so it *may* name the fleet.
+
+  Nothing was broken today, because today's default is safe. That is the whole
+  problem: the protection had become a bet on the current default rather than a
+  contract, and the next default change would have moved every one of those jobs
+  with no diff in any example.
+
+  Two rules replace it, and both are negative-tested. An example must state its
+  runner **whatever the current default is** — a default belongs to the pinned
+  commit, not to the caller. And a non-hosted label is accepted only in a file
+  whose own name declares a private target, because public repositories get free
+  unmetered hosted minutes and a forked pull request on self-hosted hardware is
+  remote code execution on it.
+
 - **The estate fleet is ephemeral, and only two of its four classes have a
   host.** Reading `modules/github-actions` instead of inferring from a label
   produced three corrections:

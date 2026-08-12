@@ -15,3 +15,5 @@ jobs:
       contents: read
       pull-requests: read
     uses: NDDev-it-com/ci-workflows/.github/workflows/pr-hygiene.yml@<sha>
+    with:
+      runner: ubuntu-latest

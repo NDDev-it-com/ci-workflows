@@ -24,9 +24,15 @@ REUSABLE_RE = re.compile(
 # Runner labels every GitHub account can resolve. Anything else is somebody's
 # private fleet.
 HOSTED_RUNNER_PREFIXES = ("ubuntu-", "macos-", "windows-")
-# `examples/nddev/` is estate-specific by name and may name the NDDev fleet.
-# Every other example is copy-paste material for a repository we do not own.
-ESTATE_EXAMPLE_PREFIX = "examples/nddev/"
+# Only an example that says in its own filename that it targets a private
+# repository may name a non-hosted runner. Public repositories get free unmetered
+# hosted minutes, and pointing one at self-hosted hardware turns a forked pull
+# request into remote code execution on that hardware — so a public example
+# naming a fleet label is a defect, not a preference.
+SELF_HOSTED_EXAMPLES = (
+    "examples/nddev/security-private-selfhosted.yml",
+    "examples/personal/security-selfhosted.yml",
+)
 
 
 def _reusable_runner_default(uses: str) -> str | None:
@@ -131,16 +137,31 @@ def check() -> list[str]:
             # this estate and the repository is public — routes untrusted fork
             # code onto trusted infrastructure. The default is a property of
             # the pin, not of the example, so the example must state it.
-            if not rel.startswith(ESTATE_EXAMPLE_PREFIX):
-                default = _reusable_runner_default(uses)
-                if default is not None and not default.startswith(HOSTED_RUNNER_PREFIXES):
-                    with_values = job.get("with")
-                    if not isinstance(with_values, dict) or "runner" not in with_values:
-                        problems.append(
-                            f"{rel}: job `{job_id}` must set `runner` explicitly — "
-                            f"the reusable defaults to {default!r}, which is not a "
-                            "hosted runner an arbitrary consumer can resolve"
-                        )
+            #
+            # This is checked whatever the current default is. The rule used to
+            # fire only when the default was non-hosted, which made it vacuous
+            # the moment the default became `ubuntu-latest`: an example could
+            # then inherit silently again, and the next default change would move
+            # it with no diff in the example. The point was never the value of
+            # today's default — it is that a caller must not have one chosen for
+            # it by a commit it pinned months ago.
+            if _reusable_runner_default(uses) is not None:
+                with_values = job.get("with")
+                chosen = with_values.get("runner") if isinstance(with_values, dict) else None
+                if chosen is None:
+                    problems.append(
+                        f"{rel}: job `{job_id}` must set `runner` explicitly — a "
+                        "default belongs to the pinned commit, not to the caller"
+                    )
+                elif not str(chosen).startswith(HOSTED_RUNNER_PREFIXES) \
+                        and rel not in SELF_HOSTED_EXAMPLES:
+                    problems.append(
+                        f"{rel}: job `{job_id}` names the non-hosted runner "
+                        f"{chosen!r}. Public repositories get free unmetered hosted "
+                        "minutes, and a forked pull request on self-hosted hardware "
+                        "is remote code execution on it — only an example whose "
+                        "filename declares a private target may name a fleet label"
+                    )
         if rel.endswith("scorecard.yml") and events != {"push", "schedule"}:
             problems.append(f"{rel}: Scorecard example must use only push + schedule")
         if rel == "examples/private-free/security.yml":
