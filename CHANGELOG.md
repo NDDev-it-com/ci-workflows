@@ -4,6 +4,21 @@
 
 ### Added
 
+- **The gates are now proven to fail, not only to pass.** Everything the fixture
+  estate did up to now showed that a reusable starts and succeeds on good input.
+  That is half a proof: a gate that never fails is not a gate.
+
+  `runtime-negative.yml` feeds six reusables a deliberately broken fixture — an
+  unpinned Docker base, SQL the ansi dialect rejects, a misspelling, a false
+  assertion in Go and in pytest, misaligned HCL — and asserts each one refuses
+  it. All six refused on the first run.
+
+  Its run conclusion is `failure` by design and is not evidence; `verdict` is.
+  `continue-on-error` is rejected on a job that calls a reusable with `uses:`,
+  so an expected failure cannot be absorbed the way it can for a normal step.
+  Because a permanently red workflow would drown a real failure, it never runs
+  on push — monthly and on demand only.
+
 - **`benchmark-compare`, `r-ci` and `mutation-testing` are proven**, taking the
   ledger to 29 of 46 and leaving seven unverified.
 

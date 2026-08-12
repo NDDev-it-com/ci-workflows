@@ -81,7 +81,7 @@ entries:
   - workflow: .github/workflows/docs-quality.yml
     criticality: supporting
     status: runtime-proven
-    evidence: "Fixture caller ran the lychee, typos and markdownlint lanes against tests/fixtures/docs. This run is also what proved the scoping fix: the lanes are `uses:` steps and take repo-root-relative paths, which the fixture now passes explicitly."
+    evidence: "Fixture caller ran the lychee, typos and markdownlint lanes against tests/fixtures/docs. This run is also what proved the scoping fix: the lanes are `uses:` steps and take repo-root-relative paths, which the fixture now passes explicitly. Also proven to FAIL: runtime-negative.yml fed it a misspelling and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31606529908). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
     last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31559394938
     proven_digest: 48b4f5ab8c87398ebfaa636be9f9865477866d4a5a0ee2d9692122014d39c807
     waiver: null
@@ -101,7 +101,7 @@ entries:
   - workflow: .github/workflows/go-ci.yml
     criticality: supporting
     status: runtime-proven
-    evidence: "Fixture caller ran the build, vet and test lanes against tests/fixtures/go, a module with a test, a benchmark and a fuzz target. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories."
+    evidence: "Fixture caller ran the build, vet and test lanes against tests/fixtures/go, a module with a test, a benchmark and a fuzz target. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories. Also proven to FAIL: runtime-negative.yml fed it a failing Go test and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31606529908). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
     last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31559394938
     proven_digest: 8fcdea5369d080a6ed1bfc74d8ba70d0643a8b0255e3b385c23e20ce8b4249f9
     waiver: null
@@ -118,7 +118,7 @@ entries:
   - workflow: .github/workflows/hadolint-ci.yml
     criticality: supporting
     status: runtime-proven
-    evidence: "Fixture caller ran hadolint at the default warning threshold against tests/fixtures/docker/Dockerfile."
+    evidence: "Fixture caller ran hadolint at the default warning threshold against tests/fixtures/docker/Dockerfile. Also proven to FAIL: runtime-negative.yml fed it an unpinned base tag and an unpinned package and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31606529908). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
     last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31559394938
     proven_digest: 9c5de87c4dbdef53a07513d8afab105a328524059d462d73d71696514bfbcdd1
     waiver: null
@@ -224,7 +224,7 @@ entries:
   - workflow: .github/workflows/python-ci.yml
     criticality: supporting
     status: runtime-proven
-    evidence: "Fixture caller ran install and test against tests/fixtures/python. This run is also what proved the python_version fix: the summary now reports the interpreter that executed, and it matches the requested one. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories."
+    evidence: "Fixture caller ran install and test against tests/fixtures/python. This run is also what proved the python_version fix: the summary now reports the interpreter that executed, and it matches the requested one. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories. Also proven to FAIL: runtime-negative.yml fed it a failing pytest and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31606529908). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
     last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31559394938
     proven_digest: 3c2a15c1f9cdae90f15b57d47dd6f776143f388cb85f9166d46b20d9e4573b09
     waiver: null
@@ -291,7 +291,7 @@ entries:
   - workflow: .github/workflows/sql-ci.yml
     criticality: supporting
     status: runtime-proven
-    evidence: "Fixture caller ran sqlfluff on the ansi dialect against tests/fixtures/sql. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories."
+    evidence: "Fixture caller ran sqlfluff on the ansi dialect against tests/fixtures/sql. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories. Also proven to FAIL: runtime-negative.yml fed it SQL that violates the ansi dialect and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31606529908). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
     last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31559394938
     proven_digest: 706b484365bf3d17b3b693a11ad5ff57207f388d007f0919e94771ff5864bb43
     waiver: null
@@ -305,7 +305,7 @@ entries:
   - workflow: .github/workflows/terraform-ci.yml
     criticality: supporting
     status: runtime-proven
-    evidence: "Fixture caller ran fmt -check, init -backend=false and validate against tests/fixtures/terraform, which declares no provider so the lane stays offline. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories."
+    evidence: "Fixture caller ran fmt -check, init -backend=false and validate against tests/fixtures/terraform, which declares no provider so the lane stays offline. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories. Also proven to FAIL: runtime-negative.yml fed it unformatted HCL and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31606529908). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
     last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31559394938
     proven_digest: feace71ae75ea17bf8fefc96c368ec2e0b83ae0d36a27aa4ca23264db2c22bb4
     waiver: null
