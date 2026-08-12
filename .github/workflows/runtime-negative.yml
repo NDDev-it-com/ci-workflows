@@ -1,27 +1,39 @@
 name: runtime-negative
 
-# THIS WORKFLOW IS SUPPOSED TO GO RED. Read `verdict`, not the run badge.
+# Proves the gates can FAIL — and stays green doing it.
 #
-# The rest of the fixture estate proves that a reusable starts and passes on
-# good input. It cannot prove the opposite, and the opposite is the part that
-# matters: a gate that never fails is not a gate. Every lane below feeds a
-# reusable a deliberately broken fixture and expects it to FAIL. The `verdict`
-# job then asserts that each one did, and fails if any of them passed.
+# The rest of the estate proves a reusable starts and passes on good input.
+# That is half a proof: a gate that never fails is not a gate.
 #
-# So the run's own conclusion is `failure` by design, and it is not evidence of
-# anything. The evidence is `verdict` being green. GitHub offers no way around
-# this: `continue-on-error` is rejected on a job that calls a reusable workflow
-# with `uses:` — actionlint says so outright — so an expected failure cannot be
-# absorbed the way it can for a normal step.
+# The obvious way to prove the other half is to call the reusable with a broken
+# fixture and expect the job to fail. That is not available: `continue-on-error`
+# is rejected on a job that calls a reusable with `uses:`, so every expected
+# failure turns the whole run red, and a permanently red workflow is
+# indistinguishable from a broken one at a glance. An earlier version of this
+# file did exactly that and was replaced for precisely that reason.
 #
-# Because a permanently red workflow would otherwise drown a real failure, this
-# never runs on push. It runs monthly and on demand, and the fixtures it uses
-# live under tests/fixtures/negative/ where a README says not to fix them.
+# Instead each gate's real step is lifted out of its workflow and executed here,
+# in an ordinary job where an exit code is just data. scripts/negative_gate_probe.py
+# reads the step's own `run:` text and `env:` block from the workflow file — it
+# paraphrases nothing, so an edit to the step is an edit to what runs here, and
+# a rename fails loudly instead of silently testing nothing.
+#
+# Every probe runs BOTH directions: the broken fixture must be rejected and the
+# clean one accepted. The second half is not ceremony. The first local run of
+# the probe reported "gate refused as required" when the real reason was
+# `terraform: command not found`; without the accepting case, a missing
+# toolchain looks exactly like a working gate.
+#
+# docs-quality has no lane here: all three of its gates are `uses:` steps, and
+# an action cannot be lifted out of its runner.
 
 on:
+  pull_request:
+  push:
+    branches: ['fixtures/**']
   schedule:
-    # First of the month, 05:00 UTC — clear of the weekly fixture estate.
-    - cron: "0 5 1 * *"
+    # Sundays 06:00 UTC, after the fixture estate.
+    - cron: "0 6 * * 0"
   workflow_dispatch:
 
 permissions: {}
@@ -31,136 +43,116 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Unpinned base tag (DL3007) and unpinned package (DL3018), both warnings.
-  neg-hadolint:
-    name: negative / hadolint-ci
-    permissions:
-      contents: read
-    uses: ./.github/workflows/hadolint-ci.yml
-    with:
-      runner: ubuntu-latest
-      dockerfile: tests/fixtures/negative/docker/Dockerfile
-
-  # Keyword capitalisation and spacing sqlfluff rejects on the ansi dialect.
-  neg-sql-ci:
-    name: negative / sql-ci
-    permissions:
-      contents: read
-    uses: ./.github/workflows/sql-ci.yml
-    with:
-      runner: ubuntu-latest
-      working_directory: tests/fixtures/negative/sql
-
-  # Only the typos lane is enabled, so a failure here names one gate rather
-  # than leaving three candidates.
-  neg-docs-quality:
-    name: negative / docs-quality
-    permissions:
-      contents: read
-    uses: ./.github/workflows/docs-quality.yml
-    with:
-      runner: ubuntu-latest
-      lychee: false
-      markdownlint: false
-      typos_files: tests/fixtures/negative/docs
-
-  # A test asserting a value the implementation cannot produce.
-  neg-go-ci:
-    name: negative / go-ci
-    permissions:
-      contents: read
-    uses: ./.github/workflows/go-ci.yml
-    with:
-      runner: ubuntu-latest
-      working_directory: tests/fixtures/negative/go
-
-  # The same, in Python.
-  neg-python-ci:
-    name: negative / python-ci
-    permissions:
-      contents: read
-    uses: ./.github/workflows/python-ci.yml
-    with:
-      runner: ubuntu-latest
-      working_directory: tests/fixtures/negative/python
-      install_command: "uv pip install -e . pytest"
-      test_command: "python -m pytest -q"
-
-  # Misaligned assignments that `terraform fmt -check` rejects.
-  neg-terraform-ci:
-    name: negative / terraform-ci
-    permissions:
-      contents: read
-    uses: ./.github/workflows/terraform-ci.yml
-    with:
-      runner: ubuntu-latest
-      working_directory: tests/fixtures/negative/terraform
-
-  # The only job worth reading. Green means every gate above refused its bad
-  # input; red means one of them accepted it, which is the defect this workflow
-  # exists to catch.
-  verdict:
-    name: verdict
-    needs:
-      - neg-hadolint
-      - neg-sql-ci
-      - neg-docs-quality
-      - neg-go-ci
-      - neg-python-ci
-      - neg-terraform-ci
-    if: always()
+  shell-gates:
+    name: gates refuse bad input
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 20
     permissions:
       contents: read
     defaults:
       run:
         shell: bash
     steps:
-      - name: Assert every gate refused its bad input
-        env:
-          RESULTS: ${{ toJSON(needs) }}
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e  # v7.0.0
+        with:
+          go-version: '1.24'
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e  # v4.0.1
+        with:
+          terraform_wrapper: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        with:
+          version: 0.11.30
+          python-version: '3.13'
+          activate-environment: true
+          enable-cache: false
+
+      - name: Install the probe's dependency and both Python fixtures
         run: |
           set -euo pipefail
-          python3 -I <<'PY'
-          import json
-          import os
-          import pathlib
+          # The probe reads workflow YAML through the repository's strict
+          # loader, so it needs PyYAML — from the hash-locked file CI already
+          # uses, not an ad-hoc install.
+          uv pip install --require-hashes -r requirements-ci.txt
+          # Both fixture packages must be importable in one environment: the
+          # probe runs the same step twice and only the directory changes.
+          uv pip install -e tests/fixtures/python -e tests/fixtures/negative/python pytest
 
-          # negative job -> the gate it feeds bad input to
-          GATES = {
-              "neg-hadolint": "hadolint-ci.yml rejects an unpinned base and package",
-              "neg-sql-ci": "sql-ci.yml rejects SQL that violates the ansi dialect",
-              "neg-docs-quality": "docs-quality.yml rejects a misspelling",
-              "neg-go-ci": "go-ci.yml reports a failing Go test",
-              "neg-python-ci": "python-ci.yml reports a failing pytest",
-              "neg-terraform-ci": "terraform-ci.yml rejects unformatted HCL",
-          }
-          results = json.loads(os.environ["RESULTS"])
+      - name: terraform-ci must reject unformatted HCL
+        run: |
+          python3 -I scripts/negative_gate_probe.py \
+            --workflow .github/workflows/terraform-ci.yml --job terraform \
+            --step 'Format check' \
+            --bad tests/fixtures/negative/terraform --good tests/fixtures/terraform
 
-          lines = ["### Negative estate", "",
-                   "Each gate was fed a deliberately broken fixture and must have"
-                   " failed. A `success` row means the gate accepted bad input.", "",
-                   "| Gate | Result | Verdict |", "| --- | --- | --- |"]
-          broken = []
-          for job, description in sorted(GATES.items()):
-              result = (results.get(job) or {}).get("result", "missing")
-              # `failure` is the only correct outcome. `skipped` and `cancelled`
-              # prove nothing, so they are failures of the estate, not passes.
-              ok = result == "failure"
-              if not ok:
-                  broken.append(f"{job}: {description} — got {result!r}, expected 'failure'")
-              lines.append(f"| {description} | {result} | {'refused ✓' if ok else 'DID NOT REFUSE ✗'} |")
+      - name: go-ci must report a failing test
+        run: |
+          python3 -I scripts/negative_gate_probe.py \
+            --workflow .github/workflows/go-ci.yml --job go \
+            --step 'Run tests' \
+            --bad tests/fixtures/negative/go --good tests/fixtures/go
 
-          summary = pathlib.Path(os.environ["GITHUB_STEP_SUMMARY"])
-          with summary.open("a", encoding="utf-8") as handle:
-              handle.write("\n".join(lines) + "\n")
-          print("\n".join(lines))
+      - name: sql-ci must reject SQL the dialect refuses
+        run: |
+          python3 -I scripts/negative_gate_probe.py \
+            --workflow .github/workflows/sql-ci.yml --job sql \
+            --step 'Lint' \
+            --bad tests/fixtures/negative/sql --good tests/fixtures/sql
 
-          if broken:
-              print("\nA gate accepted input it must refuse:")
-              for item in broken:
-                  print(f"  - {item}")
-              raise SystemExit(1)
-          print("\nEvery gate refused its bad input.")
-          PY
+      - name: python-ci must report a failing test
+        run: |
+          python3 -I scripts/negative_gate_probe.py \
+            --workflow .github/workflows/python-ci.yml --job python \
+            --step 'Run tests' \
+            --bad tests/fixtures/negative/python --good tests/fixtures/python \
+            --input test_command='python -m pytest -q'
+
+  dockerfile-gate:
+    name: hadolint refuses an unpinned image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        with:
+          version: 0.11.30
+          python-version: '3.13'
+          activate-environment: true
+          enable-cache: false
+
+      - name: Install the probe's dependency
+        run: |
+          set -euo pipefail
+          uv pip install --require-hashes -r requirements-ci.txt
+
+      # hadolint varies by input rather than by directory, and its binary is
+      # installed by an earlier step of the workflow itself, so --before runs
+      # that download instead of assuming a hadolint is already present.
+      - name: hadolint-ci must reject an unpinned base and package
+        run: |
+          python3 -I scripts/negative_gate_probe.py \
+            --workflow .github/workflows/hadolint-ci.yml --job hadolint \
+            --before 'Download hadolint (pinned + checksum-verified)' \
+            --step 'Run hadolint' \
+            --bad . --good . \
+            --bad-input dockerfile=tests/fixtures/negative/docker/Dockerfile \
+            --good-input dockerfile=tests/fixtures/docker/Dockerfile
