@@ -108,7 +108,11 @@ jobs:
           # Download into RUNNER_TEMP rather than /tmp: the fleet runs several
           # runner instances under one uid, and a shared /tmp filename is a
           # cross-job race.
-          curl -fsSL -o "${RUNNER_TEMP}/hadolint" \
+          # --retry covers only the transient case: 5xx, connection failures and
+          # timeouts. It does not retry a 404 and it cannot weaken what follows,
+          # because the checksum below is verified either way. Without it a GitHub
+          # Releases 503 fails a required gate outright, which happened on 2026-08-12.
+          curl -fsSL --retry 3 --retry-delay 2 -o "${RUNNER_TEMP}/hadolint" \
             "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-linux-x86_64"
           echo "${HADOLINT_SHA256}  ${RUNNER_TEMP}/hadolint" | sha256sum -c -
           # Install into a runner-writable directory rather than /usr/local/bin:
