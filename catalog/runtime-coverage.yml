@@ -206,10 +206,10 @@ entries:
     waiver: null
   - workflow: .github/workflows/public-scorecard-json.yml
     criticality: supporting
-    status: unverified
-    evidence: "Was runtime-proven by run 30702998422. Adding per-permission comments for the pedantic zizmor persona changed the file, so that run no longer describes these bytes. Its caller scorecard.yml runs on push to main, so merging this change re-proves it; promote the record from that run."
-    last_run: null
-    proven_digest: null
+    status: runtime-proven
+    evidence: "Called by this repository's own scorecard.yml through a relative ref; JSON-artifact lane executed live on main. Re-proven after the pedantic permission comments changed the file — this is the scorecard run on the commit that merged them."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31555123883
+    proven_digest: 5dbe99d99e4aedcc7893a794e829fe78060ea01479fa27e1db27c812ea9cc735
     waiver: null
   - workflow: .github/workflows/public-scorecard.yml
     criticality: supporting
