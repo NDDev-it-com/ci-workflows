@@ -85,15 +85,26 @@ Editing a workflow the ledger marks `runtime-proven` invalidates its
 `proven_digest`, and the gate fails. There is no way to keep the label without
 new evidence, which is the point.
 
-There is now a way to supply it. Push a `fixtures/**` branch:
-`runtime-fixtures.yml` calls nine reusables the way a consumer would, and its
-evidence job prints the run URL and each workflow's new sha256 ready to paste
-into the ledger. Only a `success` row is evidence — a failed or skipped row
+There is now a way to supply it. Push a `fixtures/**` branch. The estate is
+three workflows: `runtime-fixtures.yml` for the tree-level lanes,
+`runtime-fixtures-languages.yml` for the language and tooling lanes — split
+because one file grew until it stopped starting at all — and
+`runtime-negative.yml`, which proves the gates still refuse bad input. The
+first two call the reusables the way a consumer would, and each prints the run
+URL and every workflow's new sha256 ready to paste into the ledger. Only a `success` row is evidence — a failed or skipped row
 proves nothing and says so. Re-proving a change that touched every workflow is
 one push.
 
 If a workflow has no fixture, drop its record to `static-only` naming a validator
 that actually exists. Never leave a stale run as proof.
+
+Say *why* a record is unproven rather than reaching for the template. "No
+observed consumer run" was true of everything before the estate existed and
+is now nearly always the wrong sentence: the useful record names the obstacle
+— an SDK nobody installed, a gate needing `contents: write` the estate refuses
+to grant, a scanner that only evaluates a default branch. The status column
+says *that* something is unproven; only the evidence column can say whether
+that is a gap to close or a property of the thing.
 
 `release`, `security-blocking` and `required-gate` may not rest at `unverified`:
 prove, stand in with a validator, or take a dated waiver with an owner. Stagger

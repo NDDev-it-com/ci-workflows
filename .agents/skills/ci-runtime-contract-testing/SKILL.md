@@ -6,10 +6,10 @@ license: AGPL-3.0-or-later
 compatibility: Codex and Agent Skills compatible; OpenCode discovers .agents/skills. Generate .claude/skills mirrors for Claude
   Code.
 metadata:
-  version: 1.0.0
+  version: 1.1.0
   owner: NDDev
-  status: proposed
-  reviewed_at: '2026-07-11'
+  status: active
+  reviewed_at: '2026-08-12'
 ---
 
 # Runtime Contract Testing for Reusable CI
@@ -92,6 +92,60 @@ Required lanes should include, where relevant:
 - Linux/Windows/macOS and architecture contract;
 - Dependabot/bot actor;
 - scheduled/manual/tag/release event.
+
+### Layer 3b — Proving the gate can fail
+
+A workflow that has only ever been observed passing is half proven. **A gate
+that never fails is not a gate**, and nothing in a coverage ledger distinguishes
+"this ran and succeeded" from "this would succeed on anything".
+
+The obvious construction does not work. `continue-on-error` is **rejected on a
+job that calls a reusable workflow with `uses:`** — the allowed keys are `name`,
+`uses`, `with`, `secrets`, `needs`, `if`, `permissions`, and nothing else. So an
+expected failure cannot be absorbed, every negative lane turns the whole run
+red, and a permanently red workflow is indistinguishable from a broken one at a
+glance. Do not ship that: it teaches people to stop reading the badge, which
+costs more than the negative test is worth.
+
+What works is to **lift the gating step out of the workflow and execute it in an
+ordinary job**, where an exit code is just data. Read the step's own `run:` text
+and `env:` block from the workflow file; paraphrase nothing. Then an edit to the
+step is an edit to what runs, and a rename fails loudly instead of silently
+testing an empty set.
+
+Four properties the harness must enforce on itself, each of which exists because
+its absence produced a false pass:
+
+- **Run both directions in one invocation.** The broken fixture must be rejected
+  *and* a clean one accepted. Without the accepting case a missing toolchain is
+  indistinguishable from a working gate — the failure that motivated this rule
+  reported "gate refused as required" when the real reason was
+  `terraform: command not found`.
+- **Treat exit 127 as an error either way.** "There was no command to run" is
+  never evidence about a gate.
+- **Refuse to resolve what you cannot reproduce.** `${{ inputs.X }}` comes from
+  supplied values or the workflow's own declared defaults; `runner.os`,
+  `matrix.*` and `secrets.*` must fail loudly. Inheriting declared defaults
+  matters: copying a pinned tool version into the harness creates a second place
+  to update and a silent way to test a different binary than ships.
+- **Move credentials through the environment, never an argument.** A token in a
+  command line lands in the process list — and if the gate under test is a
+  workflow scanner, that is the exact interpolation pattern it exists to catch.
+  Reject an empty value too: empty and absent differ, and some tools hard-error
+  on the first while tolerating the second.
+
+Some gates cannot be covered this way and the record should say which and why,
+not fall silent. A gate implemented as a `uses:` step cannot be lifted out of
+its runner at all. A gate whose command takes no target and resolves its own
+project root cannot be aimed at a fixture without giving that fixture its own
+repository — and the harness must run the step as written, not a convenient
+variant of it.
+
+**Broken fixtures collide with repo-wide lanes.** A deliberately broken fixture
+is found by every positive lane whose scope is the whole tree. Enumerate them
+before adding one. Where the collision is real, the fix belongs in the reusable
+as a narrow exclusion input rather than in the fixture: any consumer keeping
+such a fixture has the same problem.
 
 ### Layer 4 — Protected side-effect fixtures
 

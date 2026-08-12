@@ -9,7 +9,7 @@ metadata:
   version: 1.0.0
   owner: NDDev
   status: proposed
-  reviewed_at: '2026-07-11'
+  reviewed_at: '2026-08-12'
 ---
 
 # GitHub Actions Security Review
@@ -157,7 +157,13 @@ Separate vulnerability, material risk, and hardening recommendation. Falsify aga
 
 ## Required validation
 
-- `actionlint` and `zizmor` at current pinned versions;
+- `actionlint` and `zizmor` at current pinned versions, and at the strictest
+  persona the repository can actually hold. A stricter persona recorded as
+  advice — "run it locally for a deeper audit" — is not a control: nothing
+  fails when it is skipped and nothing records whether anyone ran it. zizmor's
+  `pedantic` adds `undocumented-permissions`, which forces every granted scope
+  to state why it exists; that is cheap in a repository that grants few, and
+  it makes an unnecessary scope visible in a diff instead of blending in;
 - repository-specific permission/pin/template-injection validators;
 - fork PR and same-repo PR fixtures;
 - negative OIDC claim/policy tests;
