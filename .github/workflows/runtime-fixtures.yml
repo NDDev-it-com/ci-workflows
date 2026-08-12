@@ -140,6 +140,12 @@ jobs:
     uses: ./.github/workflows/docs-ci.yml
     with:
       runner: ubuntu-latest
+      # The default glob is repo-wide, which is the point — this lane checks
+      # every link this repository ships. It has to skip the negative fixture,
+      # whose link is broken deliberately so runtime-negative.yml can prove the
+      # checker still fails. Without the exclusion the two lanes contradict each
+      # other, and the positive one loses.
+      exclude_glob: 'tests/fixtures/negative/**/*.md'
 
   # supporting — the reporting helper, called the way a consumer should call it:
   # every job in `needs` listed in `required_jobs`, and never as a required check.

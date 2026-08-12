@@ -10,6 +10,16 @@ on:
       runner:
         type: string
         default: 'ubuntu-latest'
+      exclude_glob:
+        description: >-
+          Glob of Markdown files to skip, or empty to skip none. A repository
+          that keeps deliberately broken fixtures — to prove its own link
+          checker still fails — cannot use the repo-wide default without the
+          fixtures failing the very lane they exist to test. This is that
+          escape hatch, and it is narrow on purpose: one glob, no regex, no
+          ignore file.
+        type: string
+        default: ''
       docs_glob:
         description: 'Glob of Markdown files to check.'
         type: string
@@ -37,15 +47,24 @@ jobs:
       - name: Check relative Markdown links
         env:
           DOCS_GLOB: ${{ inputs.docs_glob }}
+          DOCS_EXCLUDE_GLOB: ${{ inputs.exclude_glob }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
           import os, re, sys, glob
           from pathlib import Path
           pattern = os.environ["DOCS_GLOB"]
+          excluded_glob = os.environ.get("DOCS_EXCLUDE_GLOB", "")
+          excluded = (
+              {os.path.normpath(p) for p in glob.glob(excluded_glob, recursive=True)}
+              if excluded_glob
+              else set()
+          )
           link_re = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
           broken = []
           for md in glob.glob(pattern, recursive=True):
+              if os.path.normpath(md) in excluded:
+                  continue
               base = Path(md).parent
               text = Path(md).read_text(encoding="utf-8")
               for target in link_re.findall(text):
@@ -62,7 +81,10 @@ jobs:
               for b in broken:
                   print(f"  - {b}")
               sys.exit(1)
-          print("All relative Markdown links resolve.")
+          print(
+              "All relative Markdown links resolve"
+              + (f" ({len(excluded)} excluded)." if excluded else ".")
+          )
           PY
 
       - name: Run extra docs command
