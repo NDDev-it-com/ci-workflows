@@ -1,0 +1,19 @@
+name: template-injection fixture
+# Deliberately vulnerable. zizmor must report `template-injection` here: the
+# pull-request title is attacker-controlled and is interpolated straight into a
+# shell command. This is the exact pattern CONTRIBUTING forbids, and this file
+# exists so the scanner is proven to still catch it.
+on:
+  pull_request_target:
+
+permissions: {}
+
+jobs:
+  vulnerable:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Interpolate untrusted input into a shell command
+        run: echo "title is ${{ github.event.pull_request.title }}"
