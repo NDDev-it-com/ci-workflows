@@ -445,6 +445,45 @@ jobs:
       working_directory: tests/fixtures/node
       test_command: "bun test"
 
+  fixture-terraform-ci-os:
+    name: fixture / terraform-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/terraform-ci.yml
+    with:
+      runner: ${{ matrix.os }}
+      working_directory: tests/fixtures/terraform
+
+  fixture-sql-ci-os:
+    name: fixture / sql-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/sql-ci.yml
+    with:
+      runner: ${{ matrix.os }}
+      working_directory: tests/fixtures/sql
+
+  fixture-web-ci-os:
+    name: fixture / web-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/web-ci.yml
+    with:
+      runner: ${{ matrix.os }}
+      working_directory: tests/fixtures/web
+
   # One place to read the outcome, and the digests to paste into the ledger when
   # promoting a record. Never required; this is a report, not a gate.
   evidence:
@@ -480,6 +519,9 @@ jobs:
       - fixture-dotnet-ci-os
       - fixture-java-ci-os
       - fixture-node-ci-os
+      - fixture-terraform-ci-os
+      - fixture-sql-ci-os
+      - fixture-web-ci-os
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
