@@ -175,6 +175,12 @@ capabilities:
     private_paid: available
     workflow: .github/workflows/secret-scan.yml
     example: examples/private-free/security.yml
+    # gitleaks is a digest-pinned image, not a binary, so this lane needs a
+    # container runtime on whatever machine it lands on. Stated here because a
+    # caller choosing between self-hosted classes cannot see it from the inputs,
+    # and getting it wrong fails at runtime with a missing socket rather than
+    # with anything that names the real problem.
+    runtime_requirements: ["container-runtime"]
     required_permissions:
       - "contents: read"
     required_settings: []
@@ -1023,6 +1029,8 @@ capabilities:
     private_free: free
     private_paid: available
     workflow: .github/workflows/container-ci.yml
+    # trivy-action shells out to the Docker daemon.
+    runtime_requirements: ["container-runtime"]
     example: examples/infra/container.yml
     required_permissions:
       - "contents: read"

@@ -173,6 +173,36 @@ workflow file in the repository.
 <a id="always-name-the-runner"></a>
 ### Always name the runner — the default belongs to the pin
 
+## What a workflow needs from the machine
+
+Choosing a runner is choosing a machine, and permissions do not tell you what
+that machine must provide. `catalog/capabilities.yml` now states it:
+`runtime_requirements` names host capabilities a workflow actually uses.
+
+The surface is small, and knowing that is the useful part. **Of 46 reusables, 44
+need nothing but a shell.** Exactly two need a container runtime:
+
+| Workflow | Why |
+| --- | --- |
+| `secret-scan.yml` | gitleaks is a digest-pinned image, not a binary |
+| `container-ci.yml` | `trivy-action` shells out to the Docker daemon |
+
+So a private caller routing work onto self-hosted classes needs the Docker-capable
+class for two lanes and can put the other forty-four on the cheapest thing that
+runs a shell.
+
+The field is derived from the workflow and compared against the catalog by
+`check_runtime_requirements.py`, so the two cannot drift: add `docker run` to a
+workflow and the gate fails until the catalog says so — and remove it and the
+gate fails too, because an overstated requirement pushes callers onto a scarcer
+class than they need.
+
+This is deliberately **not** a `runner_class` input. An input would have to name
+a private label taxonomy inside a public library, which is what ADR 0004 forbids,
+and it would sit beside `runner` as a second way to choose one machine. A
+requirement is durable; a class name belongs to whoever operates the fleet and
+changes when they do.
+
 Reusables here default `runner` to `ubuntu-latest`. A default is a property of
 **the commit you pinned**, not of your caller, so a caller that omits `runner`
 silently adopts whatever the next pin says. Name it anyway — and if you run your
