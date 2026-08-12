@@ -121,6 +121,25 @@
 
 ### Fixed
 
+- **This library said the `amsterdam` runner label had been retired. It has
+  not.** ADR 0004 and `docs/05` both stated the label was dead and that any
+  caller still inheriting it queued against a runner that would never appear.
+  The fleet session measured the opposite: four `amsterdam` runners online
+  serving **4698 jobs across 19 repositories in seven days**, including most of
+  `github-device-sync`'s own CI.
+
+  The decision those documents record is unaffected and unchanged — a public
+  library must not ship a private label as anyone's default, because no consumer
+  outside this estate can resolve one. What was wrong is the *reason* attached
+  to it, and the tense. Saying the label is dead makes the danger sound
+  historical; the live danger is the other one, that a public repository
+  inheriting a private default runs fork-authored code on trusted hardware.
+
+  The estate version ledger carried the mirror image of the same error — it
+  claimed this module defaults `runner` to `amsterdam` across 38 workflows, when
+  the string appears in no workflow here at all. Corrected in
+  NDDev-it-com/github-device-sync#159.
+
 - **A wrong reason in the ledger, corrected.** `benchmark.yml` was recorded as
   unprovable because `auto-push: true` would write a `gh-pages` branch. That was
   not the obstacle. The real one is permissions: its job declares

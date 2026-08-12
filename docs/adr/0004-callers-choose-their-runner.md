@@ -45,23 +45,28 @@ Dependabot bump would have flipped it.
   decision the library may not make for its consumers, so the rule closed the
   exposure at the caller and the generic contract stayed wrong-by-default.
 
-  **Superseded 2026-08-12: the `amsterdam` label was retired.** The estate moved
-  its runners to a GitHub App fleet implemented in `modules/github-actions`, with
-  a per-class label taxonomy (`nddev-linux-standard`, `-integration`, `-fast`,
-  `-release`). The fleet still exists; the label this library shipped as a
-  default does not.
+  **Superseded 2026-08-12, and corrected the same day: `amsterdam` is still
+  live.** This paragraph first claimed the label had been retired and that every
+  caller inheriting it now queued against a runner that would never appear. That
+  was wrong. The fleet session measured four `amsterdam` runners online serving
+  **4698 jobs across 19 repositories in seven days**, `github-device-sync`'s own
+  CI among them. A GitHub App fleet does exist alongside it in
+  `modules/github-actions`, with a per-class taxonomy (`nddev-linux-fast`,
+  `-standard`, `-integration`), but it has not replaced anything yet.
 
-  That does not merely void the cost objection — it makes the objection
-  irrelevant. There is no metered move to protect those callers from, because
-  the default no longer resolves at all: the first failure mode above, a job
-  queuing forever against a runner that will never appear, is now what every
-  caller relying on it actually gets. All 39 defaults moved to `ubuntu-latest`.
+  So the cost objection is **not** void, and it is worth being precise about
+  what actually changed: nothing about the estate's runners. Only this library
+  stopped shipping a private label as its default, and all 39 defaults moved to
+  `ubuntu-latest`. An estate caller that wants the fleet still passes the label
+  and still lands on hardware that is running today.
 
   Note what the fix is *not* justified by. It is not "the estate went hosted" —
   it did not. It is the original decision, unchanged: a public library must not
   ship a private label as anyone's default, because no consumer outside the
   estate can resolve one. `nddev-linux-standard` would be exactly as wrong a
-  default as `amsterdam` was. An estate caller names its class explicitly, which
+  default as `amsterdam` is — and note the tense: the objection was never that
+  the label is dead, but that no consumer outside this estate can resolve a
+  private one. An estate caller names its class explicitly, which
   is what the rule required all along — and why the migration was a single edit
   with no example and no compliant consumer affected.
 - A public repository on a persistent self-hosted fleet stays out of policy
