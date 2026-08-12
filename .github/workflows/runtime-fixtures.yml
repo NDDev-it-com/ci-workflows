@@ -352,6 +352,99 @@ jobs:
       runner: macos-latest
       working_directory: tests/fixtures/swift
 
+
+  # --- Three-operating-system lanes -----------------------------------------
+  # Every reusable above exposes a `runner` input, which is a promise that a
+  # consumer may pick their operating system. Until now that promise was only
+  # ever tested on Linux. Standard hosted runners are unmetered on public
+  # repositories in all three, so testing the promise here costs nothing and
+  # catches the class of defect that only appears off Linux: path separators,
+  # the shell git-bash provides on Windows, and toolchain availability.
+  #
+  # The Linux lane already runs above; these add macOS and Windows.
+
+  fixture-go-ci-os:
+    name: fixture / go-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/go-ci.yml
+    with:
+      runner: ${{ matrix.os }}
+      working_directory: tests/fixtures/go
+
+  fixture-python-ci-os:
+    name: fixture / python-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/python-ci.yml
+    with:
+      runner: ${{ matrix.os }}
+      working_directory: tests/fixtures/python
+      install_command: "uv pip install -e . pytest"
+      test_command: "python -m pytest -q"
+
+  fixture-rust-ci-os:
+    name: fixture / rust-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/rust-ci.yml
+    with:
+      runner: ${{ matrix.os }}
+      working_directory: tests/fixtures/rust
+
+  fixture-dotnet-ci-os:
+    name: fixture / dotnet-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/dotnet-ci.yml
+    with:
+      runner: ${{ matrix.os }}
+      working_directory: tests/fixtures/dotnet
+      test_command: "dotnet run --no-build --configuration Release"
+
+  fixture-java-ci-os:
+    name: fixture / java-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/java-ci.yml
+    with:
+      runner: ${{ matrix.os }}
+      working_directory: tests/fixtures/java
+
+  fixture-node-ci-os:
+    name: fixture / node-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/node-ci.yml
+    with:
+      runner: ${{ matrix.os }}
+      working_directory: tests/fixtures/node
+      test_command: "bun test"
+
   # One place to read the outcome, and the digests to paste into the ledger when
   # promoting a record. Never required; this is a report, not a gate.
   evidence:
@@ -381,6 +474,12 @@ jobs:
       - fixture-java-ci
       - fixture-dotnet-ci
       - fixture-swift-ci
+      - fixture-go-ci-os
+      - fixture-python-ci-os
+      - fixture-rust-ci-os
+      - fixture-dotnet-ci-os
+      - fixture-java-ci-os
+      - fixture-node-ci-os
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5

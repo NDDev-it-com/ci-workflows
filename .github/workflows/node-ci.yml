@@ -44,6 +44,12 @@ jobs:
       contents: read
     defaults:
       run:
+        # Explicit, and not redundant with the workflow-level default above:
+        # a job-level `defaults.run` replaces the workflow-level one rather than
+        # merging with it, so declaring working-directory here silently drops the
+        # shell. On Linux nothing changes because bash is the default anyway; on
+        # Windows every run step becomes PowerShell and bash syntax stops working.
+        shell: bash
         working-directory: ${{ inputs.working_directory }}
     steps:
       - name: Checkout

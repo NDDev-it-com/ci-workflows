@@ -16,7 +16,7 @@ import re
 import shlex
 import sys
 
-from _runners import is_standard_hosted
+from _runners import is_standard_hosted, resolve_runner_labels
 from _workflow_yaml import SELF_WORKFLOWS, get_on, is_reusable, load_yaml, workflow_files
 
 
@@ -118,15 +118,27 @@ printf 'GIT_CONFIG_GLOBAL=%s\\n' "$isolated_config" >> "$GITHUB_ENV"
                     "standard hosted runner explicitly — inheriting the reusable's "
                     "default can route public pull-request code to a private fleet"
                 )
-            elif not is_standard_hosted(chosen):
+                continue
+            labels = resolve_runner_labels(chosen, job)
+            if labels is None:
                 problems.append(
-                    f"{filename}: public self-call job {job_name!r} selects "
-                    f"{chosen!r}, which is not a standard hosted runner. Standard "
-                    "runners are unmetered on public repositories in all three "
-                    "operating systems; larger runners are billed there from the "
-                    "first minute, and a self-hosted label makes a forked pull "
-                    "request remote code execution on that hardware"
+                    f"{filename}: public self-call job {job_name!r} selects runner "
+                    f"{chosen!r}, which this check cannot resolve to concrete "
+                    "labels. Use a literal or `${{ matrix.KEY }}` with the values "
+                    "listed in the job's own strategy.matrix — an unresolvable "
+                    "expression is not evidence that the runner is free"
                 )
+                continue
+            for label in labels:
+                if not is_standard_hosted(label):
+                    problems.append(
+                        f"{filename}: public self-call job {job_name!r} can run on "
+                        f"{label!r}, which is not a standard hosted runner. Standard "
+                        "runners are unmetered on public repositories in all three "
+                        "operating systems; larger runners are billed there from the "
+                        "first minute, and a self-hosted label makes a forked pull "
+                        "request remote code execution on that hardware"
+                    )
 
     ci = load_yaml((workflow_files()[0].parent / "ci.yml"))
     jobs = ci.get("jobs", {}) or {}
@@ -215,6 +227,7 @@ printf 'GIT_CONFIG_GLOBAL=%s\\n' "$isolated_config" >> "$GITHUB_ENV"
     problems += _fail_fast_caller_commands()
     problems += _balanced_caller_commands()
     problems += _runner_selftest()
+    problems += _job_defaults_pin_the_shell()
     return problems
 
 
@@ -306,6 +319,79 @@ def _runner_selftest() -> list[str]:
             problems.append(
                 f"_runners.is_standard_hosted({value!r}) accepted a non-string"
             )
+    # Matrix resolution: a self-call may pick its runner from its own matrix,
+    # but the check must see the values behind the expression. The dangerous
+    # cases are an include: entry smuggling a fleet label past a clean `os:`
+    # list, and an expression pointing at a matrix that does not exist — which
+    # must read as "cannot tell", never as "fine".
+    matrix_cases = [
+        ({"strategy": {"matrix": {"os": ["ubuntu-latest", "windows-latest",
+                                         "macos-latest"]}}},
+         ["ubuntu-latest", "windows-latest", "macos-latest"]),
+        ({"strategy": {"matrix": {"os": ["ubuntu-latest"],
+                                  "include": [{"os": "nddev-linux-fast"}]}}},
+         ["ubuntu-latest", "nddev-linux-fast"]),
+        ({"strategy": {"matrix": {"other": ["ubuntu-latest"]}}}, None),
+        ({}, None),
+        ({"strategy": {"matrix": {"os": []}}}, None),
+    ]
+    for job, expected in matrix_cases:
+        got = resolve_runner_labels("${{ matrix.os }}", job)
+        if got != expected:
+            problems.append(
+                f"resolve_runner_labels(matrix.os, {job!r}) is {got!r}, "
+                f"expected {expected!r}"
+            )
+    # A literal still resolves to itself; an unknown expression must not.
+    if resolve_runner_labels("ubuntu-latest", {}) != ["ubuntu-latest"]:
+        problems.append("resolve_runner_labels lost a literal label")
+    if resolve_runner_labels("${{ inputs.runner }}", {}) is not None:
+        problems.append(
+            "resolve_runner_labels treated an unresolvable expression as decidable"
+        )
+    return problems
+
+
+def _job_defaults_pin_the_shell() -> list[str]:
+    """A job-level `defaults.run` must name its shell.
+
+    A job-level `defaults.run` REPLACES the workflow-level one rather than
+    merging with it key by key. The documentation describes per-name
+    precedence, so this is easy to get wrong and impossible to see on Linux:
+    twenty-six jobs here declared `defaults: run: working-directory:` and
+    thereby dropped the `shell: bash` their own file declared three lines
+    above. Linux hid it, because bash is the default there anyway.
+
+    Windows does not hide it. A fixture run of python-ci on windows-latest
+    executed its steps under PowerShell, where a bash line continuation and a
+    `>>` redirect are syntax errors and `${VAR}` expands to nothing — the job
+    printed "(requested )" and then failed. cross-platform-smoke.yml, the one
+    workflow written for three operating systems, already set `shell: bash` on
+    every individual step, which is the previous author reaching the same
+    conclusion for one file.
+
+    So: any job that declares `defaults.run` at all must also pin `shell`.
+    """
+    problems: list[str] = []
+    for path in workflow_files():
+        workflow = load_yaml(path)
+        for job_name, job in (workflow.get("jobs", {}) or {}).items():
+            if not isinstance(job, dict):
+                continue
+            run_defaults = ((job.get("defaults") or {}).get("run") or {})
+            if not run_defaults:
+                continue
+            has_run_step = any(
+                isinstance(step, dict) and "run" in step
+                for step in (job.get("steps") or [])
+            )
+            if has_run_step and "shell" not in run_defaults:
+                problems.append(
+                    f"{path.name}: job {job_name!r} declares defaults.run without "
+                    "`shell`. A job-level defaults.run replaces the workflow-level "
+                    "one instead of merging, so this silently drops the file's own "
+                    "`shell: bash` and every run step becomes PowerShell on Windows"
+                )
     return problems
 
 

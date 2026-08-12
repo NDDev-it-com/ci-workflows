@@ -23,6 +23,8 @@ Both checks want the same property and should not be able to drift apart:
 """
 from __future__ import annotations
 
+import re
+
 # Labels every GitHub account can resolve, for all three operating systems.
 HOSTED_RUNNER_PREFIXES = ("ubuntu-", "macos-", "windows-")
 
@@ -42,3 +44,41 @@ def is_standard_hosted(label: object) -> bool:
     if label.endswith(LARGER_RUNNER_SUFFIXES):
         return False
     return label.startswith(HOSTED_RUNNER_PREFIXES)
+
+
+# `${{ matrix.os }}` and friends. A self-call job may pick its runner from a
+# matrix — that is how one fixture proves a reusable on all three operating
+# systems — so the check has to look through the expression to the values
+# behind it rather than rejecting anything that is not a literal.
+MATRIX_REF = re.compile(r"^\$\{\{\s*matrix\.([A-Za-z_][A-Za-z0-9_-]*)\s*\}\}$")
+
+
+def resolve_runner_labels(chosen: object, job: object) -> list[object] | None:
+    """Every concrete runner label `chosen` can take, or None if undecidable.
+
+    A literal resolves to itself. `${{ matrix.KEY }}` resolves to the job's
+    `strategy.matrix.KEY` list, including any `include:` entries that set KEY,
+    so a matrix cannot smuggle a fleet label past the check through an include.
+    Anything else — a different expression, a matrix key with no values — is
+    undecidable and returns None, which callers must treat as a failure rather
+    than as permission.
+    """
+    if not isinstance(chosen, str):
+        return [chosen]
+    match = MATRIX_REF.match(chosen.strip())
+    if match is None:
+        return None if "${{" in chosen else [chosen]
+    if not isinstance(job, dict):
+        return None
+    matrix = ((job.get("strategy") or {}) or {}).get("matrix")
+    if not isinstance(matrix, dict):
+        return None
+    key = match.group(1)
+    labels: list[object] = []
+    values = matrix.get(key)
+    if isinstance(values, list):
+        labels.extend(values)
+    for entry in matrix.get("include") or []:
+        if isinstance(entry, dict) and key in entry:
+            labels.append(entry[key])
+    return labels or None

@@ -4,6 +4,19 @@
 
 ### Added
 
+- **Six reusables are now proven on all three operating systems.** Every
+  reusable exposes a `runner` input — a promise that a consumer may choose their
+  OS — and until now that promise had only ever been tested on Linux. Standard
+  hosted runners are unmetered on public repositories in all three, so
+  `go-ci`, `python-ci`, `node-ci`, `rust-ci`, `dotnet-ci` and `java-ci` now run
+  on macOS and Windows in the fixture estate as well.
+
+  The runner rule had to learn matrices first: it required a literal label, so
+  `${{ matrix.os }}` read as "not a standard hosted runner" and three-OS
+  coverage was structurally impossible. It now resolves the expression against
+  the job's own `strategy.matrix` and checks every value, `include:` entries
+  included, so a clean `os:` list cannot smuggle a fleet label past it.
+
 - **Java, .NET and Swift joined the fixture estate**, taking the ledger to 26
   proven of 46. The Swift lane runs on `macos-latest` — a standard hosted
   runner, unmetered on public repositories, which is the whole reason the macOS
@@ -34,6 +47,25 @@
   defect: it fetches history only the writing twin can create.
 
 ### Fixed
+
+- **Twenty-six jobs were running PowerShell on Windows.** Twenty-two files
+  declare `defaults: run: shell: bash` at workflow level, and then their jobs
+  declare `defaults: run: working-directory:` — which *replaces* the
+  workflow-level block rather than merging with it. Every one of those jobs
+  silently lost the shell its own file declared three lines above.
+
+  Linux hid it completely, because bash is the default there anyway. Windows
+  did not: `python-ci` on `windows-latest` ran its steps under PowerShell,
+  where a bash line continuation and `>>` are syntax errors and `${VAR}`
+  expands to nothing — the job printed "(requested )" and then failed.
+
+  The clue was already in the tree: `cross-platform-smoke.yml`, the one
+  workflow written for three operating systems, sets `shell: bash` on every
+  individual step instead of trusting the default. It was also the only Windows
+  lane that passed.
+
+  Every job-level `defaults.run` now pins the shell, and a validator refuses one
+  that does not.
 
 - **The self-call runner rule forbade a free runner.** It demanded the literal
   string `ubuntu-latest`, which enforced the property it cared about — a public
