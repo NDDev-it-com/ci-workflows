@@ -4,6 +4,22 @@
 
 ### Added
 
+- **`benchmark-compare`, `r-ci` and `mutation-testing` are proven**, taking the
+  ledger to 29 of 46 and leaving seven unverified.
+
+  `benchmark-compare` became provable by exposing `external_data_json_path` on
+  both benchmark lanes: with it set the action stores history in a file and no
+  longer uses a Git branch, so the read-only twin stops failing on a `gh-pages`
+  branch this repository has never had. `auto_push` is deliberately still not an
+  input — `check_benchmark_contract.py` refuses that string in either file, and
+  the refusal is right, because a caller-controllable auto-push would collapse
+  the write lane and the read lane into one workflow with a dangerous toggle.
+
+- **The estate is two workflow files.** `runtime-fixtures.yml` keeps the nine
+  tree-level lanes; `runtime-fixtures-languages.yml` takes the language and
+  tooling lanes. One 550-line file mixing "does the gate work" with "does Swift
+  build" was already hard to read.
+
 - **Nine reusables are now proven on all three operating systems.** Every
   reusable exposes a `runner` input — a promise that a consumer may choose their
   OS — and until now that promise had only ever been tested on Linux. Standard
@@ -48,6 +64,20 @@
   defect: it fetches history only the writing twin can create.
 
 ### Fixed
+
+- **A wrong reason in the ledger, corrected.** `benchmark.yml` was recorded as
+  unprovable because `auto-push: true` would write a `gh-pages` branch. That was
+  not the obstacle. The real one is permissions: its job declares
+  `contents: write`, a reusable cannot request more than its caller grants, and
+  calling it from a `contents: read` job produces a `startup_failure` with no
+  jobs and no annotation. It stays unproven because granting the fixture estate
+  a write-capable token would defeat the property the estate exists to have —
+  a deliberate refusal, not an impossibility, and the record now says so.
+
+  Worth keeping: a reusable demanding more permission than its caller grants
+  fails the **whole run** before any job starts, and GitHub reports only "this
+  run likely failed because of a workflow file issue". Neither the unique-call
+  count nor the total-call count explained it; bisection did.
 
 - **Twenty-six jobs were running PowerShell on Windows.** Twenty-two files
   declare `defaults: run: shell: bash` at workflow level, and then their jobs
