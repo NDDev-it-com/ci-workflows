@@ -161,9 +161,12 @@ silently adopts whatever the next pin says. Name it anyway — and if you run yo
 own fleet you must, because a hosted default will quietly meter you.
 
 That the default is safe today is recent. It was `amsterdam`, a private
-self-hosted label, until that fleet was retired in August 2026 — at which point
-every caller inheriting it queued against a runner that no longer existed. Both
-ways a stale default bites:
+self-hosted label, until that label was retired in August 2026 — at which point
+every caller inheriting it queued against a runner that no longer existed. The
+estate still runs its own fleet, under a different implementation and a
+per-class label taxonomy; what changed is that the library stopped shipping any
+private label as a default, which was always the rule. Both ways a stale default
+bites:
 
 - **Outside this estate** the label does not resolve, so the job queues
   forever against a runner that will never appear.

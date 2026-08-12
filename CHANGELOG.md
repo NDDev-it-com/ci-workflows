@@ -4,6 +4,38 @@
 
 ### Fixed
 
+- **Corrected a claim I made about the estate's runners.** The previous entry
+  said the `amsterdam` fleet "no longer exists" and that the estate had moved to
+  GitHub-hosted runners. Only the first half is right: the **label** was retired,
+  but the estate still runs its own fleet — reimplemented as a GitHub App in
+  `modules/github-actions`, with a per-class taxonomy
+  (`nddev-linux-standard`, `-integration`, `-fast`, `-release`).
+
+  The change itself stands and every default remains `ubuntu-latest`, because the
+  justification was wrong rather than the outcome. It is not "the estate went
+  hosted". It is ADR 0004's original rule, unchanged: **a public library must not
+  ship a private label as anyone's default**, because no consumer outside the
+  estate can resolve one. `nddev-linux-standard` would be exactly as wrong a
+  default as `amsterdam` was; an estate caller names its class explicitly, which
+  is what the rule required all along.
+
+  The estate example now names the real classes instead of a `<label>`
+  placeholder, and the routing is not cosmetic: `secret-scan` runs gitleaks as a
+  digest-pinned container, so it needs `nddev-linux-integration` (the class with
+  a Docker daemon) while every other scanner uploads SARIF and belongs on
+  `nddev-linux-standard` (repository-scoped credentials) rather than the
+  credential-free `nddev-linux-fast`. Put the container job on the standard class
+  and it fails at `docker run`; put the SARIF jobs on the fast class and they
+  fail for want of a token.
+
+  `catalog/profiles.yml` therefore keeps `runner_mode: self-hosted-persistent`
+  on the two private profiles, and `docs/17` keeps its routing model: private
+  work still runs on the estate's own runners and still bypasses the metered
+  pool. ADR 0004 and `docs/05` are corrected to say the label was retired rather
+  than the fleet.
+
+### Fixed
+
 - **The GDS projection no longer contradicts live governance.** For most of this
   repository's life `.gds/compiled-policy.json` declared `allow_squash_merge:
   true` and `allow_merge_commit: false` under `management: managed`, while the

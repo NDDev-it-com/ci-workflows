@@ -45,17 +45,25 @@ Dependabot bump would have flipped it.
   decision the library may not make for its consumers, so the rule closed the
   exposure at the caller and the generic contract stayed wrong-by-default.
 
-  **Superseded 2026-08-12: the fleet no longer exists.** The estate moved to its
-  own GitHub App for CI and the `amsterdam` label was retired. That voids the
-  objection — there is nothing to move those callers *off*, and a default naming
-  a retired label is not merely wrong-by-default but broken: the first failure
-  mode above, a job queuing forever against a runner that will never appear, is
-  now what every caller relying on the default actually gets. All 39 defaults
-  moved to `ubuntu-latest`.
+  **Superseded 2026-08-12: the `amsterdam` label was retired.** The estate moved
+  its runners to a GitHub App fleet implemented in `modules/github-actions`, with
+  a per-class label taxonomy (`nddev-linux-standard`, `-integration`, `-fast`,
+  `-release`). The fleet still exists; the label this library shipped as a
+  default does not.
 
-  The decision itself is unchanged and is the reason the migration was one edit:
-  because callers were already required to name their runner, no example and no
-  consumer that followed the rule depended on the default at all.
+  That does not merely void the cost objection — it makes the objection
+  irrelevant. There is no metered move to protect those callers from, because
+  the default no longer resolves at all: the first failure mode above, a job
+  queuing forever against a runner that will never appear, is now what every
+  caller relying on it actually gets. All 39 defaults moved to `ubuntu-latest`.
+
+  Note what the fix is *not* justified by. It is not "the estate went hosted" —
+  it did not. It is the original decision, unchanged: a public library must not
+  ship a private label as anyone's default, because no consumer outside the
+  estate can resolve one. `nddev-linux-standard` would be exactly as wrong a
+  default as `amsterdam` was. An estate caller names its class explicitly, which
+  is what the rule required all along — and why the migration was a single edit
+  with no example and no compliant consumer affected.
 - A public repository on a persistent self-hosted fleet stays out of policy
   regardless of this rule. Making that safe needs ephemeral runners or fork-PR
   approval for all external contributors, neither of which this library controls.
