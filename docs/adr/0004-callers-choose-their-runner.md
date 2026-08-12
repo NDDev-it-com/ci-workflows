@@ -48,9 +48,11 @@ Dependabot bump would have flipped it.
   **Superseded 2026-08-12, and corrected the same day: `amsterdam` is still
   live.** This paragraph first claimed the label had been retired and that every
   caller inheriting it now queued against a runner that would never appear. That
-  was wrong. The fleet session measured four `amsterdam` runners online serving
-  **4698 jobs across 19 repositories in seven days**, `github-device-sync`'s own
-  CI among them. A GitHub App fleet does exist alongside it in
+  was wrong. The fleet that owns those runners reports them online and carrying a
+  large share of the estate's CI, `github-device-sync`'s own included. The
+  counts belong to the control plane and are deliberately not repeated here — a
+  public library states the durable rule, not somebody's job totals. A GitHub
+  App fleet does exist alongside it in
   `modules/github-actions`, with a per-class taxonomy (`nddev-linux-fast`,
   `-standard`, `-integration`), but it has not replaced anything yet.
 

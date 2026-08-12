@@ -124,9 +124,10 @@
 - **This library said the `amsterdam` runner label had been retired. It has
   not.** ADR 0004 and `docs/05` both stated the label was dead and that any
   caller still inheriting it queued against a runner that would never appear.
-  The fleet session measured the opposite: four `amsterdam` runners online
-  serving **4698 jobs across 19 repositories in seven days**, including most of
-  `github-device-sync`'s own CI.
+  The fleet that owns those runners reports the opposite: they are
+  online and carrying a large share of the estate's CI, `github-device-sync`'s
+  own included. The counts stay in the control plane, where account state
+  belongs.
 
   The decision those documents record is unaffected and unchanged — a public
   library must not ship a private label as anyone's default, because no consumer

@@ -179,9 +179,8 @@ silently adopts whatever the next pin says. Name it anyway — and if you run yo
 own fleet you must, because a hosted default will quietly meter you.
 
 That the default is safe today is recent. It was `amsterdam`, a private
-self-hosted label, until August 2026. **That label is still live** — four
-runners online, thousands of jobs a week across the estate — so what changed is
-narrower than it might look: the library stopped shipping a private label as a
+self-hosted label, until August 2026. **That label is still live**, carrying a
+large share of the estate's CI, so what changed is narrower than it might look: the library stopped shipping a private label as a
 default, which was always the rule. A per-class fleet
 (`nddev-linux-fast`/`-standard`/`-integration`) exists alongside it in
 `modules/github-actions` and has not replaced it.
