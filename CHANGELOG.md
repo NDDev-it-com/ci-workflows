@@ -9,6 +9,23 @@
   action steps narrowly suppress both tag/version audits without changing SHA
   or runtime behaviour.
 
+### Changed
+
+- Make billing intent an explicit operating-profile control. Derived public
+  modes select unmetered standard hosted runners; derived private/internal
+  modes now fail safe to self-hosted compute instead of silently opting into
+  metered GitHub-hosted minutes when an add-on is enabled.
+- Resolve paid capabilities per entitlement instead of promoting an entire
+  private repository into one `private_paid` bucket, and emit a deduplicated
+  workflow programme with exactly one plan-correct release variant.
+- Distinguish the private no-add-on feature posture from runner billing:
+  self-hosted is the zero-GitHub-meter default, while hosted quota and overage
+  require an explicit resolver opt-in.
+- Split compute billing from licence billing so self-hosted Enterprise modes
+  can honestly express both zero GitHub-hosted minutes and a fixed add-on
+  envelope. Reject Code Security and Secret Protection on Free/Pro plans and
+  non-Enterprise internal repositories according to GitHub's product gates.
+
 ### Added
 
 - **OS and machine-capability routing now fails before useful jobs enter a

@@ -1,11 +1,9 @@
-# Private security suite without paid GitHub security add-ons.
-# This variant explicitly uses standard GitHub-hosted runners: its included
-# allowance is bounded and overage can be billed. Use security-selfhosted.yml
-# when the requirement is zero GitHub Actions compute meter.
-# Harden-Runner and code scanning are paid on private repos, so this caller uses
-# workflows whose files contain neither paid capability.
-# Each callee isolates global Git config before checkout; callers do not need to
-# sanitize persistent self-hosted runner credentials.
+# Private security suite with zero GitHub Actions compute meter.
+# Replace `private-ci` with an isolated ephemeral runner label registered only
+# to private repositories. Destroy the VM after one job; cost control must not
+# expose a persistent trusted machine to pull-request code. Self-hosted
+# infrastructure still has its own cost; this promise covers only GitHub
+# Actions runner-minute metering.
 # Replace @<sha> with a pinned full commit SHA of ci-workflows.
 name: security
 on:
@@ -20,20 +18,20 @@ jobs:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/secret-scan.yml@<sha>
     with:
-      runner: ubuntu-latest
+      runner: private-ci
   actionlint:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/actionlint.yml@<sha>
     with:
-      runner: ubuntu-latest
+      runner: private-ci
   zizmor:
-    permissions: { contents: read }   # least privilege: no security-events: write
+    permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/zizmor-no-sarif.yml@<sha>
     with:
-      runner: ubuntu-latest
+      runner: private-ci
   validate:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/private-static.yml@<sha>
     with:
-      runner: ubuntu-latest
+      runner: private-ci
       command: "python3 scripts/validate_all.py"

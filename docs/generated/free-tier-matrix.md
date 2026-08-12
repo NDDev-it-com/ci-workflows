@@ -20,11 +20,11 @@ past its expiry, so a stale tier claim cannot silently mislead adopters.
 | `cirrus-ci-shutdown` | Cirrus Labs | Cirrus CI hosted service | public, private | All | shutdown | 0 available-builds/feature | deprecated | 2026-07-11 | — |
 | `codemagic-personal` | Codemagic | Personal plan | public, private | Personal | recurring-quota | 500 macos-build-minutes/month | vendor-verified | 2026-08-10 | 2026-10-02 |
 | `github-actions-larger-runners` | GitHub | Actions larger runners | public, private, internal | Team, Enterprise Cloud, eligible plans | paid-only | 0 included-minutes/month | official | 2026-08-10 | 2026-10-09 |
-| `github-actions-private-free-org` | GitHub | Actions included usage | private | Free organization | recurring-quota | 2000 runner-minutes/month | official | 2026-08-10 | 2026-10-09 |
-| `github-actions-private-free-personal` | GitHub | Actions included usage | private | Free personal | recurring-quota | 2000 runner-minutes/month | official | 2026-08-10 | 2026-10-09 |
-| `github-actions-private-ghec` | GitHub | Actions included usage | private, internal | Enterprise Cloud | recurring-quota | 50000 runner-minutes/month | official | 2026-08-10 | 2026-10-09 |
-| `github-actions-private-pro` | GitHub | Actions included usage | private | Pro | recurring-quota | 3000 runner-minutes/month | official | 2026-08-10 | 2026-10-09 |
-| `github-actions-private-team` | GitHub | Actions included usage | private | Team | recurring-quota | 3000 runner-minutes/month | official | 2026-08-10 | 2026-10-09 |
+| `github-actions-private-free-org` | GitHub | Actions included usage | private | Free organization | recurring-quota | 2000 runner-minutes/month | official | 2026-08-13 | 2026-11-02 |
+| `github-actions-private-free-personal` | GitHub | Actions included usage | private | Free personal | recurring-quota | 2000 runner-minutes/month | official | 2026-08-13 | 2026-10-31 |
+| `github-actions-private-ghec` | GitHub | Actions included usage | private, internal | Enterprise Cloud | recurring-quota | 50000 runner-minutes/month | official | 2026-08-13 | 2026-11-04 |
+| `github-actions-private-pro` | GitHub | Actions included usage | private | Pro | recurring-quota | 3000 runner-minutes/month | official | 2026-08-13 | 2026-11-01 |
+| `github-actions-private-team` | GitHub | Actions included usage | private | Team | recurring-quota | 3000 runner-minutes/month | official | 2026-08-13 | 2026-11-03 |
 | `github-actions-public-standard` | GitHub | Actions standard GitHub-hosted runners | public | Free, Pro, Team, Enterprise Cloud | public-unmetered | unmetered (standard-runner-minutes) | official | 2026-08-12 | 2026-10-30 |
 | `github-actions-self-hosted-control-plane` | GitHub | Actions self-hosted runners | public, private, internal | All eligible GitHub plans | zero-license-control-plane | unmetered (github-actions-control-plane-minutes) | official | 2026-08-10 | 2026-10-09 |
 | `github-attestations-private` | GitHub | Artifact attestations | private, internal | Enterprise Cloud | plan-gated | attestations | official | 2026-08-10 | 2026-11-06 |

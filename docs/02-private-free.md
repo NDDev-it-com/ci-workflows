@@ -1,9 +1,11 @@
-# Private-free tier — zero-cost only
+# Private without paid security add-ons
 
-Private repositories on a free GitHub plan can still run a meaningful security
-and supply-chain stack, but **only the capabilities that cost nothing**. This
-doc lists exactly what is free on private, how to configure the library for it,
-and — importantly — what is **excluded** because it is paid.
+Private repositories can run a meaningful security and supply-chain stack
+without paid GitHub security add-ons. That does **not** automatically make the
+runner bill zero: standard GitHub-hosted minutes have a finite allowance on
+private repositories and overage may be billed. This document separates the
+feature posture from the compute route so neither promise is implied by the
+other.
 
 ## Paid on private → excluded from this tier
 
@@ -31,7 +33,7 @@ them in the private-free tier:
 > this repository — the free maintainability substitutes are listed in
 > [16 Code Quality tier](16-code-quality.md#what-the-free-tiers-do-instead).
 
-## The zero-cost private stack
+## The no-paid-add-on private stack
 
 | Capability | Workflow | Notes |
 | --- | --- | --- |
@@ -43,10 +45,30 @@ them in the private-free tier:
 | Cross-platform smoke | `cross-platform-smoke.yml` | OS matrix |
 | Cloud auth | OIDC | short-lived credentials, no stored secrets |
 
-### Recommended caller
+### Choose the compute contract first
+
+- `private-self-hosted` compute — pass a private self-hosted label to every
+  reusable workflow and separately route managed CodeQL/Code Quality scans.
+  GitHub does not meter runner minutes, but the fleet still has infrastructure
+  and operations cost.
+- `private-hosted-bounded` compute — pass a standard GitHub-hosted label. This uses the
+  plan allowance and can incur overage; Windows and macOS consume it faster.
+  Set an Actions budget with **Stop paid usage** enabled. Included-usage alerts
+  are notifications, not a spending boundary.
+
+The resolver defaults private/internal repositories to the first, fail-closed
+mode. The hosted choice requires an explicit flag:
+
+```bash
+python3 scripts/resolve_profile.py --visibility private --plan free
+python3 scripts/resolve_profile.py --visibility private --plan free \
+  --private-compute github-hosted
+```
+
+### Bounded-quota GitHub-hosted caller
 
 ```yaml
-# .github/workflows/security.yml  (private, free-minimal)
+# .github/workflows/security.yml  (private, no paid add-ons; hosted quota)
 name: security
 on:
   push: { branches: [main] }
@@ -74,6 +96,10 @@ jobs:
 > public/GHAS tier uses `zizmor-sarif.yml` instead. See
 > [06 Security scanning](06-security-scanning.md#zizmor).
 
+For a zero-GitHub-meter caller, use
+[`examples/private-free/security-selfhosted.yml`](../examples/private-free/security-selfhosted.yml)
+and replace its placeholder runner label with a private, isolated fleet label.
+
 ## actionlint (`actionlint.yml`)
 
 Lints workflow YAML for syntax errors, expression typos, and deprecated usage.
@@ -92,7 +118,7 @@ private-tier substitute for native secret scanning, which is paid.
 ## private-static (`private-static.yml`)
 
 A deliberately minimal single Ubuntu job with **no matrix, no cache, no
-artifacts** — the zero-cost validation lane. It runs a caller-provided `command`
+artifacts** — the low-consumption validation lane. It runs a caller-provided `command`
 (required input) with optional Python setup.
 
 ```yaml
@@ -150,7 +176,7 @@ recommended posture for private repos — see
 Runs a caller command across an OS matrix. On private repos, **Windows and macOS
 minutes are billed at higher multipliers than Linux** (see
 [05 Runners](05-runners.md#cost-model)). Trim `os_list` to `["ubuntu-latest"]`
-to stay free-minimal, or accept the multiplier cost intentionally. Use
+to conserve quota, or accept the multiplier cost intentionally. Use
 `linux_command`, `macos_command`, or `windows_command` when one platform needs a
 lighter smoke than the default `command`.
 

@@ -57,16 +57,16 @@
 | Container build and Trivy scan (`container-scan-trivy`) | security-scanning | ga | free | free | available | `.github/workflows/container-ci.yml` | `examples/infra/container.yml` |
 | Copilot Autofix for code scanning (`copilot-autofix`) | security-scanning | ga | free | unavailable | available | `-` | `-` |
 | Fuzzing (`fuzzing`) | security-scanning | ga | free | conditional | available | `.github/workflows/fuzzing.yml` | `examples/testing/fuzzing.yml` |
-| GitHub Code Quality (`github-code-quality`) | security-scanning | ga | paid | paid | conditional | `-` | `-` |
+| GitHub Code Quality (`github-code-quality`) | security-scanning | ga | paid | paid | available | `-` | `-` |
 | Gitleaks secret scan (`gitleaks-secret-scan`) | security-scanning | ga | free | free | available | `.github/workflows/secret-scan.yml` | `examples/private-free/security.yml` |
 | hadolint Dockerfile lint (`hadolint-dockerfile`) | security-scanning | ga | free | free | available | `.github/workflows/hadolint-ci.yml` | `examples/security/hadolint.yml` |
 | IaC scan (Checkov) (`iac-scan-checkov`) | security-scanning | ga | free | free | available | `.github/workflows/iac-scan.yml` | `examples/security/iac-scan.yml` |
 | GitHub native secret scanning (`native-secret-scanning`) | security-scanning | ga | free | unavailable | available | `-` | `-` |
-| OpenSSF Scorecard SARIF (`ossf-scorecard`) | security-scanning | ga | free | unavailable | conditional | `.github/workflows/public-scorecard.yml` | `examples/public-oss/scorecard-sarif.yml` |
-| OpenSSF Scorecard JSON artifact (`ossf-scorecard-json`) | security-scanning | ga | free | unavailable | conditional | `.github/workflows/public-scorecard-json.yml` | `examples/public-oss/scorecard.yml` |
+| OpenSSF Scorecard SARIF (`ossf-scorecard`) | security-scanning | ga | free | unavailable | unavailable | `.github/workflows/public-scorecard.yml` | `examples/public-oss/scorecard-sarif.yml` |
+| OpenSSF Scorecard JSON artifact (`ossf-scorecard-json`) | security-scanning | ga | free | unavailable | unavailable | `.github/workflows/public-scorecard-json.yml` | `examples/public-oss/scorecard.yml` |
 | Rust supply-chain checks (cargo-deny + cargo-audit + cargo-machete) (`rust-supply-chain`) | security-scanning | ga | free | free | available | `.github/workflows/rust-supply-chain.yml` | `examples/security/rust-supply-chain.yml` |
 | Semgrep OSS SAST (`semgrep-sast`) | security-scanning | ga | free | free | available | `.github/workflows/semgrep-ci.yml` | `examples/security/semgrep.yml` |
-| zizmor workflow security scanner (`zizmor`) | security-scanning | ga | free | free | available | `.github/workflows/zizmor-sarif.yml` | `-` |
+| zizmor workflow security scanner (`zizmor`) | security-scanning | ga | free | unavailable | available | `.github/workflows/zizmor-sarif.yml` | `-` |
 | zizmor workflow security scanner (no SARIF) (`zizmor-no-sarif`) | security-scanning | ga | free | free | available | `.github/workflows/zizmor-no-sarif.yml` | `examples/private-free/security.yml` |
 | Artifact attestations (`artifact-attestations`) | supply-chain | ga | free | paid | conditional | `.github/workflows/release-supply-chain.yml` | `-` |
 | Dependabot version and security updates (`dependabot`) | supply-chain | ga | free | free | available | `-` | `-` |

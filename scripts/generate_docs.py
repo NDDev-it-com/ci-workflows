@@ -222,8 +222,8 @@ def profile_matrix(doc: dict[str, Any]) -> str:
         "",
         "## Profiles",
         "",
-        "| Profile | Visibility | Base plan | C/S/Q | CodeQL | Runner | Provenance | Enforcement | Fixed cost | Programme |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+        "| Profile | Visibility | Base plan | C/S/Q | Compute billing | Licence billing | CodeQL | Runner | Provenance | Enforcement | Fixed cost | Programme |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for profile in profiles:
         sel = profile.get("selectors") or {}
@@ -231,11 +231,13 @@ def profile_matrix(doc: dict[str, Any]) -> str:
         cost = profile.get("cost") or {}
         fixed = cost.get("fixed_usd")
         lines.append(
-            "| `{id}` | {vis} | {plans} | `{mask}` | {codeql} | {runner} | {prov} | {enf} | {cost} | {programme} |".format(
+            "| `{id}` | {vis} | {plans} | `{mask}` | {compute} | {license} | {codeql} | {runner} | {prov} | {enf} | {cost} | {programme} |".format(
                 id=profile.get("id"),
                 vis=", ".join(sel.get("visibility") or []),
                 plans=", ".join(sel.get("base_plan") or []),
                 mask=profile.get("entitlement_mask"),
+                compute=ctl.get("compute_billing"),
+                license=ctl.get("license_billing"),
                 codeql=ctl.get("codeql_mode"),
                 runner=ctl.get("runner_mode"),
                 prov=ctl.get("release_provenance"),

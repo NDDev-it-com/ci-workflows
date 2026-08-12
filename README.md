@@ -3,20 +3,22 @@
 A **July-2026 GitHub-native CI/CD, security, governance, and supply-chain
 automation knowledge base plus reusable workflow library** for the NDDev estate.
 
-It separates three billing realities — **public OSS**, **private-free**, and
-**private-paid/GHAS** — plus one opt-in product that ignores all three
-(**Code Quality**), ships SHA-pinned reusable workflows for each, and
+It separates repository visibility, runner billing, base plan, and the three
+independent paid add-ons instead of collapsing them into one tier ladder.
+Named programmes cover **public OSS**, **private without paid add-ons**, and
+**private paid capabilities** — plus one opt-in product with its own licence
+(**Code Quality**). The library ships SHA-pinned reusable workflows for each and
 documents every capability with its status, cost model, risk, and implementation
 path in [`docs/`](docs/00-overview.md) and the machine-readable
 [`catalog/`](catalog/README.md).
 
-## Three tiers, by repository billing reality
+## Ready programmes, by repository and billing contract
 
 | Tier | What you get | Notes |
 | --- | --- | --- |
 | **Public OSS** | The full free security suite: CodeQL, OSSF Scorecard, dependency review, native secret scanning, gitleaks, actionlint, zizmor (SARIF), harden-runner, SBOM + attestations. | Standard hosted runners and code scanning are free on public repos. |
-| **Private-free** | Zero-cost only: actionlint, zizmor (no SARIF), gitleaks, private static validation, cross-platform smoke, SBOM + checksummed immutable releases (no attestations), OIDC. | CodeQL, native secret scanning, dependency review, and harden-runner are **paid** on private repos and are excluded here. Artifact attestations require **GitHub Enterprise Cloud** on private repos — release with `release-supply-chain-free.yml`. |
-| **Private-paid / GHAS** | Everything in public, on private repos, via GitHub Code Security / Secret Protection. | Requires a paid plan. |
+| **Private, no paid add-ons** | actionlint, zizmor (no SARIF), gitleaks, private static validation, cross-platform smoke, SBOM + checksummed immutable releases (no attestations), OIDC. | Self-hosted gives zero GitHub runner-meter; standard hosted uses bounded quota and may incur overage. Code Security, Secret Protection and private attestations are excluded. |
+| **Private, selected paid capabilities** | Only the workflows unlocked by the independently enabled Code Security, Secret Protection, and Code Quality products. | Buying one add-on never enables another. Private attestations separately require Enterprise Cloud. |
 
 See [`docs/01-public-oss-free.md`](docs/01-public-oss-free.md),
 [`docs/02-private-free.md`](docs/02-private-free.md), and
@@ -158,7 +160,7 @@ jobs:
     uses: NDDev-it-com/ci-workflows/.github/workflows/public-scorecard-json.yml@<sha>
 ```
 
-### Private repository (free-minimal)
+### Private repository (no paid add-ons)
 
 ```yaml
 # .github/workflows/security.yml

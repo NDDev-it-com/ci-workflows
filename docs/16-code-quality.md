@@ -11,8 +11,9 @@ tiers are built on**.
 ## Why this is a separate tier
 
 The [three-tier model](00-overview.md#the-three-tier-model) sorts capabilities by
-repository visibility and plan: public is free, private-free is the zero-cost
-subset, private-paid unlocks the rest through GHAS. Code Quality obeys none of
+repository visibility and plan: public capabilities can be free, while the
+private no-add-on posture excludes licensed features and chooses runner billing
+separately. Code Quality obeys none of
 that:
 
 | Assumption that holds for CodeQL / GHAS | What Code Quality actually does |

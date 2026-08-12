@@ -36,7 +36,12 @@ axes:
   entitlements:
     code_security:
       values: [true, false]
-      unlocks: [codeql-code-scanning, dependency-review]
+      unlocks:
+        - codeql-code-scanning
+        - dependency-review
+        - copilot-autofix
+        - license-compliance-preview
+        - zizmor
     secret_protection:
       values: [true, false]
       unlocks: [native-secret-scanning]
@@ -45,6 +50,20 @@ axes:
       unlocks: [github-code-quality]
 
   controls:
+    compute_billing:
+      values: [public-standard-unmetered, private-self-hosted, private-hosted-bounded]
+      note: >-
+        The runner-minute contract only. Public standard runners are unmetered.
+        Private self-hosted runners consume no GitHub-hosted minutes but retain
+        infrastructure cost. Private hosted runners consume a recurring plan
+        allowance and may incur overage.
+    license_billing:
+      values: [no-paid-addons, selected-addons, fixed-license-envelope]
+      note: >-
+        The product-license contract, independent of compute. Code Security,
+        Secret Protection and Code Quality are separate purchases; a fixed
+        envelope is valid only when every licensed line is itemised and metered
+        AI/Actions overage is disabled.
     codeql_mode:
       values: [none, default, advanced]
       note: >-
@@ -141,20 +160,34 @@ derivation:
   # The only reasons a shape is genuinely invalid. These are plan gates taken
   # from the products themselves, not house style.
   plan_gates:
+    code_security: [team, enterprise-cloud]
+    secret_protection: [team, enterprise-cloud]
     code_quality: [team, enterprise-cloud]
     private_attestations: [enterprise-cloud]
+  plan_unlocks:
+    enterprise-cloud:
+      - artifact-attestations
+      - slsa-build-provenance
+      - release-supply-chain
+  capability_plan_gates:
+    # These are base-plan features, not add-on entitlements. Public availability
+    # remains governed by public_oss; the gates below apply to private/internal.
+    rulesets: [pro, team, enterprise-cloud]
+    merge-queue: [enterprise-cloud]
+    larger-gpu-runners: [team, enterprise-cloud]
+    rhel-larger-runner-images: [team, enterprise-cloud]
+    license-compliance-preview: [enterprise-cloud]
 
   # Controls that follow from the axes for an unnamed shape.
   default_controls:
     code_quality_ai: disabled      # metered with no included allowance
     coverage_mode: gated
-    runner_mode: github-hosted-standard
     enforcement: report            # nothing has observed this mode's contexts yet
 
   # Controls computed from the shape rather than fixed:
   #   codeql_mode        default where CodeQL resolves in the mode, else none
   #   release_provenance attestations where the plan permits, else checksums
-  computed_controls: [codeql_mode, release_provenance]
+  computed_controls: [compute_billing, license_billing, runner_mode, codeql_mode, release_provenance]
 
   # Controls the axes genuinely do not determine. A derived mode leaves these
   # unset rather than inventing an answer; a caller adopting the mode chooses.
@@ -170,6 +203,8 @@ profiles:
     entitlements: { code_security: false, secret_protection: false, code_quality: false }
     entitlement_mask: "000"
     controls:
+      compute_billing: public-standard-unmetered
+      license_billing: no-paid-addons
       codeql_mode: default
       code_quality_ai: disabled
       coverage_mode: gated
@@ -190,27 +225,36 @@ profiles:
     name: Private, no paid add-ons
     doc: docs/02-private-free.md
     selectors:
-      visibility: [private, internal]
+      visibility: [private]
       base_plan: [free, pro, team]
     entitlements: { code_security: false, secret_protection: false, code_quality: false }
     entitlement_mask: "000"
     controls:
+      compute_billing: private-self-hosted
+      license_billing: no-paid-addons
       codeql_mode: none
       code_quality_ai: disabled
       coverage_mode: gated
-      runner_mode: self-hosted-persistent
+      runner_mode: self-hosted-ephemeral
       governance_mode: solo-agent
       enforcement: active
       release_provenance: checksums
     cost:
       fixed_usd: 0
-      metered_lines: [actions-minutes]
-      product_facts: [github-actions-private-team, github-attestations-private]
+      metered_lines: [actions-storage]
+      product_facts:
+        - github-actions-private-free-personal
+        - github-actions-private-free-org
+        - github-actions-private-pro
+        - github-actions-private-team
+        - github-actions-self-hosted-control-plane
+        - github-attestations-private
     rationale: >-
       Private CodeQL, SARIF upload, native secret scanning and dependency review
       all require add-ons, and attestations require Enterprise Cloud. This
-      profile is the honest zero-cost subset: OSS scanners, repository-native
-      tests, checksummed releases.
+      profile is the honest no-paid-add-on subset: OSS scanners,
+      repository-native tests, checksummed releases. Its zero-GitHub-meter
+      compute promise depends on the declared self-hosted route.
 
   - id: public-enterprise-max
     name: Public OSS under Enterprise governance
@@ -221,6 +265,8 @@ profiles:
     entitlements: { code_security: true, secret_protection: true, code_quality: true }
     entitlement_mask: "111"
     controls:
+      compute_billing: public-standard-unmetered
+      license_billing: selected-addons
       codeql_mode: default
       code_quality_ai: disabled
       coverage_mode: gated
@@ -247,6 +293,8 @@ profiles:
     entitlements: { code_security: true, secret_protection: true, code_quality: true }
     entitlement_mask: "111"
     controls:
+      compute_billing: private-self-hosted
+      license_billing: fixed-license-envelope
       codeql_mode: default
       code_quality_ai: disabled
       coverage_mode: gated
@@ -265,7 +313,7 @@ profiles:
         - { line: Code Security, usd: 30 }
         - { line: Secret Protection, usd: 19 }
         - { line: Code Quality, usd: 10 }
-      metered_lines: [actions-minutes, actions-storage, ai-credits]
+      metered_lines: [actions-storage, ai-credits]
       product_facts: [github-actions-private-ghec, github-attestations-private, github-code-quality-transition]
       guards:
         allow_ai_credits: false
@@ -273,6 +321,7 @@ profiles:
         active_committers: 1
     rationale: >-
       The four licences are billed once per active committer, so the estate pays
-      the same whether one repository or fifty are enabled. Every metered line
-      is driven to zero by a $0 stop-usage budget. The fixed total holds only at
+      the same whether one repository or fifty are enabled. Runner minutes are
+      absent because library and managed scans route to the ephemeral fleet;
+      remaining metered lines are driven to zero by spend guards. The fixed total holds only at
       one active committer: a second adds $59 before anyone writes a workflow.

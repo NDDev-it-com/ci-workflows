@@ -145,6 +145,7 @@ def check() -> list[str]:
         allowed_aggregate_examples = {
             "examples/public-oss/security.yml",
             "examples/private-free/security.yml",
+            "examples/private-free/security-selfhosted.yml",
             "examples/private-paid-ghas/security.yml",
             "examples/nddev/security.yml",
             "examples/nddev/security-private-selfhosted.yml",
