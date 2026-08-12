@@ -25,7 +25,7 @@ past its expiry, so a stale tier claim cannot silently mislead adopters.
 | `github-actions-private-ghec` | GitHub | Actions included usage | private, internal | Enterprise Cloud | recurring-quota | 50000 runner-minutes/month | official | 2026-08-10 | 2026-10-09 |
 | `github-actions-private-pro` | GitHub | Actions included usage | private | Pro | recurring-quota | 3000 runner-minutes/month | official | 2026-08-10 | 2026-10-09 |
 | `github-actions-private-team` | GitHub | Actions included usage | private | Team | recurring-quota | 3000 runner-minutes/month | official | 2026-08-10 | 2026-10-09 |
-| `github-actions-public-standard` | GitHub | Actions standard GitHub-hosted runners | public | Free, Pro, Team, Enterprise Cloud | public-unmetered | unmetered (standard-runner-minutes) | official | 2026-08-10 | 2026-10-09 |
+| `github-actions-public-standard` | GitHub | Actions standard GitHub-hosted runners | public | Free, Pro, Team, Enterprise Cloud | public-unmetered | unmetered (standard-runner-minutes) | official | 2026-08-12 | 2026-10-30 |
 | `github-actions-self-hosted-control-plane` | GitHub | Actions self-hosted runners | public, private, internal | All eligible GitHub plans | zero-license-control-plane | unmetered (github-actions-control-plane-minutes) | official | 2026-08-10 | 2026-10-09 |
 | `github-attestations-private` | GitHub | Artifact attestations | private, internal | Enterprise Cloud | plan-gated | attestations | official | 2026-08-10 | 2026-11-06 |
 | `github-attestations-public` | GitHub | Artifact attestations | public | Free, Pro, Team, Enterprise Cloud | included-feature | attestations | official | 2026-08-10 | 2026-11-06 |

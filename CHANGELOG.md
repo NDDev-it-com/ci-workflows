@@ -4,6 +4,35 @@
 
 ### Fixed
 
+- **The ledger held no macOS fact at all**, while this library defaults
+  `swift-ci.yml` to `macos-latest` and `cross-platform-smoke.yml` to a matrix
+  including macOS and Windows. Eighteen GitHub facts, zero of them covering the
+  runners we hand consumers by default.
+
+  Verified against two primary sources and recorded on
+  `github-actions-public-standard`: **all three operating systems are standard on
+  public repositories and free there** — `macos-latest` is listed under "Standard
+  GitHub-hosted runners for public repositories", and "use of the standard
+  GitHub-hosted runners is free and unlimited on public repositories". Larger
+  runners stay billed even on public. On **private** repositories the multiplier
+  is the part worth knowing: Linux $0.006/min, Windows 1.67x, macOS **10.33x** —
+  a macOS lane that costs an OSS repository nothing eats ten times the quota
+  behind the paywall.
+
+  Worth recording how close this came to being wrong: a summary of the billing
+  page asserted that *only Linux* standard runners are free on public
+  repositories. The sentence it quoted said no such thing, and the runners
+  reference contradicts it outright. The claim was taken from the primary wording
+  rather than the summary — which is the entire reason this ledger requires
+  `source_urls` instead of prose.
+
+  Marked where it will actually be read: `docs/05` where routing is taught,
+  `AGENTS.md` tier truth, and the `runner` input description of `swift-ci.yml`
+  itself. Expiry staggered to 2026-10-30, away from the eight facts already on
+  2026-10-09.
+
+### Fixed
+
 - **Hosted is not the same as free.** `docs/05` taught routing with the sentence
   "minutes are free and unlimited on public repositories" — true only for
   **standard** runners. Larger ones (`-N-cores`, `-large`, `-xlarge`) are billed

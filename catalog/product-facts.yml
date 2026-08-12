@@ -29,17 +29,36 @@ facts:
     multipliers: {}
   conditions:
   - Only standard GitHub-hosted runners; larger runners are billed
+  - 'ALL THREE operating systems are included, not Linux only. The runners reference lists macos-latest,
+    macos-14, macos-15, macos-26, macos-15-intel, macos-26-intel and xcode-27 under "Standard GitHub-hosted
+    runners for public repositories" alongside ubuntu-* and windows-*, and states "Use of the standard
+    GitHub-hosted runners is free and unlimited on public repositories".'
+  - 'Larger runners are billed even here: "Larger runners are always charged for, even when used by public
+    repositories or when you have quota available from your plan." A larger runner is any label carrying a
+    size suffix -- -N-cores, -large, -xlarge.'
+  - 'The OS multiplier applies to PRIVATE repositories only, and it is steep: Linux $0.006/min, Windows
+    $0.010/min (1.67x), macOS $0.062/min (10.33x). A macOS matrix lane that costs nothing on a public
+    repository consumes ten times the included quota on a private one.'
   payment_method: not-required-for-included-use
   overage: not-applicable-for-standard-public-runners
   status: official
   source_authority: primary
-  verified_at: '2026-08-10'
-  expires_after: '2026-10-09'
+  verified_at: '2026-08-12'
+  expires_after: '2026-10-30'
   source_urls:
   - https://docs.github.com/en/billing/concepts/product-billing/github-actions
   - https://docs.github.com/en/actions/reference/runners/github-hosted-runners
+  - https://docs.github.com/en/billing/managing-billing-for-your-products/managing-billing-for-github-actions/about-billing-for-github-actions
   notes:
   - Public standard runners are documented as free and unlimited.
+  - 'Re-verified 2026-08-12 against the runners reference and the Actions billing page, because the ledger
+    held no macOS coverage at all while this library defaults swift-ci.yml to macos-latest and
+    cross-platform-smoke.yml to a matrix including macOS and Windows. One summary of the billing page
+    asserted that only Linux standard runners are free on public repositories; the sentence it quoted says
+    no such thing, and the runners reference lists macOS under the public standard set. Recorded from the
+    primary wording rather than the summary.'
+  - 'Expiry staggered to 2026-10-30: eight facts already share 2026-10-09, and a re-verified fact rejoining
+    that cluster would rebuild the cliff the staggering rule exists to prevent.'
 - id: github-actions-private-free-personal
   provider: GitHub
   product: Actions included usage

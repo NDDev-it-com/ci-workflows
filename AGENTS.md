@@ -102,9 +102,11 @@ Artifact Attestations: free on public repositories on any plan; private and
 internal require **Enterprise Cloud** (Code Security does not unlock them).
 Private-free repositories release with `release-supply-chain-free.yml`.
 
-Runners: **standard** hosted runners are unmetered on public repositories;
-**larger** ones (`-N-cores`, `-large`, `-xlarge`) are billed from the first minute
-there too. Hosted is not the same as free. A public repository must never route to
+Runners: **standard** hosted runners are unmetered on public repositories — all
+three operating systems, macOS included, `macos-latest` is standard. **Larger**
+ones (`-N-cores`, `-large`, `-xlarge`) are billed from the first minute there too;
+hosted is not the same as free. On **private** repositories the OS multiplier
+bites: macOS is 10.33x Linux. A public repository must never route to
 self-hosted hardware — a forked pull request there is remote code execution on it.
 `docs/05` teaches the routing; the amounts live in `catalog/product-facts.yml`.
 

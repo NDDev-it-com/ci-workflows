@@ -10,6 +10,12 @@ on:
   workflow_call:
     inputs:
       runner:
+        description: >-
+          macos-latest is a STANDARD hosted runner, so this default is free and
+          unlimited on a public repository. On a private one macOS bills at
+          10.33x Linux, so a private caller should think about the lane rather
+          than inherit it. See catalog/product-facts.yml
+          (github-actions-public-standard).
         type: string
         default: 'macos-latest'
       swift_version:

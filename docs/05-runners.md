@@ -112,6 +112,14 @@ Minutes on **standard** GitHub-hosted runners are free and unlimited on public
 repositories and metered on private ones, so the cost-optimal routing is the
 opposite of what "use our own hardware everywhere" would suggest:
 
+**All three operating systems are included.** `macos-latest`, `windows-latest`
+and `ubuntu-latest` are all standard runners, and all three are free and
+unlimited on a public repository — macOS is not an exception. On a **private**
+repository the multiplier is steep: Linux $0.006/min, Windows 1.67x that, macOS
+**10.33x**. A macOS matrix lane that costs a public repository nothing eats ten
+times the quota on a private one, so `cross-platform-smoke.yml`'s default matrix
+is cheap on OSS and expensive behind the paywall.
+
 **Standard** is load-bearing in that sentence. Larger runners — anything whose
 label ends in `-N-cores`, `-large` or `-xlarge` — are billed from the first
 minute *including on public repositories*, and the standard-runner allowance does
