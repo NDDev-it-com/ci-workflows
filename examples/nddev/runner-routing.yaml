@@ -1,0 +1,32 @@
+# Operator mapping for NDDev private repositories. This is estate-specific data,
+# not a reusable-workflow default. Compile it before dispatch; GitHub will not
+# fall back after a self-hosted label has entered the queue.
+schema: nddev-ci-runner-map/v1
+routes:
+  linux:
+    hosted:
+      runner: ubuntu-latest
+      backend: github-hosted-standard
+      capabilities: [container-runtime]
+    fast:
+      runner: nddev-linux-fast
+      backend: self-hosted
+      capabilities: []
+    standard:
+      runner: nddev-linux-standard
+      backend: self-hosted
+      capabilities: []
+    integration:
+      runner: nddev-linux-integration
+      backend: self-hosted
+      capabilities: [container-runtime]
+  macos:
+    hosted:
+      runner: macos-latest
+      backend: github-hosted-standard
+      capabilities: []
+  windows:
+    hosted:
+      runner: windows-latest
+      backend: github-hosted-standard
+      capabilities: []

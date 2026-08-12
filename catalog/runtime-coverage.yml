@@ -59,6 +59,7 @@ entries:
     proven_digest: c371f13f3ecdb33605dabc5f063f05adbef8050dd49b6f4b2896d0774e94796e
     waiver: null
   - workflow: .github/workflows/cross-platform-smoke.yml
+    proven_os: [linux, macos, windows]
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran the default three-OS matrix; the ubuntu, macOS and Windows lanes all executed. Free here because standard hosted runners are unmetered on public repositories in all three operating systems."
@@ -86,6 +87,7 @@ entries:
     proven_digest: 48b4f5ab8c87398ebfaa636be9f9865477866d4a5a0ee2d9692122014d39c807
     waiver: null
   - workflow: .github/workflows/dotnet-ci.yml
+    proven_os: [linux, macos, windows]
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran the restore, build and test lanes against tests/fixtures/dotnet. The fixture is a console app and the caller overrides test_command with `dotnet run`, so the third lane executes a real command without a NuGet test-framework tree. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories."
@@ -99,6 +101,7 @@ entries:
     last_run: null
     waiver: null
   - workflow: .github/workflows/go-ci.yml
+    proven_os: [linux, macos, windows]
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran the build, vet and test lanes against tests/fixtures/go, a module with a test, a benchmark and a fuzz target. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories. Also proven to FAIL: the negative gates in ci.yml fed it a failing Go test and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621986015). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
@@ -133,6 +136,7 @@ entries:
         IaC misconfiguration scan. No fixture tree and no observed run.
       expires_after: "2026-12-31"
   - workflow: .github/workflows/java-ci.yml
+    proven_os: [linux, macos, windows]
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran `mvn -B verify` against tests/fixtures/java, whose POM declares no test dependency so the lifecycle runs without resolving an artifact tree. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories."
@@ -160,6 +164,7 @@ entries:
     proven_digest: 0eb7c8e199e6aaf96dee782842905c16b8b6be0e92c1dead54184443bccf5ac8
     waiver: null
   - workflow: .github/workflows/node-ci.yml
+    proven_os: [linux, macos, windows]
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran bun install and bun test against tests/fixtures/node. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories."
@@ -222,6 +227,7 @@ entries:
     last_run: null
     waiver: null
   - workflow: .github/workflows/python-ci.yml
+    proven_os: [linux, macos, windows]
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran install and test against tests/fixtures/python. This run is also what proved the python_version fix: the summary now reports the interpreter that executed, and it matches the requested one. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories. Also proven to FAIL: the negative gates in ci.yml fed it a failing pytest and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621986015). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
@@ -268,6 +274,7 @@ entries:
     last_run: null
     waiver: null
   - workflow: .github/workflows/rust-ci.yml
+    proven_os: [linux, macos, windows]
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran the build, test, rustfmt and clippy lanes against tests/fixtures/rust, whose committed Cargo.lock lets the default --locked commands run as written. The msrv and test-matrix lanes are guarded by their own inputs and correctly skipped; they remain unproven. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories."
@@ -289,6 +296,7 @@ entries:
     proven_digest: 849b5394257034a01a2253e116430e71e7298bcf084ccc4346e6eb1316a1429c
     waiver: null
   - workflow: .github/workflows/sql-ci.yml
+    proven_os: [linux, macos, windows]
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran sqlfluff on the ansi dialect against tests/fixtures/sql. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories. Also proven to FAIL: the negative gates in ci.yml fed it SQL that violates the ansi dialect and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621986015). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
@@ -296,6 +304,7 @@ entries:
     proven_digest: 706b484365bf3d17b3b693a11ad5ff57207f388d007f0919e94771ff5864bb43
     waiver: null
   - workflow: .github/workflows/swift-ci.yml
+    proven_os: [macos]
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran swift build and swift test against tests/fixtures/swift on macos-latest. XCTest ships with the toolchain, so the package resolves nothing. Free here because standard hosted runners are unmetered on public repositories in all three operating systems."
@@ -303,6 +312,7 @@ entries:
     proven_digest: 0a6b6f52e518670f9a03ffab49ae6b00a809b12cafcdaf7ebf4c603123a1f869
     waiver: null
   - workflow: .github/workflows/terraform-ci.yml
+    proven_os: [linux, macos, windows]
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran fmt -check, init -backend=false and validate against tests/fixtures/terraform, which declares no provider so the lane stays offline. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories. Also proven to FAIL: the negative gates in ci.yml fed it unformatted HCL and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621986015). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
@@ -310,6 +320,7 @@ entries:
     proven_digest: feace71ae75ea17bf8fefc96c368ec2e0b83ae0d36a27aa4ca23264db2c22bb4
     waiver: null
   - workflow: .github/workflows/web-ci.yml
+    proven_os: [linux, macos, windows]
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran stylelint and htmlhint against tests/fixtures/web. The fixture carries its own .stylelintrc.json because stylelint hard-errors without a configuration. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories."

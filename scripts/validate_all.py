@@ -55,6 +55,7 @@ import check_monorepo_routing
 import check_permissions
 import check_public_docs
 import check_runtime_requirements
+import check_runner_routing
 import check_pinned_actions
 import check_privileged_ref_guard
 import check_release_graph
@@ -96,6 +97,7 @@ CORE = [
     ("examples", check_examples.check),
     ("public-docs", check_public_docs.check),
     ("runtime-requirements", check_runtime_requirements.check),
+    ("runner-routing", check_runner_routing.check),
     ("merge-group", check_merge_group.check),
     ("rulesets", check_rulesets.check),
     ("catalog", validate_catalog.check),

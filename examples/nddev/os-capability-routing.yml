@@ -1,0 +1,36 @@
+# NDDev PRIVATE-repository caller compiled from runner-routing.yaml.
+# Each useful job has its final runner before dispatch: there is no routing job
+# and no delayed fallback after a self-hosted label enters GitHub's queue.
+# Do not use the self-hosted Linux routes in a public repository.
+# Replace @<sha> with a pinned full commit SHA of ci-workflows.
+name: os-capability-routing
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+permissions: {}
+jobs:
+  linux-fast:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/actionlint.yml@<sha>
+    with:
+      runner: nddev-linux-fast
+  linux-standard:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/go-ci.yml@<sha>
+    with:
+      runner: nddev-linux-standard
+  linux-integration:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/secret-scan.yml@<sha>
+    with:
+      runner: nddev-linux-integration
+  macos-hosted:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/go-ci.yml@<sha>
+    with:
+      runner: macos-latest
+  windows-hosted:
+    permissions: { contents: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/go-ci.yml@<sha>
+    with:
+      runner: windows-latest

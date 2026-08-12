@@ -11,6 +11,16 @@
 
 ### Added
 
+- **OS and machine-capability routing now fails before useful jobs enter a
+  runner queue.** `catalog/workflow-routing.yml` declares the supported OS and
+  derived machine requirements for every reusable without embedding private
+  labels. `check_runner_routing.py` combines it with an operator mapping and
+  rejects unsupported OS/class pairs, missing container capacity and public
+  repositories targeting self-hosted backends. The NDDev mapping sends Linux
+  fast/standard/integration to their explicit classes and keeps macOS/Windows
+  on standard hosted runners. Runtime-proven OS remains a separate evidence
+  field; static validation is not presented as a live run.
+
 - **A workflow now states what it needs from the machine.** `required_permissions`
   answered what the token needs and `required_settings` what the repository
   needs; nothing answered what the *host* needs, so a caller choosing between

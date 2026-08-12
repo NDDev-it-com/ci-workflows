@@ -142,6 +142,16 @@ def validate_coverage(data: object, reusables: set[str], as_of: dt.date,
         status = entry.get("status")
         if status not in VALID_STATUS:
             problems.append(f"{where}: invalid status {status!r}")
+        proven_os = entry.get("proven_os")
+        if proven_os is not None:
+            if status != "runtime-proven":
+                problems.append(f"{where}: proven_os requires status runtime-proven")
+            elif not isinstance(proven_os, list) or not proven_os \
+                    or len(proven_os) != len(set(proven_os)) \
+                    or set(proven_os) - {"linux", "macos", "windows"}:
+                problems.append(
+                    f"{where}: proven_os must be a non-empty subset of linux/macos/windows"
+                )
         criticality = entry.get("criticality")
         pinned = PINNED_CRITICALITY.get(str(workflow).rsplit("/", 1)[-1])
         if criticality not in VALID_CRITICALITY:

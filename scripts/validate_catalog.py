@@ -148,6 +148,7 @@ def check() -> list[str]:
             "examples/private-paid-ghas/security.yml",
             "examples/nddev/security.yml",
             "examples/nddev/security-private-selfhosted.yml",
+            "examples/nddev/os-capability-routing.yml",
             "examples/personal/security-selfhosted.yml",
         }
         missing_examples -= allowed_aggregate_examples
