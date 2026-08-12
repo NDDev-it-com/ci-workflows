@@ -184,7 +184,10 @@ jobs:
     with:
       runner: ubuntu-latest
       working_directory: tests/fixtures/python
-      install_command: "uv pip install --system -e . pytest"
+      # No --system: the workflow now activates a uv venv on the requested
+      # interpreter, and --system would push the install back onto the runner's
+      # externally-managed system Python, which is what failed the first run.
+      install_command: "uv pip install -e . pytest"
       test_command: "python -m pytest -q"
 
   # supporting — Node lane under bun.
@@ -253,7 +256,13 @@ jobs:
     uses: ./.github/workflows/docs-quality.yml
     with:
       runner: ubuntu-latest
-      working_directory: tests/fixtures/docs
+      # Repo-root-relative on purpose — see the scope note in docs-quality.yml.
+      # The first run of this fixture set working_directory alone and scanned
+      # the whole repository, failing on "NDDev" in docs/02. That is what these
+      # three explicit paths exist to prevent.
+      typos_files: tests/fixtures/docs
+      markdownlint_globs: tests/fixtures/docs/**/*.md
+      lychee_args: '--no-progress --max-concurrency 8 "tests/fixtures/docs/**/*.md"'
 
   # supporting — hadolint against a Dockerfile that is clean at the default
   # `warning` threshold: digest-pinned base, pinned package version, non-root.
@@ -300,29 +309,6 @@ jobs:
       contents: read
     uses: ./.github/workflows/cross-platform-smoke.yml
 
-  # supporting — the read-only half of the benchmark pair. Deliberately
-  # benchmark-compare and NOT benchmark: the writing twin hard-wires
-  # `auto-push: true`, so proving it would commit benchmark history to a
-  # gh-pages branch. A fixture estate must not change the repository it runs
-  # in, so benchmark.yml keeps an honest unverified record instead.
-  #
-  # output_file_path is repo-root-relative on purpose. `working_directory`
-  # applies to `run:` steps only, so the bench command writes inside the fixture
-  # while the action step that reads the file resolves from the workspace root.
-  fixture-benchmark-compare:
-    name: fixture / benchmark-compare
-    permissions:
-      contents: read
-    uses: ./.github/workflows/benchmark-compare.yml
-    with:
-      runner: ubuntu-latest
-      language: go
-      working_directory: tests/fixtures/go
-      bench_command: "go test -bench=. -benchmem -run=XXX_no_tests ./... | tee output.txt"
-      tool: go
-      output_file_path: tests/fixtures/go/output.txt
-      fail_on_alert: false
-
   # One place to read the outcome, and the digests to paste into the ledger when
   # promoting a record. Never required; this is a report, not a gate.
   evidence:
@@ -349,7 +335,6 @@ jobs:
       - fixture-web-ci
       - fixture-container-ci
       - fixture-cross-platform-smoke
-      - fixture-benchmark-compare
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -396,7 +381,6 @@ jobs:
               "fixture-web-ci": "web-ci.yml",
               "fixture-container-ci": "container-ci.yml",
               "fixture-cross-platform-smoke": "cross-platform-smoke.yml",
-              "fixture-benchmark-compare": "benchmark-compare.yml",
           }
           results = json.loads(os.environ["RESULTS"])
           run_url = os.environ["RUN_URL"]

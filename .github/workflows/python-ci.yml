@@ -59,11 +59,16 @@ jobs:
         with:
           version: ${{ inputs.uv_version }}
           enable-cache: true
-
-      - name: Install Python
-        env:
-          PY_VERSION: ${{ inputs.python_version }}
-        run: uv python install "$PY_VERSION"
+          # python-version sets UV_PYTHON; activate-environment creates a venv
+          # on that interpreter and puts it on PATH for every later step. Both
+          # are needed. A previous version ran `uv python install` on its own,
+          # which downloaded the requested Python and then left it unused: the
+          # caller's install and test commands resolved `python` from PATH and
+          # got the runner's system interpreter instead. The first fixture run
+          # caught it — the job announced "Python 3.13 tests passed" while
+          # pytest had run on the image's 3.12.
+          python-version: ${{ inputs.python_version }}
+          activate-environment: true
 
       - name: Install dependencies
         if: ${{ inputs.install_command != '' }}
@@ -77,4 +82,8 @@ jobs:
           PY_VERSION: ${{ inputs.python_version }}
         run: |
           bash -euo pipefail -c "$TEST_COMMAND"
-          echo "Python ${PY_VERSION} tests passed." >> "$GITHUB_STEP_SUMMARY"
+          # Report the interpreter that actually ran, not the one that was
+          # requested. Printing the input was how the inert python_version
+          # stayed invisible for so long.
+          echo "Tests passed on $(python -V 2>&1) (requested ${PY_VERSION})." \
+            >> "$GITHUB_STEP_SUMMARY"

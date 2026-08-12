@@ -23,14 +23,14 @@ entries:
     criticality: supporting
     status: unverified
     validator: scripts/check_benchmark_contract.py
-    evidence: 'Executable contract validator exercises the embedded program(s); no live workflow_call run.'
+    evidence: "Fixtured and run; the run failed at the comparison step with `couldn't find remote ref gh-pages`. That is a genuine precondition rather than a defect: the read-only twin fetches history that only its writing twin can create, and this repository has never run benchmark.yml. Toolchain setup and the bench command executed successfully before that point."
     last_run: null
     waiver: null
   - workflow: .github/workflows/benchmark.yml
     criticality: supporting
     status: unverified
     validator: scripts/check_benchmark_contract.py
-    evidence: 'Executable contract validator exercises the embedded program(s); no live workflow_call run.'
+    evidence: "Not fixturable in this repository, and the reason is structural rather than missing effort: benchmark.yml hard-wires `auto-push: true`, so any proving run would commit benchmark history to a gh-pages branch. A fixture estate must not change the repository it runs in."
     last_run: null
     waiver: null
   - workflow: .github/workflows/container-ci.yml
