@@ -10,7 +10,7 @@ metadata:
   version: 1.0.0
   owner: NDDev
   status: proposed
-  reviewed_at: '2026-07-11'
+  reviewed_at: '2026-08-12'
 ---
 
 # GitHub Actions Authoring Standard
@@ -102,6 +102,25 @@ Every job should have:
 - clear retry ownership and no unbounded loops;
 - cleanup behavior for partial failures;
 - final gate semantics that fail for required upstream failures or unexpected skips.
+
+### 6b. Pin the shell in every job that declares defaults
+
+A job-level `defaults.run` **replaces** the workflow-level one rather than
+merging with it key by key. Declaring `working-directory` in a job therefore
+drops the `shell: bash` the same file declares at the top, and the loss is
+invisible on Linux because bash is the default there anyway.
+
+On Windows the job silently becomes PowerShell. A bash line continuation and a
+`>>` redirect become syntax errors, and `${VAR}` expands to nothing — so a step
+can print a confident, wrong summary before failing on something unrelated.
+
+So: **if a job declares `defaults.run` at all, it must also pin `shell`.** This
+is worth a validator rather than a review habit, because nothing about the
+symptom points at the cause.
+
+The tell that a repository has already been bitten is a workflow setting
+`shell: bash` on every individual step instead of trusting a default. Treat that
+as evidence, not as noise.
 
 ### 7. Design cache and artifacts as trust boundaries
 

@@ -10,7 +10,7 @@ metadata:
   version: 1.0.0
   owner: NDDev
   status: proposed
-  reviewed_at: '2026-07-12'
+  reviewed_at: '2026-08-12'
 ---
 
 # CI Free-Tier and Zero-Spend Planner
@@ -76,7 +76,10 @@ Show assumptions and a sensitivity range.
 
 Use explicit categories:
 
-- public unmetered standard runners;
+- public unmetered standard runners — **all three operating systems**, not
+  Linux only: macOS and Windows standard runners are unmetered on public
+  repositories too. The exception is size, not platform: any larger runner
+  (`-N-cores`, `-large`, `-xlarge`) is billed there from the first minute;
 - recurring quota;
 - credit quota with resource multipliers;
 - application/OSS grant;
@@ -121,7 +124,9 @@ Recommended default:
 - GitHub standard runners as primary execution pool;
 - native public security surfaces plus OSS scanners;
 - attestations and immutable releases where appropriate;
-- external OSS grants only for independent platform/Windows/mobile coverage or burst capacity;
+- external OSS grants only for burst capacity or platforms GitHub does not
+  host. Not for Windows or macOS coverage: both are free here, and reaching
+  for a grant to get them is a common and expensive misreading;
 - never place untrusted forks on trusted persistent self-hosted runners.
 
 **Private Free**
