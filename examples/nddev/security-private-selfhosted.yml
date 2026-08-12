@@ -22,10 +22,16 @@
 # `github-actions/docs/architecture.md`:
 #
 #   nddev-linux-fast         format, lint, typecheck, short unit tests
-#                            (no job credential, no Docker)
-#   nddev-linux-standard     normal builds and tests, repository-scoped credentials
+#                            (no job credential, no Docker)          [no host yet]
+#   nddev-linux-standard     normal builds and tests, repo-scoped credentials
 #   nddev-linux-integration  Docker, Compose, databases, browsers
-#   nddev-linux-release      signing, publish, deploy (isolated, OIDC-only)
+#   nddev-linux-release      signing, publish, deploy (isolated)     [no host yet]
+#
+# DECLARED IS NOT DEPLOYED. As of 2026-08-11 the fleet's GARM holds one
+# repository entity and serves `NDDev-it-com/github-actions` alone, so none of
+# these labels can take a job from another repository until the organization
+# entity and its scale sets are rolled out. Until then this file documents the
+# intended routing; a caller that needs to run today names a hosted runner.
 #
 # The class is not cosmetic. `secret-scan` runs gitleaks as a digest-pinned
 # container, so it needs the class that has a Docker daemon; on

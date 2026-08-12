@@ -67,6 +67,13 @@ Dependabot bump would have flipped it.
 - A public repository on a persistent self-hosted fleet stays out of policy
   regardless of this rule. Making that safe needs ephemeral runners or fork-PR
   approval for all external contributors, neither of which this library controls.
+
+  **Update 2026-08-12:** the estate's replacement fleet is ephemeral by
+  construction — every job gets a fresh VM, runs once, and the VM is destroyed
+  without being reused after it has executed workflow code. That is the first of
+  the two conditions above. It does not make this library's default safe, which
+  is a separate question about resolvability, but it removes the reason a public
+  estate repository could not use the fleet at all.
 - The same trap exists in the platform API: a `PATCH` to code-scanning default
   setup that omits `runner_type` resets it to `standard`, silently moving a
   private repository off the fleet. Send the field on every write.

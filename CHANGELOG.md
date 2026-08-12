@@ -4,6 +4,32 @@
 
 ### Fixed
 
+- **The estate fleet is ephemeral, and only two of its four classes have a
+  host.** Reading `modules/github-actions` instead of inferring from a label
+  produced three corrections:
+
+  - `catalog/profiles.yml` recorded `runner_mode: self-hosted-persistent` for the
+    estate profile. The fleet gives every job a fresh VM, runs it once and
+    destroys it, and explicitly does not reuse a VM after that VM has executed
+    workflow code. That is `self-hosted-ephemeral`, and the distinction is the
+    one ADR 0004 named as the condition that would make a public fork safe on
+    self-hosted hardware — so its consequence is updated rather than left saying
+    the condition is unmet.
+
+  - **Declared is not deployed.** The fleet publishes four scale-set classes;
+    `nddev-linux-fast` and `nddev-linux-release` have no host, and the fleet's
+    GARM holds one repository entity, so it serves `NDDev-it-com/github-actions`
+    alone. No `nddev-*` label can take a job from any other estate repository
+    until the organization entity is rolled out. The estate example now says so
+    instead of reading as runnable.
+
+  - The previous entry called the classes a routing fix. They are the *intended*
+    routing; today they are aspirational for every repository but one. Naming a
+    real label is not the same as naming a reachable one, and the failure mode is
+    identical to the retired label's: the job queues rather than fails.
+
+### Fixed
+
 - **Corrected a claim I made about the estate's runners.** The previous entry
   said the `amsterdam` fleet "no longer exists" and that the estate had moved to
   GitHub-hosted runners. Only the first half is right: the **label** was retired,
