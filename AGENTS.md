@@ -9,7 +9,7 @@ contracts below are strict.
 
 | | |
 | --- | --- |
-| `.github/workflows/*.yml` | The product: 46 `on: workflow_call` reusables. Plus eight self workflows — `ci.yml`, `release.yml`, `maintenance.yml` (scheduled advisory sweep), `runtime-fixtures.yml` (the evidence estate), `codeql.yml`, `dependency-review.yml`, `gitleaks.yml`, `scorecard.yml`. |
+| `.github/workflows/*.yml` | The product: 46 `on: workflow_call` reusables. Plus nine self workflows — `ci.yml`, `release.yml`, `maintenance.yml` (scheduled advisory sweep), `runtime-fixtures.yml` and `runtime-fixtures-languages.yml` (the evidence estate, split in two), `codeql.yml`, `dependency-review.yml`, `gitleaks.yml`, `scorecard.yml`. |
 | `catalog/*.yml` | Source of truth. One concern each: `capabilities` (what exists, per tier), `tools` (pins + `used_by`), `product-facts` (volatile external plan/price/quota facts, dated and expiring), `runtime-coverage` (what is actually proven to run), `profiles` (operating modes), `deprecations`. |
 | `scripts/` | The validators. `validate_all.py` aggregates them. |
 | `docs/generated/*` | Rendered from the catalog. Never hand-edit. |
@@ -54,8 +54,9 @@ Touch this → also do this:
   regenerate docs, `CHANGELOG.md` under `[Unreleased]`.
 - **a *proven* workflow** (`runtime-coverage.yml` says `runtime-proven`) → the
   `proven_digest` no longer matches and the gate says so. Push a `fixtures/**`
-  branch: `runtime-fixtures.yml` calls twenty-four reusables as a consumer would, most
-  against a minimal project under `tests/fixtures/`, and its
+  branch: the estate — `runtime-fixtures.yml` for the nine tree-level lanes and
+  `runtime-fixtures-languages.yml` for the rest — calls twenty-seven reusables as a
+  consumer would, most against a minimal project under `tests/fixtures/`, and its
   evidence job prints the run URL and each new digest ready to paste back. Or drop
   the record to `static-only`. Never leave a stale run masquerading as proof.
 - **a catalog file** → `python3 scripts/generate_docs.py`.

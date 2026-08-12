@@ -1,0 +1,524 @@
+name: runtime-fixtures-languages
+
+# The consumer fixture estate. This is what `catalog/runtime-coverage.yml` has
+# been honest about not having.
+#
+# Static validation proves the contracts hold in the tree. It cannot prove a
+# reusable workflow *starts* — that its `workflow_call` interface resolves, that
+# its permissions are sufficient, that its downloads and checksums work on a real
+# runner. ADR 0003 says so plainly: "The fixture estate that would supply real
+# proof is still absent." Two of forty-six workflows were runtime-proven, and
+# both only because this repository happened to call them for its own sake.
+#
+# So this workflow calls them deliberately, as a consumer would, with the same
+# safe inputs a consumer would pass. Each successful job is real evidence for one
+# reusable, and its run URL plus the workflow's sha256 go into the ledger.
+#
+# Deliberately NOT a required check and deliberately not on `pull_request`:
+# evidence production is not merge gating, and running the whole estate on every
+# pull request would be a cost this buys nothing back. `ci-gate` does not depend
+# on it.
+#
+# Triggers: a push to `fixtures/**` produces evidence on demand (workflow_dispatch
+# only works from the default branch, which is no use while proving a change);
+# the weekly schedule keeps evidence from going stale as pins move.
+#
+# Every call names `runner: ubuntu-latest` explicitly. These reusables default to
+# a private self-hosted label, and a default belongs to the pinned commit, not to
+# the caller — the same rule every example here follows.
+
+on:
+  push:
+    branches: ['fixtures/**']
+  schedule:
+    # Sundays 04:00 UTC — well clear of the Monday Dependabot and maintenance
+    # windows, so a failure here is not confused with a pin bump.
+    - cron: "0 4 * * 0"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: runtime-fixtures-languages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fixture-go-ci:
+    name: fixture / go-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/go-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/go
+
+  # supporting — Python lane. test_command is required by the contract, so this
+  # also proves the required-input path.
+  fixture-python-ci:
+    name: fixture / python-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/python-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/python
+      # No --system: the workflow now activates a uv venv on the requested
+      # interpreter, and --system would push the install back onto the runner's
+      # externally-managed system Python, which is what failed the first run.
+      install_command: "uv pip install -e . pytest"
+      test_command: "python -m pytest -q"
+
+  # supporting — Node lane under bun.
+  fixture-node-ci:
+    name: fixture / node-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/node-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/node
+      test_command: "bun test"
+
+  # supporting — Rust build/test/fmt/clippy lanes. The fixture ships a
+  # hand-written Cargo.lock so the default `--locked` commands are exercised as
+  # written rather than relaxed for the fixture's convenience.
+  fixture-rust-ci:
+    name: fixture / rust-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/rust-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/rust
+      fmt_command: "cargo fmt --all -- --check"
+      clippy_command: "cargo clippy --locked --all-targets -- -D warnings"
+
+  # supporting — C++ configure/build/test lanes through CMake and ctest.
+  fixture-cpp-ci:
+    name: fixture / cpp-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/cpp-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/cpp
+
+  # supporting — Terraform fmt/init/validate. The fixture declares no provider,
+  # so init stays offline and the lane cannot fail on a registry outage.
+  fixture-terraform-ci:
+    name: fixture / terraform-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/terraform-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/terraform
+
+  # supporting — sqlfluff lint on the ansi dialect.
+  fixture-sql-ci:
+    name: fixture / sql-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/sql-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/sql
+
+  # supporting — the three docs lanes at once: lychee, typos and markdownlint.
+  # The fixture's only link is relative and committed alongside it, so the link
+  # checker cannot fail on someone else's outage.
+  fixture-docs-quality:
+    name: fixture / docs-quality
+    permissions:
+      contents: read
+    uses: ./.github/workflows/docs-quality.yml
+    with:
+      runner: ubuntu-latest
+      # Repo-root-relative on purpose — see the scope note in docs-quality.yml.
+      # The first run of this fixture set working_directory alone and scanned
+      # the whole repository, failing on "NDDev" in docs/02. That is what these
+      # three explicit paths exist to prevent.
+      typos_files: tests/fixtures/docs
+      markdownlint_globs: tests/fixtures/docs/**/*.md
+      lychee_args: '--no-progress --max-concurrency 8 "tests/fixtures/docs/**/*.md"'
+
+  # supporting — hadolint against a Dockerfile that is clean at the default
+  # `warning` threshold: digest-pinned base, pinned package version, non-root.
+  fixture-hadolint:
+    name: fixture / hadolint-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/hadolint-ci.yml
+    with:
+      runner: ubuntu-latest
+      dockerfile: tests/fixtures/docker/Dockerfile
+
+  # supporting — stylelint and htmlhint. The fixture carries its own
+  # .stylelintrc.json because stylelint hard-errors without a configuration,
+  # which the default lint command otherwise hides behind a working directory.
+  fixture-web-ci:
+    name: fixture / web-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/web-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/web
+
+  # supporting — Trivy filesystem scan, pointed at the fixture estate rather
+  # than the whole repository so the lane is fast and its subject is stable.
+  fixture-container-ci:
+    name: fixture / container-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/container-ci.yml
+    with:
+      runner: ubuntu-latest
+      scan_type: fs
+      scan_ref: tests/fixtures
+
+  # supporting — the three-OS matrix. Standard hosted runners are unmetered on
+  # public repositories in all three operating systems, so proving the macOS and
+  # Windows lanes here costs nothing; on a private repository this same job
+  # would bill macOS at 10.33x, which is why the record notes the tier.
+  fixture-cross-platform-smoke:
+    name: fixture / cross-platform-smoke
+    permissions:
+      contents: read
+    uses: ./.github/workflows/cross-platform-smoke.yml
+
+
+  # supporting — Maven compile and package. The POM declares no test dependency,
+  # so `mvn -B verify` runs the default lifecycle without resolving an artifact
+  # tree; a JUnit dependency would make this a Maven Central availability test.
+  fixture-java-ci:
+    name: fixture / java-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/java-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/java
+
+  # supporting — the .NET restore, build and run lanes. test_command is
+  # overridden to `dotnet run` because the fixture is a console app: a real test
+  # project would need the test SDK plus a framework package, and the point here
+  # is the workflow's plumbing, not NuGet's.
+  fixture-dotnet-ci:
+    name: fixture / dotnet-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/dotnet-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/dotnet
+      test_command: "dotnet run --no-build --configuration Release"
+
+  # supporting — swift build and swift test on macOS. XCTest ships with the
+  # toolchain, so the package resolves nothing. This runs on macos-latest, which
+  # is a standard hosted runner and therefore unmetered here; the same job on a
+  # private repository would bill at 10.33x Linux.
+  fixture-swift-ci:
+    name: fixture / swift-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/swift-ci.yml
+    with:
+      # Explicit even though it equals the reusable's default: the contract is
+      # that a public caller states its runner rather than inheriting one that
+      # could change under it.
+      runner: macos-latest
+      working_directory: tests/fixtures/swift
+
+
+  # --- Three-operating-system lanes -----------------------------------------
+  # Every reusable above exposes a `runner` input, which is a promise that a
+  # consumer may pick their operating system. Until now that promise was only
+  # ever tested on Linux. Standard hosted runners are unmetered on public
+  # repositories in all three, so testing the promise here costs nothing and
+  # catches the class of defect that only appears off Linux: path separators,
+  # the shell git-bash provides on Windows, and toolchain availability.
+  #
+  # The Linux lane already runs above; these add macOS and Windows.
+
+  fixture-go-ci-os:
+    name: fixture / go-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/go-ci.yml
+    with:
+      runner: ${{ matrix.os }}
+      working_directory: tests/fixtures/go
+
+  fixture-python-ci-os:
+    name: fixture / python-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/python-ci.yml
+    with:
+      runner: ${{ matrix.os }}
+      working_directory: tests/fixtures/python
+      install_command: "uv pip install -e . pytest"
+      test_command: "python -m pytest -q"
+
+  fixture-rust-ci-os:
+    name: fixture / rust-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/rust-ci.yml
+    with:
+      runner: ${{ matrix.os }}
+      working_directory: tests/fixtures/rust
+
+  fixture-dotnet-ci-os:
+    name: fixture / dotnet-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/dotnet-ci.yml
+    with:
+      runner: ${{ matrix.os }}
+      working_directory: tests/fixtures/dotnet
+      test_command: "dotnet run --no-build --configuration Release"
+
+  fixture-java-ci-os:
+    name: fixture / java-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/java-ci.yml
+    with:
+      runner: ${{ matrix.os }}
+      working_directory: tests/fixtures/java
+
+  fixture-node-ci-os:
+    name: fixture / node-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/node-ci.yml
+    with:
+      runner: ${{ matrix.os }}
+      working_directory: tests/fixtures/node
+      test_command: "bun test"
+
+  fixture-terraform-ci-os:
+    name: fixture / terraform-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/terraform-ci.yml
+    with:
+      runner: ${{ matrix.os }}
+      working_directory: tests/fixtures/terraform
+
+  fixture-sql-ci-os:
+    name: fixture / sql-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/sql-ci.yml
+    with:
+      runner: ${{ matrix.os }}
+      working_directory: tests/fixtures/sql
+
+  fixture-web-ci-os:
+    name: fixture / web-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/web-ci.yml
+    with:
+      runner: ${{ matrix.os }}
+      working_directory: tests/fixtures/web
+
+  # promoting a record. Never required; this is a report, not a gate.
+  fixture-benchmark-compare:
+    name: fixture / benchmark-compare
+    permissions:
+      contents: read
+    uses: ./.github/workflows/benchmark-compare.yml
+    with:
+      runner: ubuntu-latest
+      language: go
+      working_directory: tests/fixtures/go
+      bench_command: "go test -bench=. -benchmem -run=XXX_no_tests ./... | tee output.txt"
+      tool: go
+      output_file_path: tests/fixtures/go/output.txt
+      external_data_json_path: tests/fixtures/go/benchmark-data.json
+      fail_on_alert: false
+
+  # supporting — R lane. use_public_rspm (the default) serves precompiled
+  # supporting — R lane. use_public_rspm (the default) serves precompiled
+  # binaries, so installing testthat is a download rather than a compile.
+  fixture-r-ci:
+    name: fixture / r-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/r-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/r
+
+  # supporting — mutation testing over the Rust fixture. cargo-mutants is used
+  # supporting — mutation testing over the Rust fixture. cargo-mutants is used
+  # rather than a Python or JS mutator because the crate is dependency-free, so
+  # the only install is the mutator itself.
+  fixture-mutation-testing:
+    name: fixture / mutation-testing
+    permissions:
+      contents: read
+    uses: ./.github/workflows/mutation-testing.yml
+    with:
+      runner: ubuntu-latest
+      language: rust
+      working_directory: tests/fixtures/rust
+      install_command: "cargo install cargo-mutants --locked"
+      mutation_command: "cargo mutants --no-shuffle --test-tool=cargo -j 2"
+
+  # One place to read the outcome, and the digests to paste into the ledger when
+  evidence:
+    name: evidence summary (languages)
+    needs:
+      - fixture-mutation-testing
+      - fixture-r-ci
+      - fixture-benchmark-compare
+      - fixture-go-ci
+      - fixture-python-ci
+      - fixture-node-ci
+      - fixture-rust-ci
+      - fixture-cpp-ci
+      - fixture-terraform-ci
+      - fixture-sql-ci
+      - fixture-docs-quality
+      - fixture-hadolint
+      - fixture-web-ci
+      - fixture-container-ci
+      - fixture-cross-platform-smoke
+      - fixture-java-ci
+      - fixture-dotnet-ci
+      - fixture-swift-ci
+      - fixture-go-ci-os
+      - fixture-python-ci-os
+      - fixture-rust-ci-os
+      - fixture-dotnet-ci-os
+      - fixture-java-ci-os
+      - fixture-node-ci-os
+      - fixture-terraform-ci-os
+      - fixture-sql-ci-os
+      - fixture-web-ci-os
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Render evidence for the runtime-coverage ledger
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          python3 -I <<'PY'
+          import hashlib
+          import json
+          import os
+          import pathlib
+
+          # fixture job id -> the reusable it proves
+          PROVES = {
+              "fixture-go-ci": "go-ci.yml",
+              "fixture-python-ci": "python-ci.yml",
+              "fixture-node-ci": "node-ci.yml",
+              "fixture-rust-ci": "rust-ci.yml",
+              "fixture-cpp-ci": "cpp-ci.yml",
+              "fixture-terraform-ci": "terraform-ci.yml",
+              "fixture-sql-ci": "sql-ci.yml",
+              "fixture-docs-quality": "docs-quality.yml",
+              "fixture-hadolint": "hadolint-ci.yml",
+              "fixture-web-ci": "web-ci.yml",
+              "fixture-container-ci": "container-ci.yml",
+              "fixture-cross-platform-smoke": "cross-platform-smoke.yml",
+              "fixture-java-ci": "java-ci.yml",
+              "fixture-dotnet-ci": "dotnet-ci.yml",
+              "fixture-swift-ci": "swift-ci.yml",
+              "fixture-mutation-testing": "mutation-testing.yml",
+              "fixture-r-ci": "r-ci.yml",
+              "fixture-benchmark-compare": "benchmark-compare.yml",
+              "fixture-go-ci-os": "go-ci.yml",
+              "fixture-python-ci-os": "python-ci.yml",
+              "fixture-rust-ci-os": "rust-ci.yml",
+              "fixture-dotnet-ci-os": "dotnet-ci.yml",
+              "fixture-java-ci-os": "java-ci.yml",
+              "fixture-node-ci-os": "node-ci.yml",
+              "fixture-terraform-ci-os": "terraform-ci.yml",
+              "fixture-sql-ci-os": "sql-ci.yml",
+              "fixture-web-ci-os": "web-ci.yml",
+          }
+          results = json.loads(os.environ["RESULTS"])
+          run_url = os.environ["RUN_URL"]
+
+          lines = [
+              "### Runtime evidence",
+              "",
+              f"Run: {run_url}",
+              "",
+              "Only a `success` row is evidence. Copy `last_run` and `proven_digest`",
+              "into `catalog/runtime-coverage.yml` and set the status to",
+              "`runtime-proven`. A failed or skipped row proves nothing — leave that",
+              "record where it is.",
+              "",
+              "| Workflow | Result | proven_digest |",
+              "| --- | --- | --- |",
+          ]
+          for job, workflow in sorted(PROVES.items(), key=lambda kv: kv[1]):
+              result = (results.get(job) or {}).get("result", "missing")
+              path = pathlib.Path(".github/workflows") / workflow
+              digest = (
+                  hashlib.sha256(path.read_bytes()).hexdigest()
+                  if path.is_file()
+                  else "FILE MISSING"
+              )
+              mark = "" if result == "success" else " ⚠"
+              lines.append(f"| `{workflow}` | {result}{mark} | `{digest}` |")
+
+          summary = pathlib.Path(os.environ["GITHUB_STEP_SUMMARY"])
+          with summary.open("a", encoding="utf-8") as handle:
+              handle.write("\n".join(lines) + "\n")
+          print("\n".join(lines))
+          PY

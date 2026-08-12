@@ -25,6 +25,7 @@ SELF_WORKFLOWS = {
     "gitleaks.yml",
     "release.yml",
     "runtime-fixtures.yml",
+    "runtime-fixtures-languages.yml",
     "scorecard.yml",
 }
 
