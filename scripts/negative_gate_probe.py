@@ -25,6 +25,13 @@ local run reported "gate refused as required" when the real reason was
 `terraform: command not found` — exit 127. A missing tool is indistinguishable
 from a working gate if you only ever look at the failing side. So:
 
+A step that installs a tool tells the runner about it by appending to
+`$GITHUB_PATH`, and the runner applies that to later steps. Nothing does that
+here, so the probe emulates it: `--before` gets a real `GITHUB_PATH` file and
+whatever it writes there is prepended to `PATH` for the steps that follow.
+hadolint downloads its own binary that way, and without the emulation the probe
+reported exit 127 — which it correctly refused to read as a verdict.
+
 * `--bad` must make the step exit non-zero — the claim the estate could not
   make before;
 * `--good` must make the same step exit zero — the control that proves the
@@ -40,6 +47,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -182,22 +190,49 @@ def main() -> int:
     if args.before:
         prior = find_step(Path(args.workflow), args.job, args.before)
         print(f"── {label}: preparing with step {args.before!r}")
-        prior_env = dict(os.environ)
-        for key, value in (prior.get("env") or {}).items():
-            prior_env[key] = _resolve(str(value), inputs)
-        prior_env.setdefault("GITHUB_STEP_SUMMARY", os.devnull)
-        if run_in(args.good, prior["run"], prior_env) != 0:
-            print(
-                f"✗ {label}: preparatory step {args.before!r} failed, so nothing "
-                "below proves anything about the gate.",
-                file=sys.stderr,
-            )
-            return 1
+        with tempfile.TemporaryDirectory() as scratch:
+            path_file = Path(scratch) / "github_path"
+            path_file.touch()
+            prior_env = dict(os.environ)
+            for key, value in (prior.get("env") or {}).items():
+                prior_env[key] = _resolve(str(value), inputs)
+            prior_env.setdefault("GITHUB_STEP_SUMMARY", os.devnull)
+            prior_env["GITHUB_PATH"] = str(path_file)
+            prior_env.setdefault("RUNNER_TEMP", scratch)
+            if run_in(args.good, prior["run"], prior_env) != 0:
+                print(
+                    f"✗ {label}: preparatory step {args.before!r} failed, so "
+                    "nothing below proves anything about the gate.",
+                    file=sys.stderr,
+                )
+                return 1
+            # The runner prepends whatever a step appends to $GITHUB_PATH.
+            added = [
+                line.strip()
+                for line in path_file.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+            if added:
+                os.environ["PATH"] = os.pathsep.join(
+                    added + [os.environ.get("PATH", "")]
+                )
+                print(f"   PATH += {', '.join(added)}")
+            os.environ.setdefault("RUNNER_TEMP", scratch)
+            # env_for() copies os.environ, so both cases below see the tool.
+            bad_code = run_in(args.bad, step["run"], env_for(parse(args.bad_input)))
+            good_code = run_in(args.good, step["run"], env_for(parse(args.good_input)))
+            return _verdict(label, args, bad_code, good_code)
 
     print(f"── {label}: must REJECT {args.bad}")
     bad_code = run_in(args.bad, step["run"], env_for(parse(args.bad_input)))
     print(f"── {label}: must ACCEPT {args.good}")
     good_code = run_in(args.good, step["run"], env_for(parse(args.good_input)))
+    return _verdict(label, args, bad_code, good_code)
+
+
+def _verdict(label: str, args, bad_code: int, good_code: int) -> int:
+    """Decide, and say why in terms of what the reader should do about it."""
+    problems: list[str] = []
 
     for code, where in ((bad_code, args.bad), (good_code, args.good)):
         if code == 127:

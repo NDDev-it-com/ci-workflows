@@ -76,11 +76,15 @@ jobs:
           activate-environment: true
           enable-cache: false
 
-      - name: Install both Python fixtures
+      - name: Install the probe's dependency and both Python fixtures
         run: |
           set -euo pipefail
-          # Both packages must be importable in one environment: the probe runs
-          # the same step twice and only the working directory changes.
+          # The probe reads workflow YAML through the repository's strict
+          # loader, so it needs PyYAML — from the hash-locked file CI already
+          # uses, not an ad-hoc install.
+          uv pip install --require-hashes -r requirements-ci.txt
+          # Both fixture packages must be importable in one environment: the
+          # probe runs the same step twice and only the directory changes.
           uv pip install -e tests/fixtures/python -e tests/fixtures/negative/python pytest
 
       - name: terraform-ci must reject unformatted HCL
@@ -125,6 +129,19 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        with:
+          version: 0.11.30
+          python-version: '3.13'
+          activate-environment: true
+          enable-cache: false
+
+      - name: Install the probe's dependency
+        run: |
+          set -euo pipefail
+          uv pip install --require-hashes -r requirements-ci.txt
 
       # hadolint varies by input rather than by directory, and its binary is
       # installed by an earlier step of the workflow itself, so --before runs
