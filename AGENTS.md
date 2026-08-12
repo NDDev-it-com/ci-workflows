@@ -105,7 +105,7 @@ internal require **Enterprise Cloud** (Code Security does not unlock them).
 Private-free repositories release with `release-supply-chain-free.yml`.
 
 Runners: **standard** hosted runners are unmetered on public repositories — all
-three operating systems, macOS included, `macos-latest` is standard. Six
+three operating systems, macOS included, `macos-latest` is standard. Nine
 reusables are proven on all three; the fixture estate runs them there because
 it costs nothing and Windows is where non-portable shell syntax surfaces. **Larger**
 ones (`-N-cores`, `-large`, `-xlarge`) are billed from the first minute there too;

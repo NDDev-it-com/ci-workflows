@@ -4,12 +4,13 @@
 
 ### Added
 
-- **Six reusables are now proven on all three operating systems.** Every
+- **Nine reusables are now proven on all three operating systems.** Every
   reusable exposes a `runner` input — a promise that a consumer may choose their
   OS — and until now that promise had only ever been tested on Linux. Standard
   hosted runners are unmetered on public repositories in all three, so
-  `go-ci`, `python-ci`, `node-ci`, `rust-ci`, `dotnet-ci` and `java-ci` now run
-  on macOS and Windows in the fixture estate as well.
+  `go-ci`, `python-ci`, `node-ci`, `rust-ci`, `dotnet-ci`, `java-ci`,
+  `terraform-ci`, `sql-ci` and `web-ci` now run on macOS and Windows in the
+  fixture estate as well.
 
   The runner rule had to learn matrices first: it required a literal label, so
   `${{ matrix.os }}` read as "not a standard hosted runner" and three-OS
