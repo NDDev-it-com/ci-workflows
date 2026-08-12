@@ -16,15 +16,15 @@ entries:
     criticality: required-gate
     status: runtime-proven
     evidence: 'Called by runtime-fixtures.yml through a relative ref, re-proved after the runner default moved to ubuntu-latest; the Linux X64 runner guard, the checksum-verified binary install and the per-job Git-config isolation all executed live.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231913
-    proven_digest: 81e40be6896d24dfbdc9aa3b137142fbcb884560f7910d07c1ece7c6226fbc42
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242193
+    proven_digest: 84b1c1c470555e56933d164718fa35569aebe6146822c12b92c949f0a7b9701c
     waiver: null
   - workflow: .github/workflows/benchmark-compare.yml
     criticality: supporting
     status: runtime-proven
     validator: scripts/check_benchmark_contract.py
     evidence: "Fixture caller ran the Go bench command and the comparison step against tests/fixtures/go. Provable only since external_data_json_path was exposed: with it set the action stores history in a file and no longer uses a Git branch, so the lane no longer fails fetching a gh-pages branch this repository has never had."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231921
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
     proven_digest: 18e36f6ef1b1ec4cc6d104026744f17f4fdbc8da511e7f5f850c4a0274f4cbd5
     waiver: null
   - workflow: .github/workflows/benchmark.yml
@@ -38,7 +38,7 @@ entries:
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran the Trivy filesystem scan against tests/fixtures."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231921
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
     proven_digest: 6ec4449f45f9aa662524b88b2e4d2cec2d2ff15f6275afa05a5e75a36045372d
     waiver: null
   - workflow: .github/workflows/coverage-gate.yml
@@ -55,14 +55,14 @@ entries:
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran the configure, build and ctest lanes against tests/fixtures/cpp."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231921
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
     proven_digest: c371f13f3ecdb33605dabc5f063f05adbef8050dd49b6f4b2896d0774e94796e
     waiver: null
   - workflow: .github/workflows/cross-platform-smoke.yml
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran the default three-OS matrix; the ubuntu, macOS and Windows lanes all executed. Free here because standard hosted runners are unmetered on public repositories in all three operating systems."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231921
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
     proven_digest: 768e143bfe9fa3fe97463b926098ce6ad62ba30bf33751f36ce20af58655ebe3
     waiver: null
   - workflow: .github/workflows/dart-flutter-ci.yml
@@ -74,22 +74,22 @@ entries:
   - workflow: .github/workflows/docs-ci.yml
     criticality: supporting
     status: runtime-proven
-    evidence: "'Called by runtime-fixtures.yml; the relative-link check executed.' Also proven to FAIL: runtime-negative.yml fed it a relative link to a file that is not committed and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231629). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231913
+    evidence: "'Called by runtime-fixtures.yml; the relative-link check executed.' Also proven to FAIL: runtime-negative.yml fed it a relative link to a file that is not committed and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621241994). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242193
     proven_digest: 3a861028129aa02f141332fc33dc01cd6371941fcf72a93881cfbfa7699fd371
     waiver: null
   - workflow: .github/workflows/docs-quality.yml
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran the lychee, typos and markdownlint lanes against tests/fixtures/docs. This run is also what proved the scoping fix: the lanes are `uses:` steps and take repo-root-relative paths, which the fixture now passes explicitly."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231921
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
     proven_digest: 48b4f5ab8c87398ebfaa636be9f9865477866d4a5a0ee2d9692122014d39c807
     waiver: null
   - workflow: .github/workflows/dotnet-ci.yml
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran the restore, build and test lanes against tests/fixtures/dotnet. The fixture is a console app and the caller overrides test_command with `dotnet run`, so the third lane executes a real command without a NuGet test-framework tree. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231921
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
     proven_digest: df7c1fc75c1797fc9b4e6c1a6c3e3e1093f01e10f23aaa181df05de1d024f8f0
     waiver: null
   - workflow: .github/workflows/fuzzing.yml
@@ -101,8 +101,8 @@ entries:
   - workflow: .github/workflows/go-ci.yml
     criticality: supporting
     status: runtime-proven
-    evidence: "Fixture caller ran the build, vet and test lanes against tests/fixtures/go, a module with a test, a benchmark and a fuzz target. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories. Also proven to FAIL: runtime-negative.yml fed it a failing Go test and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231629). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231921
+    evidence: "Fixture caller ran the build, vet and test lanes against tests/fixtures/go, a module with a test, a benchmark and a fuzz target. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories. Also proven to FAIL: runtime-negative.yml fed it a failing Go test and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621241994). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
     proven_digest: 8fcdea5369d080a6ed1bfc74d8ba70d0643a8b0255e3b385c23e20ce8b4249f9
     waiver: null
   - workflow: .github/workflows/grype-scan.yml
@@ -118,9 +118,9 @@ entries:
   - workflow: .github/workflows/hadolint-ci.yml
     criticality: supporting
     status: runtime-proven
-    evidence: "Fixture caller ran hadolint at the default warning threshold against tests/fixtures/docker/Dockerfile. Also proven to FAIL: runtime-negative.yml fed it an unpinned base tag and an unpinned package and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231629). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231921
-    proven_digest: 9c5de87c4dbdef53a07513d8afab105a328524059d462d73d71696514bfbcdd1
+    evidence: "Fixture caller ran hadolint at the default warning threshold against tests/fixtures/docker/Dockerfile. Also proven to FAIL: runtime-negative.yml fed it an unpinned base tag and an unpinned package and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621241994). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
+    proven_digest: 7a0d421380125baf050a1df2a56436bd1b5a43b65544a210b6e0666be541851c
     waiver: null
   - workflow: .github/workflows/iac-scan.yml
     criticality: security-blocking
@@ -136,7 +136,7 @@ entries:
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran `mvn -B verify` against tests/fixtures/java, whose POM declares no test dependency so the lifecycle runs without resolving an artifact tree. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231921
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
     proven_digest: 47c06ab665e7c6e8a1f529c044c386d0e822ad29b340978735602da55e2a0527
     waiver: null
   - workflow: .github/workflows/kotlin-android-ci.yml
@@ -149,29 +149,29 @@ entries:
     criticality: required-gate
     status: runtime-proven
     evidence: 'Called by runtime-fixtures.yml on a branch push, where github.event.before is the all-zero oid: this executed the conservative all-true path, the one that must never silently report all-false.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231913
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242193
     proven_digest: 5b595bc7b043a081fc8ee2970fb59a034c78a54f15ad9269b660e682aacd930a
     waiver: null
   - workflow: .github/workflows/mutation-testing.yml
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran cargo-mutants over tests/fixtures/rust. The crate is dependency-free, so the only install is the mutator itself."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231921
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
     proven_digest: 0eb7c8e199e6aaf96dee782842905c16b8b6be0e92c1dead54184443bccf5ac8
     waiver: null
   - workflow: .github/workflows/node-ci.yml
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran bun install and bun test against tests/fixtures/node. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231921
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
     proven_digest: 6afeaa390e9487c09850a26116b5e4cebb447edf99a372c3cf1aae62472ffcdc
     waiver: null
   - workflow: .github/workflows/osv-scan.yml
     criticality: security-blocking
     status: runtime-proven
     evidence: 'Called by runtime-fixtures.yml; the checksum-verified OSV-Scanner binary downloaded, verified and scanned.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231913
-    proven_digest: ce458e4ece65d002e863bb4db301081b78fd086392493d8e924928b7416a2574
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242193
+    proven_digest: 1f721a5b27775766d402cb5d6198b8481b2f489d00b7fd5ac86ea4c0de413e78
     waiver: null
   - workflow: .github/workflows/pr-hygiene.yml
     criticality: required-gate
@@ -187,7 +187,7 @@ entries:
     criticality: required-gate
     status: runtime-proven
     evidence: 'Called by runtime-fixtures.yml; the lane provisioned uv through the new setup_uv input, installed hash-pinned dependencies and ran a real caller command. The first fixture attempt failed here with uv not found, which is how the missing-installer gap was found.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231913
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242193
     proven_digest: 888618f9891ae14e619e5a1936a03c67cf7d54070e331c01be290c1285e63a5d
     waiver: null
   - workflow: .github/workflows/public-codeql.yml
@@ -205,14 +205,14 @@ entries:
     criticality: security-blocking
     status: runtime-proven
     evidence: "Called by this repository's own dependency-review.yml through a relative ref; pull_request diff gate executed live. Re-proven after the pedantic permission comments changed the file — this run is that pull request's own."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31554544104
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
     proven_digest: 6b6447e71c0bc6d40e55fe65d99f09a2f9739a81ec465744bf185f24a7f498cc
     waiver: null
   - workflow: .github/workflows/public-scorecard-json.yml
     criticality: supporting
     status: runtime-proven
     evidence: "Called by this repository's own scorecard.yml through a relative ref; JSON-artifact lane executed live on main. Re-proven after the pedantic permission comments changed the file — this is the scorecard run on the commit that merged them."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31555123883
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
     proven_digest: 5dbe99d99e4aedcc7893a794e829fe78060ea01479fa27e1db27c812ea9cc735
     waiver: null
   - workflow: .github/workflows/public-scorecard.yml
@@ -224,8 +224,8 @@ entries:
   - workflow: .github/workflows/python-ci.yml
     criticality: supporting
     status: runtime-proven
-    evidence: "Fixture caller ran install and test against tests/fixtures/python. This run is also what proved the python_version fix: the summary now reports the interpreter that executed, and it matches the requested one. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories. Also proven to FAIL: runtime-negative.yml fed it a failing pytest and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231629). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231921
+    evidence: "Fixture caller ran install and test against tests/fixtures/python. This run is also what proved the python_version fix: the summary now reports the interpreter that executed, and it matches the requested one. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories. Also proven to FAIL: runtime-negative.yml fed it a failing pytest and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621241994). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
     proven_digest: 3c2a15c1f9cdae90f15b57d47dd6f776143f388cb85f9166d46b20d9e4573b09
     waiver: null
   - workflow: .github/workflows/qt-ci.yml
@@ -238,7 +238,7 @@ entries:
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran install and testthat::test_local() against tests/fixtures/r. use_public_rspm (the default) serves precompiled binaries, so installing testthat is a download rather than a compile."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231921
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
     proven_digest: 1462b2a35554cf7b4e5f2dc7a50874529414595b517183effdefecfe87c460d3
     waiver: null
   - workflow: .github/workflows/release-promotion-gate.yml
@@ -271,56 +271,56 @@ entries:
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran the build, test, rustfmt and clippy lanes against tests/fixtures/rust, whose committed Cargo.lock lets the default --locked commands run as written. The msrv and test-matrix lanes are guarded by their own inputs and correctly skipped; they remain unproven. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231921
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
     proven_digest: d78f0ff76fa9db7801738b87a5c68afa0a0f2426350bea6462389b813d8b93b6
     waiver: null
   - workflow: .github/workflows/secret-scan.yml
     criticality: security-blocking
     status: runtime-proven
     evidence: 'Called by runtime-fixtures.yml; full-history gitleaks executed through the digest-pinned container.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231913
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242193
     proven_digest: 283c40be1e8b6f3018425f6cc38373dd11f2d4c02777082589476788ea482b9f
     waiver: null
   - workflow: .github/workflows/semgrep-ci.yml
     criticality: security-blocking
     status: runtime-proven
     evidence: 'Called by runtime-fixtures.yml; the pinned Semgrep ran 33 rules over the tree and the non-SARIF gate path executed. An earlier run of the same fixture exited 1 on ten real findings, so the gate is proven to fire as well as to pass.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231913
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242193
     proven_digest: 849b5394257034a01a2253e116430e71e7298bcf084ccc4346e6eb1316a1429c
     waiver: null
   - workflow: .github/workflows/sql-ci.yml
     criticality: supporting
     status: runtime-proven
-    evidence: "Fixture caller ran sqlfluff on the ansi dialect against tests/fixtures/sql. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories. Also proven to FAIL: runtime-negative.yml fed it SQL that violates the ansi dialect and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231629). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231921
+    evidence: "Fixture caller ran sqlfluff on the ansi dialect against tests/fixtures/sql. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories. Also proven to FAIL: runtime-negative.yml fed it SQL that violates the ansi dialect and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621241994). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
     proven_digest: 706b484365bf3d17b3b693a11ad5ff57207f388d007f0919e94771ff5864bb43
     waiver: null
   - workflow: .github/workflows/swift-ci.yml
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran swift build and swift test against tests/fixtures/swift on macos-latest. XCTest ships with the toolchain, so the package resolves nothing. Free here because standard hosted runners are unmetered on public repositories in all three operating systems."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231921
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
     proven_digest: 0a6b6f52e518670f9a03ffab49ae6b00a809b12cafcdaf7ebf4c603123a1f869
     waiver: null
   - workflow: .github/workflows/terraform-ci.yml
     criticality: supporting
     status: runtime-proven
-    evidence: "Fixture caller ran fmt -check, init -backend=false and validate against tests/fixtures/terraform, which declares no provider so the lane stays offline. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories. Also proven to FAIL: runtime-negative.yml fed it unformatted HCL and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231629). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231921
+    evidence: "Fixture caller ran fmt -check, init -backend=false and validate against tests/fixtures/terraform, which declares no provider so the lane stays offline. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories. Also proven to FAIL: runtime-negative.yml fed it unformatted HCL and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621241994). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
     proven_digest: feace71ae75ea17bf8fefc96c368ec2e0b83ae0d36a27aa4ca23264db2c22bb4
     waiver: null
   - workflow: .github/workflows/web-ci.yml
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran stylelint and htmlhint against tests/fixtures/web. The fixture carries its own .stylelintrc.json because stylelint hard-errors without a configuration. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231921
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242217
     proven_digest: 40a33a69f0ddd9954ebee49f63d05399c1527bb712ad093473eb5ba42753203e
     waiver: null
   - workflow: .github/workflows/zizmor-no-sarif.yml
     criticality: security-blocking
     status: runtime-proven
-    evidence: "'Called by runtime-fixtures.yml; the private-free lane ran to completion on contents:read alone, proving the reduced permission set is sufficient without the SARIF upload. Its online audits fired and found three ref-version-mismatch pins that a tokenless local run had reported clean.' Also proven to FAIL: runtime-negative.yml fed it a workflow interpolating a pull-request title into a shell command and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231629). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231913
+    evidence: "'Called by runtime-fixtures.yml; the private-free lane ran to completion on contents:read alone, proving the reduced permission set is sufficient without the SARIF upload. Its online audits fired and found three ref-version-mismatch pins that a tokenless local run had reported clean.' Also proven to FAIL: runtime-negative.yml fed it a workflow interpolating a pull-request title into a shell command and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621241994). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242193
     proven_digest: 3038950341e4ab95198ad21c0d766195ebf6137d406b6aedd1c6f16a26df89b2
     waiver: null
   - workflow: .github/workflows/zizmor-sarif.yml
@@ -339,7 +339,7 @@ entries:
     criticality: supporting
     status: runtime-proven
     evidence: 'Called by runtime-fixtures.yml as a consumer should call it - every job in needs listed in required_jobs - proving the reporting path. It remains supporting, not a merge gate: the reusable cannot authenticate needs_json.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31617231913
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621242193
     proven_digest: b3e8bb120394a0f50f8e6e16dca666f0efd0436409123db6ec016086040cb412
     waiver: null
   - workflow: .github/workflows/rust-supply-chain.yml
