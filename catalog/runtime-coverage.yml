@@ -193,16 +193,16 @@ entries:
   - workflow: .github/workflows/public-dependency-review.yml
     criticality: security-blocking
     status: runtime-proven
-    evidence: "Called by this repository's own dependency-review.yml through a relative ref; pull_request diff gate executed live."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/30702933166
-    proven_digest: a757848e579b6115a42492ad819b29ee52b8baaabf951b8c410348b1c63561de
+    evidence: "Called by this repository's own dependency-review.yml through a relative ref; pull_request diff gate executed live. Re-proven after the pedantic permission comments changed the file — this run is that pull request's own."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31554544104
+    proven_digest: 6b6447e71c0bc6d40e55fe65d99f09a2f9739a81ec465744bf185f24a7f498cc
     waiver: null
   - workflow: .github/workflows/public-scorecard-json.yml
     criticality: supporting
-    status: runtime-proven
-    evidence: "Called by this repository's own scorecard.yml through a relative ref; JSON-artifact lane executed live on main."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/30702998422
-    proven_digest: 062afe708ea52adf57a9e54079df17ae417c0eadfbe7903571f34fdf6dbf8e82
+    status: unverified
+    evidence: "Was runtime-proven by run 30702998422. Adding per-permission comments for the pedantic zizmor persona changed the file, so that run no longer describes these bytes. Its caller scorecard.yml runs on push to main, so merging this change re-proves it; promote the record from that run."
+    last_run: null
+    proven_digest: null
     waiver: null
   - workflow: .github/workflows/public-scorecard.yml
     criticality: supporting

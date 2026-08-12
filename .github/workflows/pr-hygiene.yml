@@ -130,8 +130,8 @@ jobs:
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
-      contents: read
-      pull-requests: write
+      contents: read          # read the labeler configuration from the tree
+      pull-requests: write    # apply labels to the pull request
     steps:
       - name: Label pull request
         uses: actions/labeler@bf12e9b00b37c5c0ca2b87b79b2daf7891dbda13  # v7.0.0
@@ -144,9 +144,9 @@ jobs:
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
-      contents: read
-      issues: write
-      pull-requests: write
+      contents: read          # read the stale-bot configuration from the tree
+      issues: write           # comment on and close stale issues
+      pull-requests: write    # comment on and close stale pull requests
     steps:
       - name: Mark stale issues and pull requests
         uses: actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93  # v11.0.0

@@ -35,10 +35,10 @@ jobs:
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 15
     permissions:
-      security-events: write
-      id-token: write
-      contents: read
-      actions: read
+      security-events: write  # publish the Scorecard SARIF to code scanning
+      id-token: write         # OIDC token for the Scorecard publish step
+      contents: read          # read the repository Scorecard evaluates
+      actions: read           # Scorecard inspects workflow definitions
     steps:
       - name: Harden runner
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920  # v2.20.0

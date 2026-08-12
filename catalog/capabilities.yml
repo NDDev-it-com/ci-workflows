@@ -227,7 +227,7 @@ capabilities:
       - "Code scanning enabled to consume SARIF when upload_sarif: true (GHAS on private)"
     risks:
       - "Use zizmor-no-sarif.yml for private-free repositories to avoid code-scanning permissions"
-      - "ci.yml uses the default regular persona; run pedantic locally for deeper manual audits"
+      - "ci.yml runs the pedantic persona, which additionally requires every granted permission to carry a comment explaining it; auditor is stricter still and is a manual, not a blocking, audit"
       - "SARIF upload requires code scanning (GHAS) on private repos; use the no-SARIF variant there"
     deprecations: null
     last_verified: 2026-08-01
