@@ -66,7 +66,14 @@ jobs:
           # timeouts. It does not retry a 404 and it cannot weaken what follows,
           # because the checksum below is verified either way. Without it a GitHub
           # Releases 503 fails a required gate outright, which happened on 2026-08-12.
-          curl -fsSL --retry 3 --retry-delay 2 -o /tmp/osv-scanner \
+          #
+          # No --retry-delay on purpose. Setting it makes every attempt wait the same
+          # fixed interval and DISABLES curl's exponential backoff; the first version
+          # here used `--retry 3 --retry-delay 2` and burned all four attempts inside
+          # six seconds, which a Releases outage outlasts easily. Left unset, curl backs
+          # off 1s, 2s, 4s, 8s..., and --retry-max-time bounds the whole thing so a
+          # genuinely dead endpoint still fails the job rather than hanging it.
+          curl -fsSL --retry 5 --retry-max-time 120 -o /tmp/osv-scanner \
             "https://github.com/google/osv-scanner/releases/download/v${OSV_VERSION}/osv-scanner_linux_amd64"
           echo "${OSV_SHA256}  /tmp/osv-scanner" | sha256sum -c -
           # Install into a runner-writable directory rather than /usr/local/bin:

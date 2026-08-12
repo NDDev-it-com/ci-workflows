@@ -101,7 +101,14 @@ jobs:
           # timeouts. It does not retry a 404 and it cannot weaken what follows,
           # because the checksum below is verified either way. Without it a GitHub
           # Releases 503 fails a required gate outright, which happened on 2026-08-12.
-          curl -fsSL --retry 3 --retry-delay 2 -o /tmp/actionlint.tar.gz \
+          #
+          # No --retry-delay on purpose. Setting it makes every attempt wait the same
+          # fixed interval and DISABLES curl's exponential backoff; the first version
+          # here used `--retry 3 --retry-delay 2` and burned all four attempts inside
+          # six seconds, which a Releases outage outlasts easily. Left unset, curl backs
+          # off 1s, 2s, 4s, 8s..., and --retry-max-time bounds the whole thing so a
+          # genuinely dead endpoint still fails the job rather than hanging it.
+          curl -fsSL --retry 5 --retry-max-time 120 -o /tmp/actionlint.tar.gz \
             "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
           echo "${ACTIONLINT_SHA256}  /tmp/actionlint.tar.gz" | sha256sum -c -
           tar -xzf /tmp/actionlint.tar.gz -C /tmp actionlint
@@ -127,7 +134,7 @@ jobs:
             echo "enable_shellcheck is true but shellcheck_sha256 is empty; a SHA256 of shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz is required" >&2
             exit 1
           fi
-          curl -fsSL --retry 3 --retry-delay 2 -o /tmp/shellcheck.tar.xz \
+          curl -fsSL --retry 5 --retry-max-time 120 -o /tmp/shellcheck.tar.xz \
             "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz"
           echo "${SHELLCHECK_SHA256}  /tmp/shellcheck.tar.xz" | sha256sum -c -
           tar -xJf /tmp/shellcheck.tar.xz -C /tmp "shellcheck-v${SHELLCHECK_VERSION}/shellcheck"
