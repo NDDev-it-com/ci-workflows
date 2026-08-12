@@ -193,9 +193,9 @@ entries:
   - workflow: .github/workflows/public-dependency-review.yml
     criticality: security-blocking
     status: runtime-proven
-    evidence: "Called by this repository's own dependency-review.yml through a relative ref; pull_request diff gate executed live."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/30702933166
-    proven_digest: a757848e579b6115a42492ad819b29ee52b8baaabf951b8c410348b1c63561de
+    evidence: "Called by this repository's own dependency-review.yml through a relative ref; pull_request diff gate executed live. Re-proven after the pedantic permission comments changed the file — this run is that pull request's own."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31554544104
+    proven_digest: 6b6447e71c0bc6d40e55fe65d99f09a2f9739a81ec465744bf185f24a7f498cc
     waiver: null
   - workflow: .github/workflows/public-scorecard-json.yml
     criticality: supporting
