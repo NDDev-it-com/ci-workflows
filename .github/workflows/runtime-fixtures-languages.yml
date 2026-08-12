@@ -363,9 +363,56 @@ jobs:
       working_directory: tests/fixtures/web
 
   # promoting a record. Never required; this is a report, not a gate.
+  fixture-benchmark-compare:
+    name: fixture / benchmark-compare
+    permissions:
+      contents: read
+    uses: ./.github/workflows/benchmark-compare.yml
+    with:
+      runner: ubuntu-latest
+      language: go
+      working_directory: tests/fixtures/go
+      bench_command: "go test -bench=. -benchmem -run=XXX_no_tests ./... | tee output.txt"
+      tool: go
+      output_file_path: tests/fixtures/go/output.txt
+      external_data_json_path: tests/fixtures/go/benchmark-data.json
+      fail_on_alert: false
+
+  # supporting — R lane. use_public_rspm (the default) serves precompiled
+  # supporting — R lane. use_public_rspm (the default) serves precompiled
+  # binaries, so installing testthat is a download rather than a compile.
+  fixture-r-ci:
+    name: fixture / r-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/r-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/r
+
+  # supporting — mutation testing over the Rust fixture. cargo-mutants is used
+  # supporting — mutation testing over the Rust fixture. cargo-mutants is used
+  # rather than a Python or JS mutator because the crate is dependency-free, so
+  # the only install is the mutator itself.
+  fixture-mutation-testing:
+    name: fixture / mutation-testing
+    permissions:
+      contents: read
+    uses: ./.github/workflows/mutation-testing.yml
+    with:
+      runner: ubuntu-latest
+      language: rust
+      working_directory: tests/fixtures/rust
+      install_command: "cargo install cargo-mutants --locked"
+      mutation_command: "cargo mutants --no-shuffle --test-tool=cargo -j 2"
+
+  # One place to read the outcome, and the digests to paste into the ledger when
   evidence:
     name: evidence summary (languages)
     needs:
+      - fixture-mutation-testing
+      - fixture-r-ci
+      - fixture-benchmark-compare
       - fixture-go-ci
       - fixture-python-ci
       - fixture-node-ci
@@ -430,6 +477,9 @@ jobs:
               "fixture-java-ci": "java-ci.yml",
               "fixture-dotnet-ci": "dotnet-ci.yml",
               "fixture-swift-ci": "swift-ci.yml",
+              "fixture-mutation-testing": "mutation-testing.yml",
+              "fixture-r-ci": "r-ci.yml",
+              "fixture-benchmark-compare": "benchmark-compare.yml",
               "fixture-go-ci-os": "go-ci.yml",
               "fixture-python-ci-os": "python-ci.yml",
               "fixture-rust-ci-os": "rust-ci.yml",
