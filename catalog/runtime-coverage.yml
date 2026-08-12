@@ -86,9 +86,10 @@ entries:
     waiver: null
   - workflow: .github/workflows/dotnet-ci.yml
     criticality: supporting
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Fixture caller ran the restore, build and test lanes against tests/fixtures/dotnet. The fixture is a console app and the caller overrides test_command with `dotnet run`, so the third lane executes a real command without a NuGet test-framework tree."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31555925505
+    proven_digest: d1498a3dbdd39e8b423ba6dd4f004c91086f2eb5c4b9772d694f1baa5d862cb1
     waiver: null
   - workflow: .github/workflows/fuzzing.yml
     criticality: supporting
@@ -132,9 +133,10 @@ entries:
       expires_after: "2026-12-31"
   - workflow: .github/workflows/java-ci.yml
     criticality: supporting
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Fixture caller ran `mvn -B verify` against tests/fixtures/java, whose POM declares no test dependency so the lifecycle runs without resolving an artifact tree."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31555925505
+    proven_digest: bfa898e8aefc48740f88cb87360bc2c7f098eec16722a2c49b80b95aab759194
     waiver: null
   - workflow: .github/workflows/kotlin-android-ci.yml
     criticality: supporting
@@ -292,9 +294,10 @@ entries:
     waiver: null
   - workflow: .github/workflows/swift-ci.yml
     criticality: supporting
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Fixture caller ran swift build and swift test against tests/fixtures/swift on macos-latest. XCTest ships with the toolchain, so the package resolves nothing. Free here because standard hosted runners are unmetered on public repositories in all three operating systems."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31555925505
+    proven_digest: c567dcb008ff24108e46fd9047b520bcb6f244c99b2a562d0f38cc077c4c65d7
     waiver: null
   - workflow: .github/workflows/terraform-ci.yml
     criticality: supporting

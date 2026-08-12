@@ -4,6 +4,17 @@
 
 ### Added
 
+- **Java, .NET and Swift joined the fixture estate**, taking the ledger to 26
+  proven of 46. The Swift lane runs on `macos-latest` — a standard hosted
+  runner, unmetered on public repositories, which is the whole reason the macOS
+  fact was worth recording.
+
+  Ten records remain unverified and every one states its reason. Two are
+  structural: `benchmark.yml` cannot be proven without writing a `gh-pages`
+  branch, and its read-only twin needs history only that write creates. The
+  rest need SDKs (Android, Qt, Flutter, R) or harnesses (fuzzing, mutation
+  testing) heavy enough to deserve their own change.
+
 - **Twelve reusables now have a live run behind them.** Twenty-five of the
   forty-six sat `unverified`: every static check passed, but nothing had ever
   started them. `runtime-fixtures.yml` now calls twelve more as a consumer
@@ -23,6 +34,19 @@
   defect: it fetches history only the writing twin can create.
 
 ### Fixed
+
+- **The self-call runner rule forbade a free runner.** It demanded the literal
+  string `ubuntu-latest`, which enforced the property it cared about — a public
+  caller chooses explicitly, never inherits a default that could route forked
+  pull-request code to a private fleet — but enforced it by accident, and so
+  banned `macos-latest`. That made `swift-ci.yml` impossible to call from this
+  repository's own estate.
+
+  The rule now requires an explicit *standard hosted* runner. Both halves still
+  bite: omitting `runner` fails, and so does any larger runner or fleet label.
+  `check_examples.py` had its own copy of these constants; both now import
+  `_runners.py`, so the two checks cannot drift apart about what "hosted" and
+  "standard" mean — which is how they came to disagree at all.
 
 - **`python-ci.yml` ignored its own `python_version`.** The job ran
   `uv python install`, which downloaded the requested interpreter and then left

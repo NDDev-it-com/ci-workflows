@@ -54,7 +54,8 @@ Touch this → also do this:
   regenerate docs, `CHANGELOG.md` under `[Unreleased]`.
 - **a *proven* workflow** (`runtime-coverage.yml` says `runtime-proven`) → the
   `proven_digest` no longer matches and the gate says so. Push a `fixtures/**`
-  branch: `runtime-fixtures.yml` calls nine reusables as a consumer would, and its
+  branch: `runtime-fixtures.yml` calls twenty-four reusables as a consumer would, most
+  against a minimal project under `tests/fixtures/`, and its
   evidence job prints the run URL and each new digest ready to paste back. Or drop
   the record to `static-only`. Never leave a stale run masquerading as proof.
 - **a catalog file** → `python3 scripts/generate_docs.py`.
