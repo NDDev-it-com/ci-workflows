@@ -10,26 +10,39 @@ on:
       runner:
         type: string
         default: 'ubuntu-latest'
+      # SCOPE, and it is not obvious. working_directory governs `run:` steps
+      # only; all three lanes below are `uses:` steps, and an action resolves
+      # its path arguments against the workspace root regardless of the job's
+      # default working-directory. So the three path inputs are
+      # REPO-ROOT-RELATIVE.
+      #
+      # Setting working_directory to a subdirectory and leaving the paths at
+      # their defaults therefore scans the whole repository. A fixture run
+      # found exactly that: pointed at one small tree, it reported spelling
+      # errors from docs/ instead.
       working_directory:
+        description: 'Directory for `run:` steps. Does NOT scope the lanes below.'
         type: string
         default: '.'
       lychee:
         type: boolean
         default: true
       lychee_args:
-        description: 'Arguments passed to lychee.'
+        description: 'Arguments passed to lychee. Any path is repo-root-relative.'
         type: string
         default: '--no-progress --max-concurrency 8 "**/*.md"'
       typos:
         type: boolean
         default: true
       typos_files:
+        description: 'Path typos scans. Repo-root-relative, not under working_directory.'
         type: string
         default: '.'
       markdownlint:
         type: boolean
         default: true
       markdownlint_globs:
+        description: 'Globs markdownlint checks. Repo-root-relative, not under working_directory.'
         type: string
         default: '**/*.md'
       timeout_minutes:

@@ -2,6 +2,52 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Twelve reusables now have a live run behind them.** Twenty-five of the
+  forty-six sat `unverified`: every static check passed, but nothing had ever
+  started them. `runtime-fixtures.yml` now calls twelve more as a consumer
+  would, against ten dependency-free projects under `tests/fixtures/`. The
+  ledger moves from 11 proven to 22.
+
+  Dependency-free is the design constraint, not an economy: a fixture that
+  downloads a package tree proves the network works, not that the workflow
+  does. Each project was run locally against the same tool and the same pinned
+  version the workflow uses before being wired in.
+
+  Not everything can be proven here, and the records now say why rather than
+  saying nothing. `benchmark.yml` hard-wires `auto-push: true`, so proving it
+  would commit history to a `gh-pages` branch — a fixture estate must not
+  change the repository it runs in. Its read-only twin fails on
+  `couldn't find remote ref gh-pages`, which is a precondition rather than a
+  defect: it fetches history only the writing twin can create.
+
+### Fixed
+
+- **`python-ci.yml` ignored its own `python_version`.** The job ran
+  `uv python install`, which downloaded the requested interpreter and then left
+  it unused — the caller's install and test commands resolved `python` from
+  `PATH` and got the runner's system Python. The step then printed
+  "Python 3.13 tests passed" while pytest had run on 3.12, so the workflow
+  asserted the one thing it had not done. `setup-uv` now receives
+  `python-version` and `activate-environment`, and the summary reports the
+  interpreter that actually executed.
+
+- **`docs-quality.yml`'s `working_directory` scoped nothing.** All three lanes
+  are `uses:` steps, and an action resolves path arguments against the
+  workspace root whatever the job's default working-directory says. Pointed at
+  one small tree, the lane scanned the whole repository. The three path inputs
+  are now documented as repo-root-relative, on the input that misleads and on
+  each path input.
+
+  Both defects were found by the first fixture run and neither was reachable by
+  static analysis, which is the argument for the estate in one sentence.
+
+- **zizmor's stricter persona was advice rather than a control.** The catalog
+  recorded "run pedantic locally for deeper manual audits" — a bar nothing
+  enforced and nobody recorded. It is now what CI runs. Closing it cost ten
+  comments: every granted permission states why it is granted.
+
 ### Fixed
 
 - **The ledger held no macOS fact at all**, while this library defaults

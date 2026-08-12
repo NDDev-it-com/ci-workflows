@@ -23,21 +23,22 @@ entries:
     criticality: supporting
     status: unverified
     validator: scripts/check_benchmark_contract.py
-    evidence: 'Executable contract validator exercises the embedded program(s); no live workflow_call run.'
+    evidence: "Fixtured and run; the run failed at the comparison step with `couldn't find remote ref gh-pages`. That is a genuine precondition rather than a defect: the read-only twin fetches history that only its writing twin can create, and this repository has never run benchmark.yml. Toolchain setup and the bench command executed successfully before that point."
     last_run: null
     waiver: null
   - workflow: .github/workflows/benchmark.yml
     criticality: supporting
     status: unverified
     validator: scripts/check_benchmark_contract.py
-    evidence: 'Executable contract validator exercises the embedded program(s); no live workflow_call run.'
+    evidence: "Not fixturable in this repository, and the reason is structural rather than missing effort: benchmark.yml hard-wires `auto-push: true`, so any proving run would commit benchmark history to a gh-pages branch. A fixture estate must not change the repository it runs in."
     last_run: null
     waiver: null
   - workflow: .github/workflows/container-ci.yml
     criticality: supporting
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Fixture caller ran the Trivy filesystem scan against tests/fixtures."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31554682647
+    proven_digest: 6ec4449f45f9aa662524b88b2e4d2cec2d2ff15f6275afa05a5e75a36045372d
     waiver: null
   - workflow: .github/workflows/coverage-gate.yml
     criticality: required-gate
@@ -51,15 +52,17 @@ entries:
       expires_after: "2026-10-08"
   - workflow: .github/workflows/cpp-ci.yml
     criticality: supporting
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Fixture caller ran the configure, build and ctest lanes against tests/fixtures/cpp."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31554682647
+    proven_digest: b0167fcd9b738f1448fead56bab311ad78db3fb81e2f52e7235ea3f6c9d8f8b3
     waiver: null
   - workflow: .github/workflows/cross-platform-smoke.yml
     criticality: supporting
-    status: unverified
-    evidence: 'Per-job Git-config isolation is statically enforced; no observed consumer run yet proves checkout on every caller-selected runner lane.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Fixture caller ran the default three-OS matrix; the ubuntu, macOS and Windows lanes all executed. Free here because standard hosted runners are unmetered on public repositories in all three operating systems."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31554682647
+    proven_digest: 768e143bfe9fa3fe97463b926098ce6ad62ba30bf33751f36ce20af58655ebe3
     waiver: null
   - workflow: .github/workflows/dart-flutter-ci.yml
     criticality: supporting
@@ -76,9 +79,10 @@ entries:
     waiver: null
   - workflow: .github/workflows/docs-quality.yml
     criticality: supporting
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Fixture caller ran the lychee, typos and markdownlint lanes against tests/fixtures/docs. This run is also what proved the scoping fix: the lanes are `uses:` steps and take repo-root-relative paths, which the fixture now passes explicitly."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31554682647
+    proven_digest: 48b4f5ab8c87398ebfaa636be9f9865477866d4a5a0ee2d9692122014d39c807
     waiver: null
   - workflow: .github/workflows/dotnet-ci.yml
     criticality: supporting
@@ -94,9 +98,10 @@ entries:
     waiver: null
   - workflow: .github/workflows/go-ci.yml
     criticality: supporting
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Fixture caller ran the build, vet and test lanes against tests/fixtures/go, a module with a test, a benchmark and a fuzz target."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31554682647
+    proven_digest: 7c8d3f6ce7ebef07c9bed0a11ea2fb9bc762b588d20198fe312a3c73f6017a78
     waiver: null
   - workflow: .github/workflows/grype-scan.yml
     criticality: security-blocking
@@ -110,9 +115,10 @@ entries:
       expires_after: "2026-12-15"
   - workflow: .github/workflows/hadolint-ci.yml
     criticality: supporting
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Fixture caller ran hadolint at the default warning threshold against tests/fixtures/docker/Dockerfile."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31554682647
+    proven_digest: 9c5de87c4dbdef53a07513d8afab105a328524059d462d73d71696514bfbcdd1
     waiver: null
   - workflow: .github/workflows/iac-scan.yml
     criticality: security-blocking
@@ -151,9 +157,10 @@ entries:
     waiver: null
   - workflow: .github/workflows/node-ci.yml
     criticality: supporting
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Fixture caller ran bun install and bun test against tests/fixtures/node."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31554682647
+    proven_digest: c23df808ddee7e0451cbbe6ed25ac37cd491bc556fae9d9fc8a6bf6142a0c052
     waiver: null
   - workflow: .github/workflows/osv-scan.yml
     criticality: security-blocking
@@ -212,9 +219,10 @@ entries:
     waiver: null
   - workflow: .github/workflows/python-ci.yml
     criticality: supporting
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Fixture caller ran install and test against tests/fixtures/python. This run is also what proved the python_version fix: the summary now reports the interpreter that executed, and it matches the requested one."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31554682647
+    proven_digest: 377db97d69bfd8719e4b2d06637086fd8987fccaa510a2d936b4162da75bccb6
     waiver: null
   - workflow: .github/workflows/qt-ci.yml
     criticality: supporting
@@ -256,9 +264,10 @@ entries:
     waiver: null
   - workflow: .github/workflows/rust-ci.yml
     criticality: supporting
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Fixture caller ran the build, test, rustfmt and clippy lanes against tests/fixtures/rust, whose committed Cargo.lock lets the default --locked commands run as written. The msrv and test-matrix lanes are guarded by their own inputs and correctly skipped; they remain unproven."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31554682647
+    proven_digest: ee2db91ef885d59ccefb8d3e1cd9ab16d2e3147005572583bf698105d9893a14
     waiver: null
   - workflow: .github/workflows/secret-scan.yml
     criticality: security-blocking
@@ -276,9 +285,10 @@ entries:
     waiver: null
   - workflow: .github/workflows/sql-ci.yml
     criticality: supporting
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Fixture caller ran sqlfluff on the ansi dialect against tests/fixtures/sql."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31554682647
+    proven_digest: b0cfc13af66610bff8c7215cc58fb8e4c6f5a2bcb439f8b436ce420ca4e99874
     waiver: null
   - workflow: .github/workflows/swift-ci.yml
     criticality: supporting
@@ -288,15 +298,17 @@ entries:
     waiver: null
   - workflow: .github/workflows/terraform-ci.yml
     criticality: supporting
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Fixture caller ran fmt -check, init -backend=false and validate against tests/fixtures/terraform, which declares no provider so the lane stays offline."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31554682647
+    proven_digest: 03662058b1de1f2b38e858ee99374753798251e740c8e8140de89b22a4ad371b
     waiver: null
   - workflow: .github/workflows/web-ci.yml
     criticality: supporting
-    status: unverified
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: runtime-proven
+    evidence: "Fixture caller ran stylelint and htmlhint against tests/fixtures/web. The fixture carries its own .stylelintrc.json because stylelint hard-errors without a configuration."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31554682647
+    proven_digest: c198a79c560b9d3d4c5f9dff5160718d7661c6083d90ae55d0794ff9292d1377
     waiver: null
   - workflow: .github/workflows/zizmor-no-sarif.yml
     criticality: security-blocking
