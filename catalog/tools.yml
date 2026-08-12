@@ -182,6 +182,7 @@ tools:
       - .github/workflows/web-ci.yml
       - .github/workflows/zizmor-no-sarif.yml
       - .github/workflows/zizmor-sarif.yml
+      - .github/workflows/runtime-negative.yml
     last_verified: "2026-07-04"
 
   - id: setup-python
@@ -467,6 +468,7 @@ tools:
       - .github/workflows/sql-ci.yml
       - .github/workflows/zizmor-no-sarif.yml
       - .github/workflows/zizmor-sarif.yml
+      - .github/workflows/runtime-negative.yml
     last_verified: "2026-07-20"
 
   - id: setup-bun
@@ -491,6 +493,7 @@ tools:
       - .github/workflows/benchmark-compare.yml
       - .github/workflows/go-ci.yml
       - .github/workflows/public-codeql.yml
+      - .github/workflows/runtime-negative.yml
     last_verified: "2026-07-12"
 
   - id: setup-rust-toolchain
@@ -536,6 +539,7 @@ tools:
     pin: "hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e"
     used_by:
       - .github/workflows/terraform-ci.yml
+      - .github/workflows/runtime-negative.yml
     last_verified: "2026-07-12"
 
   - id: trivy-action
