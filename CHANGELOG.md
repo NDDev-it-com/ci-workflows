@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Document the intentional ClusterFuzzLite rolling commit pin for pedantic
+  zizmor. Upstream's only `v1` tag is older than the reviewed commit, so the two
+  action steps narrowly suppress both tag/version audits without changing SHA
+  or runtime behaviour.
+
 ### Added
 
 - **A workflow now states what it needs from the machine.** `required_permissions`
