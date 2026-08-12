@@ -59,6 +59,10 @@ Touch this → also do this:
   consumer would, most against a minimal project under `tests/fixtures/`, and its
   evidence job prints the run URL and each new digest ready to paste back. Or drop
   the record to `static-only`. Never leave a stale run masquerading as proof.
+- **a gate's behaviour** → also run `runtime-negative.yml` (dispatch only). It
+  feeds six reusables a deliberately broken fixture and expects each to fail;
+  its run is red by design and `verdict` is the job to read. A gate that never
+  fails is not a gate.
 - **a catalog file** → `python3 scripts/generate_docs.py`.
 - **a skill** → `python3 scripts/sync_skills.py`.
 - **a product fact** → re-read its `source_urls` and correct it. Bumping the
