@@ -94,7 +94,7 @@ Run these before opening a PR (they mirror the self-CI `ci-gate`):
 actionlint
 
 # Workflow security analysis (regular persona, matches CI)
-zizmor --persona regular --min-severity low .github/workflows
+zizmor --persona pedantic --min-severity low .github/workflows
 
 # Complete repository contract, catalog, example, and generated-doc checks
 python3 scripts/validate_all.py
@@ -116,9 +116,9 @@ curl -fsSL -o /tmp/actionlint.tar.gz \
 echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  /tmp/actionlint.tar.gz" | sha256sum -c -
 tar -xzf /tmp/actionlint.tar.gz -C ~/.local/bin actionlint
 
-# zizmor — run the version CI runs, not whatever is on PATH. The pin is
+# zizmor — run the version and persona CI runs, not whatever is on PATH. The pin is
 # zizmor-sarif.yml's `zizmor_version` default.
-uvx zizmor@1.26.1 --persona regular --min-severity low .github/workflows
+uvx zizmor@1.26.1 --persona pedantic --min-severity low .github/workflows
 ```
 
 Every command here uses `uv` or a checksum-verified download on purpose. The

@@ -187,9 +187,9 @@ jobs:
   publish:
     needs: [resolve, promotion, authorize]
     permissions:
-      contents: write
-      id-token: write
-      attestations: write
+      contents: write         # create the GitHub Release and upload assets
+      id-token: write         # OIDC identity for SLSA build provenance
+      attestations: write     # attest the SBOM and the release archive
       artifact-metadata: write   # actions/attest artifact storage record (required at v4.1.1)
     uses: ./.github/workflows/release-supply-chain.yml
     with:

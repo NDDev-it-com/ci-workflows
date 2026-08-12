@@ -32,8 +32,8 @@ jobs:
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 10
     permissions:
-      contents: read
-      pull-requests: write
+      contents: read          # diff the pull request against its base
+      pull-requests: write    # post the dependency-review summary comment
     steps:
       - name: Harden runner
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920  # v2.20.0
