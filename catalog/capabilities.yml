@@ -93,7 +93,7 @@ capabilities:
       - "Do not place under pull_request in caller workflows"
       - "The sarif_category input is an upload fallback; upstream runAutomationDetails.id takes precedence"
     deprecations: null
-    last_verified: 2026-08-13
+    last_verified: "2026-08-13"
     sources:
       - "https://github.com/ossf/scorecard-action/blob/v2.4.4/README.md"
       - "https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/using-code-scanning-with-your-existing-ci-system"
@@ -117,7 +117,7 @@ capabilities:
       - "Produces SARIF in-job but intentionally grants no upload, artifact publication, or OIDC authority"
       - "Supported triggers are push and schedule on the default branch only"
     deprecations: null
-    last_verified: 2026-08-13
+    last_verified: "2026-08-13"
     sources:
       - "https://github.com/ossf/scorecard-action/blob/v2.4.4/README.md"
       - "https://github.com/step-security/harden-runner"
@@ -268,7 +268,7 @@ capabilities:
       - "ci.yml runs the pedantic persona, which additionally requires every granted permission to carry a comment explaining it; auditor is stricter still and is a manual, not a blocking, audit"
       - "SARIF upload requires code scanning (GHAS) on private repos; use the no-SARIF variant there"
     deprecations: null
-    last_verified: 2026-08-01
+    last_verified: "2026-08-01"
     sources:
       - "https://github.com/woodruffw/zizmor"
       - "https://docs.zizmor.sh"

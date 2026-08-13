@@ -3,6 +3,16 @@
 
 Enforces the uniform capability schema so `catalog/` stays a trustworthy source
 of truth that `docs/` mirror. Requires PyYAML.
+
+The per-entry shape — required keys, allowed keys, enums and string patterns —
+is asserted by executing `catalog/schema/capability.schema.yaml` rather than by
+a second copy of those rules in Python. Both used to exist and disagreed: the
+schema forbade `runtime_requirements`, which two capabilities declare, while
+this file allowed it, and neither noticed that `last_verified` had drifted to
+`datetime.date` in seven entries because nothing ever ran the schema's pattern.
+What stays here is everything a schema cannot express — that a `workflow:` path
+is really on disk, that a tool pin matches the bytes the workflow uses, that
+every reusable has an entry at all.
 """
 from __future__ import annotations
 
@@ -11,6 +21,8 @@ import re
 from pathlib import Path
 
 import yaml
+
+from ci_workflows_tools import _json_schema
 
 from ci_workflows_tools._strict_yaml import strict_load
 
@@ -22,31 +34,6 @@ WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
 EXAMPLES_DIR = REPO_ROOT / "examples"
 SCHEMA_FILE = CATALOG_DIR / "schema" / "capability.schema.yaml"
 
-CAP_FIELDS = {
-    "id", "name", "cluster", "status",
-    "public_oss", "private_free", "private_paid",
-    "workflow", "example", "required_permissions", "required_settings",
-    "risks", "deprecations", "last_verified", "sources",
-}
-# Optional fields a capability may declare in addition to the required set.
-# `product_facts` links a capability's tier claims to fact IDs in
-# `product-facts.yml`; validate_product_facts.py checks those references
-# resolve and that the facts are not expired.
-CAP_OPTIONAL_FIELDS = {"product_facts",
-    # Host capabilities the workflow actually uses, derived from the
-    # workflow and cross-checked by check_runtime_requirements.py. Optional
-    # because 44 of 46 reusables need nothing but a shell.
-    "runtime_requirements",
-    "runtime_requirements_by_execution_mode",
-}
-VALID_STATUS = {"ga", "preview", "deprecated", "retiring", "planned"}
-VALID_TIER_AVAIL = {"free", "paid", "unavailable", "conditional"}
-VALID_PRIVATE_PAID = {"available", "unavailable", "conditional"}
-VALID_CLUSTERS = {
-    "actions-core", "runners", "security-scanning", "supply-chain",
-    "governance", "releases-packages", "deployments", "observability",
-    "community-dx", "external-tools", "ai-agentic",
-}
 PIN_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:/[^@\\s]+)?@[0-9a-f]{40}(?:@sha256:[0-9a-f]{64})?$")
 CONTAINER_PIN_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+:[^\\s@]+@sha256:[0-9a-f]{64}$")
 
@@ -67,11 +54,26 @@ def check() -> list[str]:
     problems: list[str] = []
     if not CATALOG_DIR.is_dir():
         return [f"missing catalog directory: {CATALOG_DIR}"]
+    problems += _json_schema.selftest()
+    schema = None
     if not SCHEMA_FILE.is_file():
         problems.append(f"missing machine-readable schema file: {SCHEMA_FILE.relative_to(REPO_ROOT)}")
+    else:
+        try:
+            schema = strict_load(SCHEMA_FILE)
+        except yaml.YAMLError as exc:
+            problems.append(f"capability.schema.yaml: invalid YAML: {exc}")
 
     caps_doc = _load("capabilities.yml", problems)
     if isinstance(caps_doc, dict):
+        # Execute the published schema against the published catalog. This is
+        # the whole assertion for per-entry shape; anything the schema can
+        # express must live there and not be restated below.
+        if schema is not None:
+            problems += [
+                f"capabilities.yml: {issue}"
+                for issue in _json_schema.validate(caps_doc, schema)
+            ]
         caps = caps_doc.get("capabilities", [])
         seen_ids: set[str] = set()
         workflows_in_catalog: set[str] = set()
@@ -81,47 +83,9 @@ def check() -> list[str]:
                 problems.append("capabilities: entry is not a mapping")
                 continue
             cid = cap.get("id", "<no-id>")
-            missing = CAP_FIELDS - set(cap.keys())
-            extra = set(cap.keys()) - CAP_FIELDS - CAP_OPTIONAL_FIELDS
-            product_facts = cap.get("product_facts")
-            if product_facts is not None and (
-                not isinstance(product_facts, list)
-                or not all(isinstance(ref, str) for ref in product_facts)
-            ):
-                problems.append(f"capability `{cid}`: product_facts must be a list of fact ids")
-            mode_requirements = cap.get("runtime_requirements_by_execution_mode")
-            if mode_requirements is not None:
-                if not isinstance(mode_requirements, dict) or set(mode_requirements) != {"container", "binary"}:
-                    problems.append(
-                        f"capability `{cid}`: runtime_requirements_by_execution_mode "
-                        "must map exactly container and binary"
-                    )
-                elif any(
-                    not isinstance(value, list)
-                    or any(item != "container-runtime" for item in value)
-                    for value in mode_requirements.values()
-                ):
-                    problems.append(
-                        f"capability `{cid}`: execution-mode requirements must be "
-                        "lists containing only container-runtime"
-                    )
-            if missing:
-                problems.append(f"capability `{cid}`: missing fields {sorted(missing)}")
-            if extra:
-                problems.append(f"capability `{cid}`: unexpected fields {sorted(extra)}")
             if cid in seen_ids:
                 problems.append(f"capability `{cid}`: duplicate id")
             seen_ids.add(cid)
-            if cap.get("cluster") not in VALID_CLUSTERS:
-                problems.append(f"capability `{cid}`: invalid cluster {cap.get('cluster')!r}")
-            if cap.get("status") not in VALID_STATUS:
-                problems.append(f"capability `{cid}`: invalid status {cap.get('status')!r}")
-            if cap.get("public_oss") not in VALID_TIER_AVAIL:
-                problems.append(f"capability `{cid}`: invalid public_oss {cap.get('public_oss')!r}")
-            if cap.get("private_free") not in VALID_TIER_AVAIL:
-                problems.append(f"capability `{cid}`: invalid private_free {cap.get('private_free')!r}")
-            if cap.get("private_paid") not in VALID_PRIVATE_PAID:
-                problems.append(f"capability `{cid}`: invalid private_paid {cap.get('private_paid')!r}")
             wf = cap.get("workflow")
             if wf:
                 workflows_in_catalog.add(wf)
@@ -138,12 +102,6 @@ def check() -> list[str]:
                 examples_in_catalog.add(example)
                 if not (REPO_ROOT / example).exists():
                     problems.append(f"capability `{cid}`: example path does not exist: {example}")
-            sources = cap.get("sources", [])
-            if not sources:
-                problems.append(f"capability `{cid}`: sources must be non-empty")
-            for source in sources:
-                if not isinstance(source, str) or not source.startswith("https://"):
-                    problems.append(f"capability `{cid}`: source is not an https URL: {source!r}")
         workflow_files = {
             f".github/workflows/{path.name}"
             for path in WORKFLOWS_DIR.glob("*.yml")

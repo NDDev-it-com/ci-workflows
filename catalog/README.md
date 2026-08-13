@@ -4,10 +4,16 @@ This directory is the **machine-readable source of truth** for the capabilities,
 external tools, and deprecations of `ci-workflows`. Human-facing docs under
 `docs/` are mirrors of this catalog, not the other way around.
 `scripts/validate_catalog.py` enforces the schema and internal consistency
-defined below (required keys, key order, enum membership, and cross-file
-references).
+defined below. Per-entry shape — required keys, allowed keys, enum membership
+and string patterns — is asserted by **executing**
+`schema/capability.schema.yaml` against `capabilities.yml` through
+`scripts/_json_schema.py`, so the published schema and the enforced rules
+cannot be two different things. `validate_catalog.py` adds what a schema cannot
+express: that a `workflow:` path exists on disk, that a recorded tool pin
+matches the bytes the workflow actually uses, and that every reusable has an
+entry at all.
 
-**Last verified: 2026-07-11**
+**Last verified: 2026-08-14**
 
 ## Files
 
@@ -16,11 +22,14 @@ references).
 | `capabilities.yml` | `capabilities:` | Every CI/CD, security, supply-chain, and governance capability with tier availability. |
 | `tools.yml` | `tools:` | External actions, CLIs, containers, and services referenced by the workflows, with pins. |
 | `deprecations.yml` | `deprecations:` | Retiring, deprecated, and removed capabilities and the migration path. |
+| `product-facts.yml` | `facts:` | Volatile external plan, price and quota facts, each dated and expiring. Enforced by `scripts/validate_product_facts.py`. |
+| `profiles.yml` | `profiles:` | Operating modes compiled from the visibility/plan/entitlement axes. Enforced by `scripts/validate_profiles.py`, resolved by `scripts/resolve_profile.py`. |
+| `scorecard-evidence.yml` | `entrypoint_matrix:` | Observed Scorecard run, job, category and artifact receipts. Enforced by `scripts/check_scorecard_evidence_contract.py`. |
 | `workflow-routing.yml` | `groups:` | Estate-neutral supported OS and machine requirements for every reusable workflow. |
 | `evidence-orchestration.yml` | `lanes:` | Evidence selection by level, platform, OS, architecture, profile, risk, change, release, and host environment. |
 | `python-execution.yml` | JSON-subset mapping | Exact Python surface/import/process inventory and hermetic launcher/environment policy. |
 | `runtime-coverage.yml` | `entries:` | Digest-bound observed runtime proof and typed debt for every reusable workflow. |
-| `schema/capability.schema.yaml` | JSON Schema | Machine-readable shape for `capabilities.yml`; `scripts/validate_catalog.py` is the enforcing validator. |
+| `schema/capability.schema.yaml` | JSON Schema | Machine-readable shape for `capabilities.yml`, **executed** against it by `scripts/validate_catalog.py` via `scripts/_json_schema.py`. |
 | `schema/workflow-routing.schema.yaml` | JSON Schema | Machine-readable shape for OS/capability routing; `scripts/check_runner_routing.py` is the enforcing validator. |
 | `schema/evidence-orchestration.schema.yaml` | JSON Schema | Evidence lane shape; `scripts/compile_evidence_plan.py` validates and compiles it fail-closed. |
 

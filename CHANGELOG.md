@@ -2,12 +2,28 @@
 
 ## [Unreleased]
 
+- Execute `catalog/schema/capability.schema.yaml` instead of merely shipping it.
+  The schema was documented as the enforced shape of `capabilities.yml`, but the
+  only thing any validator did with it was assert the file existed, so it drifted
+  from the tree in both directions at once: it declared
+  `additionalProperties: false` while omitting `runtime_requirements`, which two
+  capabilities use — applying it would have failed the catalog — and it declared
+  `last_verified` a pattern-checked string while seven entries were written
+  unquoted and parsed as `datetime.date`. The schema now covers both runtime
+  fields, the seven dates are quoted, and `scripts/_json_schema.py` runs the
+  schema against the catalog with no new dependency. The duplicated Python
+  copies of the same enums and key lists are gone, so shape has one source.
+  Proven to reject an unquoted date, an unexpected property, an invalid enum and
+  an empty `sources` list. `catalog/README.md` now documents `product-facts.yml`,
+  `profiles.yml` and `scorecard-evidence.yml`, which the Files table omitted.
+
 - Discover Python invocation documents instead of reading a closed allowlist.
   `invocation_documents` could only ever check files someone remembered to
   register, so a document nobody listed was never opened: `.claude/CLAUDE.md`,
-  the only file Claude Code auto-loads in this repository, told every agent to
-  run `python3 scripts/validate_all.py`, which aborts with `ModuleNotFoundError`
-  under the launcher — and the gate stayed green. The contract now scans the
+  the only file Claude Code auto-loads in this repository, still told every
+  agent to invoke the aggregate validator directly, which aborts with
+  `ModuleNotFoundError` under the launcher — and the gate stayed green. It also
+  caught the first bare invocation written into this entry. The contract scans the
   tree for documents that launch a real subject in `scripts/`, requires each to
   be registered or carry a written exemption, and rejects an exemption that no
   longer describes anything. Tools that are not subjects here (the control

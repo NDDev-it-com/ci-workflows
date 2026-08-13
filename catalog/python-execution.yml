@@ -2,7 +2,7 @@
   "schema_version": 1,
   "python": {
     "major_minor": "3.13",
-    "subject_count": 42,
+    "subject_count": 43,
     "launcher": "scripts/check_python_execution_contract.py",
     "launcher_prefix": [".venv/bin/python", "-I", "-B", "scripts/check_python_execution_contract.py", "--launch"],
     "syntax_gate_prefix": [".venv/bin/python", "-I", "-B", "scripts/check_python_syntax.py"],
@@ -111,7 +111,7 @@
     "shell-fixture": {"api": "subprocess", "executable": "path-search", "argv": "sequence", "cwd": "explicit-or-preserve", "environment": "replace-clean"}
   },
   "surface_groups": {
-    "library": ["_runners.py", "_workflow_yaml.py"],
+    "library": ["_json_schema.py", "_runners.py", "_workflow_yaml.py"],
     "read_only_validator": [
       "_strict_yaml.py", "check_actionlint_contract.py",
       "check_benchmark_contract.py", "check_docs_links.py", "check_examples.py",
@@ -139,6 +139,7 @@
   },
   "sibling_imports": {
     "__init__.py": [],
+    "_json_schema.py": [],
     "_workflow_yaml.py": ["_strict_yaml"],
     "check_actionlint_contract.py": ["_workflow_yaml", "check_python_execution_contract"],
     "check_benchmark_contract.py": ["_workflow_yaml"],
@@ -186,7 +187,7 @@
       "validate_catalog", "validate_product_facts", "validate_profiles",
       "validate_runtime_coverage"
     ],
-    "validate_catalog.py": ["_strict_yaml", "_workflow_yaml"],
+    "validate_catalog.py": ["_json_schema", "_strict_yaml", "_workflow_yaml"],
     "validate_product_facts.py": ["_strict_yaml"],
     "validate_profiles.py": ["_strict_yaml"],
     "validate_runtime_coverage.py": ["_strict_yaml", "_workflow_yaml"],

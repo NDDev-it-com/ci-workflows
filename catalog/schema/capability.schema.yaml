@@ -100,3 +100,29 @@ properties:
           items:
             type: string
             pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        runtime_requirements:
+          description: >-
+            Optional host capabilities the delivering workflow actually uses,
+            beyond a shell. Cross-checked against the workflow tree by
+            scripts/check_runtime_requirements.py.
+          type: array
+          minItems: 1
+          items:
+            enum: [container-runtime]
+        runtime_requirements_by_execution_mode:
+          description: >-
+            Optional per-mode split for a workflow whose host requirements
+            depend on a caller-selected execution mode. Both modes are always
+            present; an empty list means the mode needs nothing but a shell.
+          type: object
+          additionalProperties: false
+          required: [container, binary]
+          properties:
+            container:
+              type: array
+              items:
+                enum: [container-runtime]
+            binary:
+              type: array
+              items:
+                enum: [container-runtime]
