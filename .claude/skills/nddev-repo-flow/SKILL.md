@@ -36,11 +36,11 @@ it explains, so a reversal is deliberate.
 2. Update `catalog/capabilities.yml`, and `catalog/tools.yml` if you added or
    bumped an action. `used_by` and tool registration are both derived from the
    tree by `check_tool_registry.py`, so an omission fails rather than rots.
-3. `python3 scripts/generate_docs.py`.
+3. Run `generate_docs.py` through the repository's isolated Python launcher.
 4. Add a caller example under `examples/`. `check_examples.py` fails a reusable
    with no example — it is the only executable statement of a caller contract.
 5. Sync prose: `README.md`, the tier docs, the matching example.
-6. `python3 scripts/sync_skills.py` if you touched a skill.
+6. Run `sync_skills.py` through the isolated launcher if you touched a skill.
 7. `CHANGELOG.md` under `[Unreleased]`.
 8. Validate, then PR.
 
@@ -48,8 +48,8 @@ it explains, so a reversal is deliberate.
 
 ```bash
 uv pip install --system --require-hashes -r requirements-ci.txt
-python3 scripts/validate_all.py --tier core     # what ci-gate blocks on
-python3 scripts/validate_all.py                 # all three tiers
+python3 -I -B scripts/check_python_execution_contract.py --launch validate_all.py -- --tier core
+python3 -I -B scripts/check_python_execution_contract.py --launch validate_all.py --
 actionlint
 GH_TOKEN=$(gh auth token) uvx zizmor@1.26.1 --persona regular --min-severity low .github/workflows
 ```

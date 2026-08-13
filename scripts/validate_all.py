@@ -28,10 +28,10 @@ tariff expired today".
              are maintenance debt rather than a defect in someone's change.
 
 Usage:
-    python3 scripts/validate_all.py                     # everything (default)
-    python3 scripts/validate_all.py --tier core         # what ci-gate blocks on
-    python3 scripts/validate_all.py --tier touched --changed-from origin/main
-    python3 scripts/validate_all.py --tier scheduled    # the advisory sweep
+    python3 -I -B scripts/check_python_execution_contract.py --launch \
+      validate_all.py --                               # everything (default)
+    python3 -I -B scripts/check_python_execution_contract.py --launch \
+      validate_all.py -- --tier core                   # blocking gate
 """
 
 from __future__ import annotations
@@ -40,8 +40,6 @@ import argparse
 import subprocess
 import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import _strict_yaml
 import check_actionlint_contract
@@ -54,6 +52,7 @@ import check_merge_group
 import check_monorepo_routing
 import check_permissions
 import check_public_docs
+import check_python_execution_contract
 import check_runtime_requirements
 import check_runner_routing
 import check_secret_scan_contract
@@ -86,6 +85,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 CORE = [
     # Parse integrity first: every later check reads these files.
     ("strict-yaml", _strict_yaml.check),
+    ("python-execution-contract", check_python_execution_contract.check),
     ("pinned-actions", check_pinned_actions.check),
     ("tool-pinning", check_tool_pinning.check),
     ("tool-registry", check_tool_registry.check),
@@ -145,12 +145,14 @@ def changed_paths(base: str | None, explicit: list[str]) -> set[str]:
         return set()
     merge_base = subprocess.run(
         ["git", "merge-base", "HEAD", base],
-        cwd=REPO_ROOT, capture_output=True, text=True, check=False,
+        cwd=REPO_ROOT, env=check_python_execution_contract.clean_environment(),
+        capture_output=True, text=True, check=False,
     )
     ref = merge_base.stdout.strip() if merge_base.returncode == 0 else base
     diff = subprocess.run(
         ["git", "diff", "--name-only", f"{ref}...HEAD"],
-        cwd=REPO_ROOT, capture_output=True, text=True, check=False,
+        cwd=REPO_ROOT, env=check_python_execution_contract.clean_environment(),
+        capture_output=True, text=True, check=False,
     )
     if diff.returncode != 0:
         # Fail closed. An unresolvable base means the change cannot be scoped,

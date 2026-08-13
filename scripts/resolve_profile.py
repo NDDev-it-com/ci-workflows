@@ -7,9 +7,9 @@ workflows is a description rather than a selection. This closes that: give it a
 repository's shape and it returns the profile, the workflows available in that
 mode, and the free substitute for every capability the mode does not entitle.
 
-    python3 scripts/resolve_profile.py --visibility private --plan enterprise-cloud \
+    python3 -I -B scripts/check_python_execution_contract.py --launch resolve_profile.py -- --visibility private --plan enterprise-cloud \
         --code-security --secret-protection --code-quality
-    python3 scripts/resolve_profile.py --profile public-free-standalone
+    python3 -I -B scripts/check_python_execution_contract.py --launch resolve_profile.py -- --profile public-free-standalone
 
 Availability is resolved per capability, not by moving the whole repository to
 a `private_paid` column when it buys one add-on. Code Security, Secret Protection

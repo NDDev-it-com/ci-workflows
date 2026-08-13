@@ -448,6 +448,11 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Set up isolated Python contract runtime
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.13'
+
       - name: Render evidence for the runtime-coverage ledger
         env:
           RESULTS: ${{ toJSON(needs) }}
@@ -456,4 +461,4 @@ jobs:
             {"fixture-go-ci":"go-ci.yml","fixture-python-ci":"python-ci.yml","fixture-node-ci":"node-ci.yml","fixture-rust-ci":"rust-ci.yml","fixture-cpp-ci":"cpp-ci.yml","fixture-terraform-ci":"terraform-ci.yml","fixture-sql-ci":"sql-ci.yml","fixture-docs-quality":"docs-quality.yml","fixture-hadolint":"hadolint-ci.yml","fixture-web-ci":"web-ci.yml","fixture-container-ci":"container-ci.yml","fixture-cross-platform-smoke":"cross-platform-smoke.yml","fixture-java-ci":"java-ci.yml","fixture-dotnet-ci":"dotnet-ci.yml","fixture-swift-ci":"swift-ci.yml","fixture-mutation-testing":"mutation-testing.yml","fixture-r-ci":"r-ci.yml","fixture-benchmark-compare":"benchmark-compare.yml","fixture-go-ci-os":"go-ci.yml","fixture-python-ci-os":"python-ci.yml","fixture-rust-ci-os":"rust-ci.yml","fixture-dotnet-ci-os":"dotnet-ci.yml","fixture-java-ci-os":"java-ci.yml","fixture-node-ci-os":"node-ci.yml","fixture-terraform-ci-os":"terraform-ci.yml","fixture-sql-ci-os":"sql-ci.yml","fixture-web-ci-os":"web-ci.yml"}
         run: |
           set -euo pipefail
-          python3 -I scripts/render_runtime_evidence.py
+          python3 -I -B scripts/check_python_execution_contract.py --launch render_runtime_evidence.py --

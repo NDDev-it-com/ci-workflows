@@ -77,7 +77,7 @@ jobs:
           set -uo pipefail
           # Deliberately not `set -e`: a finding is the expected outcome and
           # must be reported, not abort the job before it can be filed.
-          python3 scripts/validate_all.py --tier scheduled > sweep.txt 2>&1
+          python3 -I -B scripts/check_python_execution_contract.py --launch validate_all.py -- --tier scheduled > sweep.txt 2>&1
           status=$?
           cat sweep.txt
           printf 'status=%s\n' "$status" >> "$GITHUB_OUTPUT"

@@ -50,9 +50,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
 from _strict_yaml import strict_load  # noqa: E402
+from check_python_execution_contract import clean_environment
 
 INPUT_EXPR = re.compile(r"\$\{\{\s*inputs\.([A-Za-z_][A-Za-z0-9_]*)\s*\}\}")
 CONTEXT_EXPR = re.compile(r"\$\{\{\s*([A-Za-z_][A-Za-z0-9_.]*)\s*\}\}")
@@ -213,10 +212,15 @@ def main() -> int:
         return out
 
     step = find_step(Path(args.workflow), args.job, args.step)
+    prepared_path = os.environ.get("PATH", "")
+    prepared_runner_temp = ""
 
     def env_for(overrides: dict[str, str]) -> dict[str, str]:
         merged = {**inputs, **overrides}
-        env = dict(os.environ)
+        env = clean_environment(inherit=("GH_TOKEN", "GITHUB_TOKEN"))
+        env["PATH"] = prepared_path
+        if prepared_runner_temp:
+            env["RUNNER_TEMP"] = prepared_runner_temp
         for key, value in (step.get("env") or {}).items():
             env[key] = _resolve(str(value), merged, contexts)
         # Steps append to the job summary; give them somewhere harmless.
@@ -238,7 +242,7 @@ def main() -> int:
         with tempfile.TemporaryDirectory() as scratch:
             path_file = Path(scratch) / "github_path"
             path_file.touch()
-            prior_env = dict(os.environ)
+            prior_env = clean_environment(inherit=("GH_TOKEN", "GITHUB_TOKEN"))
             for key, value in (prior.get("env") or {}).items():
                 prior_env[key] = _resolve(str(value), inputs, contexts)
             prior_env.setdefault("GITHUB_STEP_SUMMARY", os.devnull)
@@ -258,12 +262,9 @@ def main() -> int:
                 if line.strip()
             ]
             if added:
-                os.environ["PATH"] = os.pathsep.join(
-                    added + [os.environ.get("PATH", "")]
-                )
+                prepared_path = os.pathsep.join(added + [prepared_path])
                 print(f"   PATH += {', '.join(added)}")
-            os.environ.setdefault("RUNNER_TEMP", scratch)
-            # env_for() copies os.environ, so both cases below see the tool.
+            prepared_runner_temp = scratch
             bad_code = run_in(args.bad, step["run"], env_for(parse(args.bad_input)))
             good_code = run_in(args.good, step["run"], env_for(parse(args.good_input)))
             return _verdict(label, args, bad_code, good_code)

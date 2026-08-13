@@ -73,6 +73,9 @@ Attestations are gated on Enterprise Cloud and this estate has it.
 The machine-readable source of truth is [`catalog/capabilities.yml`](catalog/capabilities.yml).
 Generated mirrors live in [`docs/generated/`](docs/generated/) and are checked by
 `scripts/generate_docs.py --check`.
+Repository-owned Python validation runs through one hermetic launcher; its
+machine policy and threat boundary are documented in
+[`docs/19-python-execution.md`](docs/19-python-execution.md).
 
 ### Extended packs (July 2026)
 

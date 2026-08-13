@@ -13,6 +13,7 @@ from typing import Any
 from _strict_yaml import strict_load
 from _workflow_yaml import REPO_ROOT, WORKFLOWS_DIR, get_on, load_yaml
 from check_harden_runner_contract import HARDENED_WORKFLOWS, HARDEN_RUNNER
+from check_python_execution_contract import clean_environment
 
 CONTRACT_PATH = REPO_ROOT / "catalog" / "scorecard-evidence.yml"
 CALLER_PATH = WORKFLOWS_DIR / "scorecard.yml"
@@ -187,7 +188,6 @@ def _embedded_guard(step: dict[str, Any]) -> str:
 
 def _run_guard(program: str, **overrides: str) -> int:
     env = {
-        **os.environ,
         "SCORECARD_EVENT_NAME": "push",
         "SCORECARD_REF": "refs/heads/main",
         "SCORECARD_DEFAULT_BRANCH": "main",
@@ -198,7 +198,8 @@ def _run_guard(program: str, **overrides: str) -> int:
         **overrides,
     }
     return subprocess.run(
-        [sys.executable, "-I", "-"], input=program, env=env, text=True,
+        [sys.executable, "-I", "-"], input=program,
+        env=clean_environment(env), text=True,
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
     ).returncode
 

@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- Add one hermetic Python execution boundary for every repository validator and
+  generator. A machine-readable policy now pins the interpreter and PyYAML,
+  inventories imports/resources/subprocess edges, strips ambient `PYTHON*`
+  state at every generation, rejects shadow or unregistered tools, and keeps
+  cold startup proof separate from semantic validation (#129).
+
 - Make `public-scorecard.yml` fail closed outside a public default-branch
   push/schedule, assign a deterministic SARIF category, and expose the upload
   identifier. The repository's persistent Scorecard caller now exercises the

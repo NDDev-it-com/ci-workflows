@@ -18,6 +18,7 @@ references).
 | `deprecations.yml` | `deprecations:` | Retiring, deprecated, and removed capabilities and the migration path. |
 | `workflow-routing.yml` | `groups:` | Estate-neutral supported OS and machine requirements for every reusable workflow. |
 | `evidence-orchestration.yml` | `lanes:` | Evidence selection by level, platform, OS, architecture, profile, risk, change, release, and host environment. |
+| `python-execution.yml` | JSON-subset mapping | Exact Python surface/import/process inventory and hermetic launcher/environment policy. |
 | `runtime-coverage.yml` | `entries:` | Digest-bound observed runtime proof and typed debt for every reusable workflow. |
 | `schema/capability.schema.yaml` | JSON Schema | Machine-readable shape for `capabilities.yml`; `scripts/validate_catalog.py` is the enforcing validator. |
 | `schema/workflow-routing.schema.yaml` | JSON Schema | Machine-readable shape for OS/capability routing; `scripts/check_runner_routing.py` is the enforcing validator. |
@@ -40,9 +41,10 @@ stack packs are materialized workflows, not placeholders.
 - `docs/generated/evidence-orchestration.md`
 - `docs/generated/runtime-coverage.md`
 
-Run `python3 scripts/generate_docs.py --check` before release; `ci.yml` runs it
-through `scripts/validate_all.py` so generated docs cannot drift from the
-catalog or workflow tree.
+Run `generate_docs.py --check` through the launcher documented in
+`docs/19-python-execution.md` before release; `ci.yml` runs it through
+`validate_all.py` so generated docs cannot drift from the catalog or workflow
+tree.
 
 ## `capabilities.yml` schema
 
