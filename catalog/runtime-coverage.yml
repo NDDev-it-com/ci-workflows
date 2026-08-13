@@ -188,14 +188,14 @@ entries:
   - workflow: .github/workflows/pr-hygiene.yml
     criticality: required-gate
     status: partial-runtime
-    evidence: 'Recovery-cycle Attempt 1 ran two current-digest pull_request callers: omitted commitlint_config succeeded through upstream default discovery, and an exact validated explicit config path succeeded. PR-title and labeler also succeeded; cleanup first observed the ci label write and then restored its prior absent state, and the evidence guard succeeded. Stale was deliberately not claimed: its broad issue/PR population still needs an isolated event estate. Earlier attempts remain visible in #127, including the permission-ceiling startup failure and the pre-ACK EISDIR/default-path draft.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31657431178
-    proven_digest: 6954d674ea6ffb6c3078d0eb549c4635e5e801115874efc59cad9198b40f5242
+    evidence: 'Recovery Attempt 2 ran two current-digest pull_request callers. Default-discovery and exact explicit-config commitlint paths succeeded, as did PR-title. Labeler reported new-labels=ci and all-labels=ci; independent API observations proved ci absent before, present after the action, and absent after cleanup. The cleanup and evidence guard succeeded. Attempt 1 no-match failure remains preserved in #127. Stale remains unclaimed and owned by #133.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31659116371
+    proven_digest: bcd8258db6ee755095a6c8cb2a09839ef0ee1604645e78156b3fc613897b13c4
     proven_jobs:
       - commitlint-default-discovery
       - commitlint-explicit-config
       - pr-title
-      - labeler
+      - labeler-observable-write
     runtime_debt:
       risk: high
       barrier: event-context

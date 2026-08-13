@@ -31,6 +31,7 @@ jobs:
       - name: Establish disposable benchmark scope
         id: scope
         env:
+          GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
@@ -41,12 +42,22 @@ jobs:
             echo "benchmark fixture: invalid disposable branch" >&2
             exit 1
           fi
-          if git ls-remote --exit-code "https://github.com/${REPOSITORY}.git" "refs/heads/${branch}" >/dev/null 2>&1; then
+          encoded_branch="${branch//\//%2F}"
+          response_file="${RUNNER_TEMP}/benchmark-ref-response"
+          api_result=0
+          gh api --include "repos/${REPOSITORY}/git/ref/heads/${encoded_branch}" >"$response_file" 2>&1 || api_result=$?
+          http_status="$(awk 'NR == 1 && $1 ~ /^HTTP/ {print $2}' "$response_file")"
+          if [ "$api_result" -eq 0 ] && [ "$http_status" = 200 ]; then
             echo "benchmark fixture: disposable branch already exists" >&2
             exit 1
           fi
+          if [ "$http_status" != 404 ]; then
+            cat "$response_file" >&2
+            echo "benchmark fixture: ref probe failed (exit=${api_result}, status=${http_status:-missing})" >&2
+            exit 1
+          fi
           printf 'branch=%s\n' "$branch" >>"$GITHUB_OUTPUT"
-          echo "benchmark fixture: disposable branch absent before caller"
+          echo "benchmark fixture: disposable branch absent before caller (HTTP 404)"
 
   fixture-benchmark:
     if: ${{ github.event_name != 'pull_request' }}
@@ -86,13 +97,36 @@ jobs:
             exit 1
           fi
           encoded_branch="${BRANCH//\//%2F}"
-          if gh api "repos/${REPOSITORY}/git/ref/heads/${encoded_branch}" >/dev/null 2>&1; then
+          probe_ref() {
+            local api_result=0 response_file status
+            response_file="${RUNNER_TEMP}/benchmark-ref-response"
+            gh api --include "repos/${REPOSITORY}/git/ref/heads/${encoded_branch}" >"$response_file" 2>&1 || api_result=$?
+            status="$(awk 'NR == 1 && $1 ~ /^HTTP/ {print $2}' "$response_file")"
+            if [ "$api_result" -eq 0 ] && [ "$status" = 200 ]; then
+              printf 'present\n'
+            elif [ "$status" = 404 ]; then
+              printf 'missing\n'
+            else
+              cat "$response_file" >&2
+              echo "benchmark cleanup: ref probe failed (exit=${api_result}, status=${status:-missing})" >&2
+              return 1
+            fi
+          }
+          ref_state="$(probe_ref)" || {
+            echo "benchmark cleanup: initial ref observation failed" >&2
+            exit 1
+          }
+          if [ "$ref_state" = present ]; then
             gh api --method DELETE "repos/${REPOSITORY}/git/refs/heads/${encoded_branch}"
             echo "benchmark cleanup: removed unexpected disposable branch"
           else
-            echo "benchmark cleanup: no repository ref was created"
+            echo "benchmark cleanup: no repository ref was created (HTTP 404)"
           fi
-          if gh api "repos/${REPOSITORY}/git/ref/heads/${encoded_branch}" >/dev/null 2>&1; then
+          ref_state="$(probe_ref)" || {
+            echo "benchmark cleanup: final ref observation failed" >&2
+            exit 1
+          }
+          if [ "$ref_state" != missing ]; then
             echo "benchmark cleanup: disposable branch remains" >&2
             exit 1
           fi
@@ -144,12 +178,13 @@ jobs:
             echo "PR fixture: invalid pull request number" >&2
             exit 1
           fi
-          labels="$(gh api "repos/${REPOSITORY}/issues/${PR_NUMBER}/labels" --jq '.[].name')"
+          labels="$(gh api --paginate "repos/${REPOSITORY}/issues/${PR_NUMBER}/labels" --jq '.[].name')"
           if grep -Fxq ci <<<"$labels"; then
-            echo 'had_label=true' >>"$GITHUB_OUTPUT"
-          else
-            echo 'had_label=false' >>"$GITHUB_OUTPUT"
+            echo "PR fixture: refusing proof because ci label already exists" >&2
+            exit 1
           fi
+          echo 'had_label=false' >>"$GITHUB_OUTPUT"
+          echo "PR fixture: ci label absent before caller"
 
   fixture-pr-hygiene:
     if: ${{ github.event_name == 'pull_request' }}
@@ -195,29 +230,39 @@ jobs:
           CALLER_RESULT: ${{ needs.fixture-pr-hygiene.result }}
           GH_TOKEN: ${{ github.token }}
           HAD_LABEL: ${{ needs.prepare-pr-hygiene.outputs.had_label }}
+          LABELER_ALL_LABELS: ${{ needs.fixture-pr-hygiene.outputs.labeler_all_labels }}
+          LABELER_NEW_LABELS: ${{ needs.fixture-pr-hygiene.outputs.labeler_new_labels }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPOSITORY: ${{ github.repository }}
         run: |
           set -euo pipefail
-          if ! [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]] || [[ "$HAD_LABEL" != true && "$HAD_LABEL" != false ]]; then
+          if ! [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]] || [ "$HAD_LABEL" != false ]; then
             echo "PR cleanup: invalid disposable scope" >&2
             exit 1
           fi
-          labels="$(gh api "repos/${REPOSITORY}/issues/${PR_NUMBER}/labels" --jq '.[].name')"
+          output_has_label() {
+            local output="$1"
+            tr ',' '\n' <<<"$output" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -Fxq ci
+          }
+          if ! output_has_label "$LABELER_NEW_LABELS"; then
+            echo "PR cleanup: labeler new-labels output does not prove a ci write" >&2
+            exit 1
+          fi
+          if ! output_has_label "$LABELER_ALL_LABELS"; then
+            echo "PR cleanup: labeler all-labels output does not contain ci" >&2
+            exit 1
+          fi
+          labels="$(gh api --paginate "repos/${REPOSITORY}/issues/${PR_NUMBER}/labels" --jq '.[].name')"
           if ! grep -Fxq ci <<<"$labels"; then
             echo "PR cleanup: labeler did not apply the expected ci label" >&2
             exit 1
           fi
-          if [ "$HAD_LABEL" = false ]; then
-            gh api --method DELETE "repos/${REPOSITORY}/issues/${PR_NUMBER}/labels/ci"
-            echo "PR cleanup: removed fixture-applied ci label"
-          else
-            echo "PR cleanup: preserved pre-existing ci label"
-          fi
-          labels_after="$(gh api "repos/${REPOSITORY}/issues/${PR_NUMBER}/labels" --jq '.[].name')"
+          gh api --method DELETE "repos/${REPOSITORY}/issues/${PR_NUMBER}/labels/ci"
+          echo "PR cleanup: removed fixture-applied ci label"
+          labels_after="$(gh api --paginate "repos/${REPOSITORY}/issues/${PR_NUMBER}/labels" --jq '.[].name')"
           has_after=false
           if grep -Fxq ci <<<"$labels_after"; then has_after=true; fi
-          if [ "$has_after" != "$HAD_LABEL" ]; then
+          if [ "$has_after" != false ]; then
             echo "PR cleanup: prior label state was not restored" >&2
             exit 1
           fi

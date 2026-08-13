@@ -1341,6 +1341,7 @@ capabilities:
       - "pr_title_types is comma-separated at the input boundary but converted to the newline-delimited `types:` the action expects; leaving it empty keeps the Conventional Commits defaults"
       - "An empty commitlint_config omits configFile so the action owns default discovery; a non-empty relative path must resolve to a regular file inside the checkout and is passed byte-for-byte"
       - "The labeler checks out the caller ref with credentials disabled so a branch-local configuration is the exact policy executed"
+      - "The reusable exposes the pinned labeler's documented new-labels and all-labels outputs so callers can distinguish an observable write from a successful no-match"
     deprecations: null
     last_verified: "2026-08-13"
     sources:
