@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- Make runtime-fixture evidence fail closed when a claimed caller is failed,
+  cancelled, skipped or missing; add live fixtures for six high-risk gates and
+  scope cargo-deny to the same Rust working directory as audit and machete.
+
 - Document the intentional ClusterFuzzLite rolling commit pin for pedantic
   zizmor. Upstream's only `v1` tag is older than the reviewed commit, so the two
   action steps narrowly suppress both tag/version audits without changing SHA

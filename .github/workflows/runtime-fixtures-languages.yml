@@ -452,73 +452,8 @@ jobs:
         env:
           RESULTS: ${{ toJSON(needs) }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PROVES: >-
+            {"fixture-go-ci":"go-ci.yml","fixture-python-ci":"python-ci.yml","fixture-node-ci":"node-ci.yml","fixture-rust-ci":"rust-ci.yml","fixture-cpp-ci":"cpp-ci.yml","fixture-terraform-ci":"terraform-ci.yml","fixture-sql-ci":"sql-ci.yml","fixture-docs-quality":"docs-quality.yml","fixture-hadolint":"hadolint-ci.yml","fixture-web-ci":"web-ci.yml","fixture-container-ci":"container-ci.yml","fixture-cross-platform-smoke":"cross-platform-smoke.yml","fixture-java-ci":"java-ci.yml","fixture-dotnet-ci":"dotnet-ci.yml","fixture-swift-ci":"swift-ci.yml","fixture-mutation-testing":"mutation-testing.yml","fixture-r-ci":"r-ci.yml","fixture-benchmark-compare":"benchmark-compare.yml","fixture-go-ci-os":"go-ci.yml","fixture-python-ci-os":"python-ci.yml","fixture-rust-ci-os":"rust-ci.yml","fixture-dotnet-ci-os":"dotnet-ci.yml","fixture-java-ci-os":"java-ci.yml","fixture-node-ci-os":"node-ci.yml","fixture-terraform-ci-os":"terraform-ci.yml","fixture-sql-ci-os":"sql-ci.yml","fixture-web-ci-os":"web-ci.yml"}
         run: |
           set -euo pipefail
-          python3 -I <<'PY'
-          import hashlib
-          import json
-          import os
-          import pathlib
-
-          # fixture job id -> the reusable it proves
-          PROVES = {
-              "fixture-go-ci": "go-ci.yml",
-              "fixture-python-ci": "python-ci.yml",
-              "fixture-node-ci": "node-ci.yml",
-              "fixture-rust-ci": "rust-ci.yml",
-              "fixture-cpp-ci": "cpp-ci.yml",
-              "fixture-terraform-ci": "terraform-ci.yml",
-              "fixture-sql-ci": "sql-ci.yml",
-              "fixture-docs-quality": "docs-quality.yml",
-              "fixture-hadolint": "hadolint-ci.yml",
-              "fixture-web-ci": "web-ci.yml",
-              "fixture-container-ci": "container-ci.yml",
-              "fixture-cross-platform-smoke": "cross-platform-smoke.yml",
-              "fixture-java-ci": "java-ci.yml",
-              "fixture-dotnet-ci": "dotnet-ci.yml",
-              "fixture-swift-ci": "swift-ci.yml",
-              "fixture-mutation-testing": "mutation-testing.yml",
-              "fixture-r-ci": "r-ci.yml",
-              "fixture-benchmark-compare": "benchmark-compare.yml",
-              "fixture-go-ci-os": "go-ci.yml",
-              "fixture-python-ci-os": "python-ci.yml",
-              "fixture-rust-ci-os": "rust-ci.yml",
-              "fixture-dotnet-ci-os": "dotnet-ci.yml",
-              "fixture-java-ci-os": "java-ci.yml",
-              "fixture-node-ci-os": "node-ci.yml",
-              "fixture-terraform-ci-os": "terraform-ci.yml",
-              "fixture-sql-ci-os": "sql-ci.yml",
-              "fixture-web-ci-os": "web-ci.yml",
-          }
-          results = json.loads(os.environ["RESULTS"])
-          run_url = os.environ["RUN_URL"]
-
-          lines = [
-              "### Runtime evidence",
-              "",
-              f"Run: {run_url}",
-              "",
-              "Only a `success` row is evidence. Copy `last_run` and `proven_digest`",
-              "into `catalog/runtime-coverage.yml` and set the status to",
-              "`runtime-proven`. A failed or skipped row proves nothing — leave that",
-              "record where it is.",
-              "",
-              "| Workflow | Result | proven_digest |",
-              "| --- | --- | --- |",
-          ]
-          for job, workflow in sorted(PROVES.items(), key=lambda kv: kv[1]):
-              result = (results.get(job) or {}).get("result", "missing")
-              path = pathlib.Path(".github/workflows") / workflow
-              digest = (
-                  hashlib.sha256(path.read_bytes()).hexdigest()
-                  if path.is_file()
-                  else "FILE MISSING"
-              )
-              mark = "" if result == "success" else " ⚠"
-              lines.append(f"| `{workflow}` | {result}{mark} | `{digest}` |")
-
-          summary = pathlib.Path(os.environ["GITHUB_STEP_SUMMARY"])
-          with summary.open("a", encoding="utf-8") as handle:
-              handle.write("\n".join(lines) + "\n")
-          print("\n".join(lines))
-          PY
+          python3 -I scripts/render_runtime_evidence.py
