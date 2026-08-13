@@ -128,7 +128,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
-      pull-requests: read
+      pull-requests: read # snapshot only this PR's pre-run ci label state
     outputs:
       had_label: ${{ steps.snapshot.outputs.had_label }}
     steps:
