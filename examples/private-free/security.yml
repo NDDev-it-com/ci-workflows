@@ -21,6 +21,9 @@ jobs:
     uses: NDDev-it-com/ci-workflows/.github/workflows/secret-scan.yml@<sha>
     with:
       runner: ubuntu-latest
+      # Optional Docker-free lane for a Linux X64 worker. Omit this input to
+      # preserve the digest-pinned container default.
+      execution_mode: binary
   actionlint:
     permissions: { contents: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/actionlint.yml@<sha>

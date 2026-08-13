@@ -1,7 +1,7 @@
 # External tools referenced by ci-workflows.
 # Machine-readable source of truth. Mirrored by docs/. Enforced by scripts/validate_catalog.py.
 # Action `pin` values are full commit SHAs (tags are mutable); CLIs pin by version/checksum and use null here.
-# Last verified: 2026-07-13
+# Last verified: 2026-08-13
 
 tools:
   - id: actionlint
@@ -31,9 +31,10 @@ tools:
     kind: container
     current_version: "v8.30.1"
     pin: "zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
+    binary_release: "linux_x64 size:8230402 sha256:551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
     used_by:
       - .github/workflows/secret-scan.yml
-    last_verified: "2026-07-04"
+    last_verified: "2026-08-13"
 
   - id: trivy
     name: Trivy

@@ -27,7 +27,8 @@ container images, checksum for downloaded binaries).
 - **zizmor** — installed at a pinned version; `regular` persona by default,
   `pedantic`/`auditor` available. Split into SARIF/no-SARIF callers for the
   public vs private-free tiers (see [06 Security scanning](06-security-scanning.md#zizmor)).
-- **gitleaks** — run from a **digest-pinned** container image with `--redact`
+- **gitleaks** — run from a **digest-pinned** container image by default, or an
+  explicit size/checksum/version-verified Linux X64 binary release with `--redact`
   so matched secrets are never printed.
 - **trivy / grype / hadolint** — the container lane's scanners; trivy also
   covers IaC and dependencies. Emit SARIF for upload on public/GHAS.

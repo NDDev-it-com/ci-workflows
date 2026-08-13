@@ -175,23 +175,28 @@ capabilities:
     private_paid: available
     workflow: .github/workflows/secret-scan.yml
     example: examples/private-free/security.yml
-    # gitleaks is a digest-pinned image, not a binary, so this lane needs a
-    # container runtime on whatever machine it lands on. Stated here because a
-    # caller choosing between self-hosted classes cannot see it from the inputs,
-    # and getting it wrong fails at runtime with a missing socket rather than
-    # with anything that names the real problem.
+    # The compatibility default remains the digest-pinned container. The
+    # explicit binary mode is a separately pinned Linux/X64 contract and needs
+    # only a shell; callers compile the selected mode before choosing a class.
     runtime_requirements: ["container-runtime"]
+    runtime_requirements_by_execution_mode:
+      container: ["container-runtime"]
+      binary: []
     required_permissions:
       - "contents: read"
     required_settings: []
     risks:
       - "Digest-pinned container image must be bumped by Dependabot to stay current"
+      - "Binary mode is allowlisted to Gitleaks 8.30.1 on Linux X64; unsupported tuples fail before checkout"
+      - "The binary release archive is bound to its official asset size and SHA-256, safely extracted, version-verified, and cleanup-proven"
       - "Private-free contract intentionally contains no paid runtime-hardening action"
       - "Checkout ignores persistent runner global Git config so ambient Authorization headers cannot combine with the job token"
     deprecations: null
-    last_verified: "2026-07-04"
+    last_verified: "2026-08-13"
     sources:
       - "https://github.com/gitleaks/gitleaks"
+      - "https://github.com/gitleaks/gitleaks/releases/tag/v8.30.1"
+      - "https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#runner-context"
 
   - id: actionlint
     name: actionlint workflow linter

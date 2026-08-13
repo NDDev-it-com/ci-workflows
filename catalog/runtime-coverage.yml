@@ -318,10 +318,15 @@ entries:
     waiver: null
   - workflow: .github/workflows/secret-scan.yml
     criticality: security-blocking
-    status: runtime-proven
-    evidence: 'Called by runtime-fixtures.yml; full-history gitleaks executed through the digest-pinned container.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621986220
-    proven_digest: 283c40be1e8b6f3018425f6cc38373dd11f2d4c02777082589476788ea482b9f
+    status: blocked
+    validator: scripts/check_secret_scan_contract.py
+    evidence: 'The workflow changed to add an explicit verified binary mode. Executable local probes cover the default container invocation, mode/version/platform/digest guard, safe archive extraction and semantic parity; a fresh live workflow_call run for both modes is pending.'
+    last_run: null
+    runtime_debt:
+      risk: high
+      barrier: specialized-harness
+      required_capability: Standard GitHub-hosted Linux X64 caller executing both the default container and verified binary modes without skipped jobs.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/137
     waiver: null
   - workflow: .github/workflows/semgrep-ci.yml
     criticality: security-blocking

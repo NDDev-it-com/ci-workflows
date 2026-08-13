@@ -110,10 +110,13 @@ first-step guard rejects any other platform before the download.
 
 ## gitleaks (`secret-scan.yml`)
 
-History-aware secret detection using a **digest-pinned** gitleaks container
-image (`detect --redact --exit-code 1` over full git history via
-`fetch-depth: 0`). Gitleaks is free on public and private. It is the
-private-tier substitute for native secret scanning, which is paid.
+History-aware secret detection using a **digest-pinned** gitleaks container by
+default (`detect --redact --exit-code 1` over full git history via
+`fetch-depth: 0`). Linux X64 workers without Docker may opt into
+`execution_mode: binary`; the only accepted release tuple is pinned by exact
+asset size and SHA-256 and is extracted and version-checked fail-closed.
+Gitleaks is free on public and private. It is the private-tier substitute for
+native secret scanning, which is paid.
 
 ## private-static (`private-static.yml`)
 

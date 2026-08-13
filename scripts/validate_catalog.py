@@ -37,6 +37,7 @@ CAP_OPTIONAL_FIELDS = {"product_facts",
     # workflow and cross-checked by check_runtime_requirements.py. Optional
     # because 44 of 46 reusables need nothing but a shell.
     "runtime_requirements",
+    "runtime_requirements_by_execution_mode",
 }
 VALID_STATUS = {"ga", "preview", "deprecated", "retiring", "planned"}
 VALID_TIER_AVAIL = {"free", "paid", "unavailable", "conditional"}
@@ -88,6 +89,22 @@ def check() -> list[str]:
                 or not all(isinstance(ref, str) for ref in product_facts)
             ):
                 problems.append(f"capability `{cid}`: product_facts must be a list of fact ids")
+            mode_requirements = cap.get("runtime_requirements_by_execution_mode")
+            if mode_requirements is not None:
+                if not isinstance(mode_requirements, dict) or set(mode_requirements) != {"container", "binary"}:
+                    problems.append(
+                        f"capability `{cid}`: runtime_requirements_by_execution_mode "
+                        "must map exactly container and binary"
+                    )
+                elif any(
+                    not isinstance(value, list)
+                    or any(item != "container-runtime" for item in value)
+                    for value in mode_requirements.values()
+                ):
+                    problems.append(
+                        f"capability `{cid}`: execution-mode requirements must be "
+                        "lists containing only container-runtime"
+                    )
             if missing:
                 problems.append(f"capability `{cid}`: missing fields {sorted(missing)}")
             if extra:
