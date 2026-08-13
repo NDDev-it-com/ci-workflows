@@ -317,16 +317,12 @@ entries:
     proven_digest: d78f0ff76fa9db7801738b87a5c68afa0a0f2426350bea6462389b813d8b93b6
     waiver: null
   - workflow: .github/workflows/secret-scan.yml
+    proven_os: [linux]
     criticality: security-blocking
-    status: blocked
-    validator: scripts/check_secret_scan_contract.py
-    evidence: 'The workflow changed to add an explicit verified binary mode. Executable local probes cover the default container invocation, mode/version/platform/digest guard, safe archive extraction and semantic parity; a fresh live workflow_call run for both modes is pending.'
-    last_run: null
-    runtime_debt:
-      risk: high
-      barrier: specialized-harness
-      required_capability: Standard GitHub-hosted Linux X64 caller executing both the default container and verified binary modes without skipped jobs.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/137
+    status: runtime-proven
+    evidence: 'Fresh fixture run executed two independent Linux X64 workflow_call jobs: job 94323980245 ran the unchanged digest-pinned container path, and job 94323980234 downloaded the allowlisted release asset, verified size/SHA-256/version, scanned full history without invoking the container step, cleanup-proved its temporary state, and emitted its summary. The aggregate evidence job succeeded; skipped mutually-exclusive steps are expected mode separation, not claimed evidence. Executable negative probes additionally reject unknown mode/version/OS/arch, missing/malformed/mismatched digest, and corrupt/traversal/duplicate/link/special archives.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31660449006
+    proven_digest: 97d45022fbddb41249cb804b09a40312adeddc8b56079f2099d1ada9f2e47b01
     waiver: null
   - workflow: .github/workflows/semgrep-ci.yml
     criticality: security-blocking
