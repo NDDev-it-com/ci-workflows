@@ -27,6 +27,7 @@
     "invocation_documents": {
       ".agents/skills/ci-consumer-adoption/SKILL.md": {"role": "repository-launcher", "language": "markdown"},
       ".agents/skills/nddev-repo-flow/SKILL.md": {"role": "repository-launcher", "language": "markdown"},
+      ".claude/CLAUDE.md": {"role": "repository-launcher", "language": "markdown"},
       ".claude/skills/ci-consumer-adoption/SKILL.md": {"role": "repository-launcher", "language": "markdown"},
       ".claude/skills/nddev-repo-flow/SKILL.md": {"role": "repository-launcher", "language": "markdown"},
       "AGENTS.md": {"role": "repository-launcher", "language": "markdown"},
@@ -40,6 +41,10 @@
       "examples/private-free/security.yml": {"role": "consumer-command", "language": "yaml"},
       "scripts/resolve_profile.py": {"role": "repository-launcher", "language": "python"},
       "scripts/validate_all.py": {"role": "repository-launcher", "language": "python"}
+    },
+    "invocation_document_exemptions": {
+      ".gds/repository.yaml": "Generated estate projection owned by the control plane; its verification command is stale after the launcher split and is tracked in NDDev-it-com/github-device-sync#176. A hand edit here is reverted by the next gds run.",
+      "catalog/scorecard-evidence.yml": "Historical evidence record of a command as it was actually run. Rewriting it to the current launcher form would falsify the receipt."
     },
     "source_classes": {
       "production_workflows": ".github/workflows/*.yml",

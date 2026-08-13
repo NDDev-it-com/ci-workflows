@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+- Discover Python invocation documents instead of reading a closed allowlist.
+  `invocation_documents` could only ever check files someone remembered to
+  register, so a document nobody listed was never opened: `.claude/CLAUDE.md`,
+  the only file Claude Code auto-loads in this repository, told every agent to
+  run `python3 scripts/validate_all.py`, which aborts with `ModuleNotFoundError`
+  under the launcher — and the gate stayed green. The contract now scans the
+  tree for documents that launch a real subject in `scripts/`, requires each to
+  be registered or carry a written exemption, and rejects an exemption that no
+  longer describes anything. Tools that are not subjects here (the control
+  plane's `promotion_record.py`) are correctly out of scope. `.claude/CLAUDE.md`
+  is corrected and registered; `.gds/repository.yaml` and
+  `catalog/scorecard-evidence.yml` carry reasoned exemptions.
+
 - Add one hermetic Python execution boundary for every repository validator and
   generator. A machine-readable policy now pins the interpreter and PyYAML,
   inventories imports/resources/subprocess edges, strips ambient `PYTHON*`
