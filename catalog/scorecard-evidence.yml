@@ -1,4 +1,12 @@
 schema: nddev-ci-scorecard-evidence/v1
+attempts:
+  - attempt: 1
+    classification: product-failure
+    caller_sha: 1c5545457b36d6875a43695902fca66a02136a18
+    run_id: 31662081168
+    run_url: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31662081168
+    conclusion: startup_failure
+    reason: "Nested scorecard job requested id-token: write while its publish_results:false caller allowed id-token: none."
 designated_consumer:
   repository: NDDev-it-com/ci-workflows
   visibility: public
@@ -7,12 +15,15 @@ designated_consumer:
   reusable_workflow: .github/workflows/public-scorecard.yml
   supported_events: [push, schedule]
   runner: ubuntu-latest
-  publish_results: false
+  publish_results: true
   sarif_category: ossf-scorecard
   sarif_tool: Scorecard
   required_permissions:
     actions: read
     contents: read
+    id-token: write
     security-events: write
-  forbidden_permissions: [id-token]
+  analysis_only_permissions:
+    actions: read
+    contents: read
 proof: null

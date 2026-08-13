@@ -14,15 +14,24 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  scorecard:
+  analysis-only:
     permissions:
-      security-events: write # upload the Scorecard SARIF to Code Scanning
       contents: read # read the public repository Scorecard evaluates
       actions: read # inspect workflow definitions for the scoring checks
-      # Deliberately no id-token: publish_results is false because OpenSSF's
-      # publishing verifier does not accept reusable-workflow caller shape.
     uses: ./.github/workflows/public-scorecard.yml
     with:
       runner: ubuntu-latest
       publish_results: false
+      sarif_category: ossf-scorecard
+
+  scorecard:
+    permissions:
+      security-events: write # upload the Scorecard SARIF to Code Scanning
+      id-token: write # OpenSSF Scorecard publish provenance
+      contents: read # read the public repository Scorecard evaluates
+      actions: read # inspect workflow definitions for the scoring checks
+    uses: ./.github/workflows/public-scorecard.yml
+    with:
+      runner: ubuntu-latest
+      publish_results: true
       sarif_category: ossf-scorecard

@@ -253,6 +253,13 @@ def scorecard_evidence_ledger() -> str:
         f"| SARIF category / tool | `{consumer['sarif_category']}` / `{consumer['sarif_tool']}` |",
         f"| Scorecard API publish | `{'enabled' if consumer['publish_results'] else 'disabled'}` |",
     ]
+    attempts = contract.get("attempts") or []
+    if attempts:
+        attempt = attempts[-1]
+        lines.extend([
+            f"| Preserved failed attempt | `{attempt['attempt']}` / `{attempt['classification']}` |",
+            f"| Failed run | [run]({attempt['run_url']}) (`{attempt['caller_sha']}`) |",
+        ])
     if proof:
         lines.extend([
             f"| Runtime status | `accepted` |",

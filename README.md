@@ -156,10 +156,10 @@ on:
 permissions: {}
 jobs:
   scorecard:
-    permissions: { security-events: write, contents: read, actions: read }
+    permissions: { security-events: write, id-token: write, contents: read, actions: read }
     uses: NDDev-it-com/ci-workflows/.github/workflows/public-scorecard.yml@<sha>
     with:
-      publish_results: false
+      publish_results: true
       sarif_category: ossf-scorecard
 ```
 
