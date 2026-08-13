@@ -14,6 +14,9 @@
   `public-scorecard-analysis.yml`. GitHub validates every nested job's maximum
   permissions before evaluating job conditions, so separate reusable files are
   required to prevent a skipped publish job from invalidating a read-only call.
+- Preserve Scorecard's three upstream SARIF run identities and verify their
+  exact Code Scanning API category set. The upload category is a fallback, not
+  an override when `runAutomationDetails.id` is already present.
 
 - Add an explicit, fail-closed non-Docker Gitleaks mode for Linux X64. The
   existing digest-pinned container remains the default; binary execution binds

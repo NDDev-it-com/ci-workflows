@@ -27,7 +27,7 @@ on:
         type: boolean
         default: false
       sarif_category:
-        description: 'Deterministic Code Scanning analysis category.'
+        description: 'Fail-closed upload fallback; upstream Scorecard runAutomationDetails define the three analysis categories.'
         type: string
         default: 'ossf-scorecard'
     outputs:
@@ -101,7 +101,7 @@ jobs:
               fail(f"the run must evaluate the actual default-branch ref {expected_ref!r}")
           category = os.environ["SCORECARD_SARIF_CATEGORY"]
           if not re.fullmatch(r"[a-z0-9][a-z0-9._-]{0,63}", category):
-              fail("sarif_category must be 1-64 lowercase URI-safe characters")
+              fail("sarif_category fallback must be 1-64 lowercase URI-safe characters")
           print(
               f"validated public Scorecard run: event={event} "
               f"ref={expected_ref} category={category}"

@@ -37,9 +37,9 @@ validation and skipped jobs are not runtime evidence.
 | `.github/workflows/private-static.yml` | `required-gate` | `runtime-proven` | `—` | `—` | — | — |
 | `.github/workflows/public-codeql.yml` | `security-blocking` | `runtime-proven` | `—` | `—` | — | — |
 | `.github/workflows/public-dependency-review.yml` | `security-blocking` | `runtime-proven` | `—` | `—` | — | — |
-| `.github/workflows/public-scorecard-analysis.yml` | `supporting` | `unverified` | `medium` | `event-context` | Default-branch Scorecard analysis with jobs nonempty and no publication authority. | [issue](https://github.com/NDDev-it-com/ci-workflows/issues/128) |
+| `.github/workflows/public-scorecard-analysis.yml` | `supporting` | `unverified` | `medium` | `event-context` | Fresh post-contract default-branch Scorecard analysis with jobs nonempty and no publication authority. | [issue](https://github.com/NDDev-it-com/ci-workflows/issues/128) |
 | `.github/workflows/public-scorecard-json.yml` | `supporting` | `runtime-proven` | `—` | `—` | — | — |
-| `.github/workflows/public-scorecard.yml` | `supporting` | `unverified` | `medium` | `event-context` | Default-branch Scorecard run with SARIF upload enabled. | [issue](https://github.com/NDDev-it-com/ci-workflows/issues/128) |
+| `.github/workflows/public-scorecard.yml` | `supporting` | `unverified` | `medium` | `event-context` | Default-branch Scorecard run with SARIF upload and exact three-category API evidence. | [issue](https://github.com/NDDev-it-com/ci-workflows/issues/128) |
 | `.github/workflows/python-ci.yml` | `supporting` | `runtime-proven` | `—` | `—` | — | — |
 | `.github/workflows/qt-ci.yml` | `supporting` | `unverified` | `medium` | `heavy-toolchain` | Minimal CMake Qt project and hosted-runner Qt provisioning. | [issue](https://github.com/NDDev-it-com/ci-workflows/issues/129) |
 | `.github/workflows/r-ci.yml` | `supporting` | `runtime-proven` | `—` | `—` | — | — |
