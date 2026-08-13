@@ -62,7 +62,7 @@ def validate(doc: dict[str, Any]) -> list[str]:
 
     hygiene = _job(doc, "fixture-pr-hygiene")
     if hygiene.get("permissions") != {
-        "contents": "read", "pull-requests": "write"
+        "contents": "read", "issues": "write", "pull-requests": "write"
     }:
         problems.append("PR-hygiene caller has broader or insufficient permissions")
     hygiene_with = hygiene.get("with") or {}

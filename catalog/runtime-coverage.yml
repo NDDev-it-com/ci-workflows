@@ -198,7 +198,7 @@ entries:
   - workflow: .github/workflows/pr-hygiene.yml
     criticality: required-gate
     status: blocked
-    evidence: 'No current-digest pull_request caller has run. The new harness will prove commitlint, title validation, label mutation and exact state restoration; stale remains outside that event scope.'
+    evidence: 'No current-digest pull_request caller has run. The first harness attempt failed closed at graph startup because GitHub requires the caller permission ceiling to cover even a disabled nested stale job; no runner or token started. The corrected harness will prove commitlint, title validation, label mutation and exact state restoration; stale remains outside that event scope.'
     last_run: null
     runtime_debt:
       risk: high
