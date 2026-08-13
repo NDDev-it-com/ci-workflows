@@ -23,7 +23,11 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from _workflow_yaml import WORKFLOWS_DIR, load_yaml
+from ci_workflows_tools._workflow_yaml import WORKFLOWS_DIR, load_yaml
+from ci_workflows_tools.check_python_execution_contract import (
+    clean_environment,
+    workflow_python_invocation_problems,
+)
 
 REUSABLE = WORKFLOWS_DIR / "release-supply-chain.yml"
 FREE = WORKFLOWS_DIR / "release-supply-chain-free.yml"
@@ -98,9 +102,7 @@ def _run(
     env: dict[str, str] | None = None,
     input_text: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
-    process_env = os.environ.copy()
-    if env:
-        process_env.update(env)
+    process_env = clean_environment(env)
     return subprocess.run(
         command,
         cwd=cwd,
@@ -167,6 +169,7 @@ def _find_gnu_tar() -> str | None:
             continue
         result = subprocess.run(
             [candidate, "--version"],
+            env=clean_environment(),
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
             check=False,
@@ -206,6 +209,7 @@ def _check_gnu_tar_archive(
         tar_result = subprocess.run(
             command,
             cwd=root,
+            env=clean_environment(),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=False,
@@ -218,6 +222,7 @@ def _check_gnu_tar_archive(
             return
         gzip_result = subprocess.run(
             ["gzip", "-n"],
+            env=clean_environment(),
             input=tar_result.stdout,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -232,6 +237,7 @@ def _check_gnu_tar_archive(
 
     listing = subprocess.run(
         [gnu_tar, "--list", "--file=-"],
+        env=clean_environment(),
         input=gzip.decompress(archives[0]),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -1147,16 +1153,14 @@ def check() -> list[str]:
     free_text = FREE.read_text(encoding="utf-8")
     self_text = SELF_RELEASE.read_text(encoding="utf-8")
 
-    for name, text in (
-        (REUSABLE.name, reusable_text),
-        (FREE.name, free_text),
-        (SELF_RELEASE.name, self_text),
+    for path, text in (
+        (REUSABLE, reusable_text),
+        (FREE, free_text),
+        (SELF_RELEASE, self_text),
     ):
-        for line_number, line in enumerate(text.splitlines(), start=1):
-            if "python3" in line and re.search(r"\bpython3\s+(?!-I\b)", line):
-                problems.append(
-                    f"{name}:{line_number}: embedded Python must use isolated mode (-I)"
-                )
+        problems += workflow_python_invocation_problems(
+            path, text, enforce_embedded=True,
+        )
 
     checkout = _step(reusable, "release", "Checkout")
     checkout_with = checkout.get("with", {}) if isinstance(checkout, dict) else {}

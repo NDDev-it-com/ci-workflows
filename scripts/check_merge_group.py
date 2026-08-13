@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from _workflow_yaml import get_on, load_yaml
+from ci_workflows_tools._workflow_yaml import get_on, load_yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 RULESETS_DIR = REPO_ROOT / ".github" / "rulesets"

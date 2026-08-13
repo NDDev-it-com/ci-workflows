@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from _workflow_yaml import get_on, load_yaml
+from ci_workflows_tools._workflow_yaml import get_on, load_yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES_DIR = REPO_ROOT / "examples"
@@ -24,7 +24,7 @@ REUSABLE_RE = re.compile(
 # Runner semantics live in one place so this check and
 # check_workflow_contracts.py cannot drift apart about what "hosted" and
 # "standard" mean. See _runners.py for why the distinction matters.
-from _runners import HOSTED_RUNNER_PREFIXES, LARGER_RUNNER_SUFFIXES
+from ci_workflows_tools._runners import HOSTED_RUNNER_PREFIXES, LARGER_RUNNER_SUFFIXES
 # Only an example that says in its own filename that it targets a private
 # repository may name a non-hosted runner. Public repositories get free unmetered
 # hosted minutes, and pointing one at self-hosted hardware turns a forked pull
@@ -81,7 +81,9 @@ def _coverage() -> list[str]:
     the permissions it needs, the inputs it requires, and the runner the caller
     must name for itself.
     """
-    from _workflow_yaml import SELF_WORKFLOWS, WORKFLOWS_DIR, get_on, load_yaml
+    from ci_workflows_tools._workflow_yaml import (
+        SELF_WORKFLOWS, WORKFLOWS_DIR, get_on, load_yaml,
+    )
 
     reusables = set()
     for path in sorted(WORKFLOWS_DIR.glob("*.yml")):

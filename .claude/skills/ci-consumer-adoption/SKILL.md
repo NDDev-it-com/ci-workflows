@@ -24,7 +24,7 @@ still bills, and a repository that is routed to hardware its jobs cannot use.
 Do not choose a tier by reading prose. Resolve it:
 
 ```bash
-python3 scripts/resolve_profile.py --visibility private --plan enterprise-cloud \
+.venv/bin/python -I -B scripts/check_python_execution_contract.py --launch resolve_profile.py -- --visibility private --plan enterprise-cloud \
     --code-security --secret-protection --code-quality
 ```
 

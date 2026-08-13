@@ -11,13 +11,13 @@ supported/unsupported runner matrix.
 
 from __future__ import annotations
 
-import os
 import re
 import subprocess
 import sys
 from typing import Any
 
-from _workflow_yaml import WORKFLOWS_DIR, get_on, load_yaml
+from ci_workflows_tools._workflow_yaml import WORKFLOWS_DIR, get_on, load_yaml
+from ci_workflows_tools.check_python_execution_contract import clean_environment
 
 ACTIONLINT = WORKFLOWS_DIR / "actionlint.yml"
 GUARD_ENV_KEYS = {"ACTIONLINT_RUNNER_OS", "ACTIONLINT_RUNNER_ARCH"}
@@ -64,13 +64,10 @@ def _embedded_python(step: dict[str, Any] | None) -> str:
 
 
 def _run_guard(program: str, runner_os: str, runner_arch: str) -> int:
-    env = os.environ.copy()
-    env.update(
-        {
-            "ACTIONLINT_RUNNER_OS": runner_os,
-            "ACTIONLINT_RUNNER_ARCH": runner_arch,
-        }
-    )
+    env = clean_environment({
+        "ACTIONLINT_RUNNER_OS": runner_os,
+        "ACTIONLINT_RUNNER_ARCH": runner_arch,
+    })
     return subprocess.run(
         [sys.executable, "-I", "-"],
         input=program,

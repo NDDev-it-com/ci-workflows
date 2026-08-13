@@ -31,7 +31,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-from _workflow_yaml import REPO_ROOT, load_yaml
+from ci_workflows_tools._workflow_yaml import REPO_ROOT, load_yaml
+from ci_workflows_tools.check_python_execution_contract import clean_environment
 
 GATE = REPO_ROOT / ".github" / "workflows" / "gate.yml"
 CATALOG = REPO_ROOT / "catalog" / "capabilities.yml"
@@ -60,14 +61,14 @@ def _embedded_program() -> str:
 def _run(program: Path, needs, required: str, allow: str = "") -> int:
     payload = "" if needs is None else json.dumps(needs)
     completed = subprocess.run(
-        ["python3", "-I", str(program)],
-        env={
+        [sys.executable, "-I", str(program)],
+        env=clean_environment({
             "PATH": "/usr/bin:/bin",
             "NEEDS_JSON": payload,
             "REQUIRED_JOBS": required,
             "ALLOW_SKIPPED": allow,
             "CHECK_NAME": "fixture",
-        },
+        }),
         capture_output=True,
         text=True,
         timeout=30,
@@ -150,7 +151,7 @@ def check() -> list[str]:
 
     # The catalog must not advertise it as a merge gate either.
     if CATALOG.is_file():
-        from _strict_yaml import strict_load
+        from ci_workflows_tools._strict_yaml import strict_load
 
         for cap in (strict_load(CATALOG) or {}).get("capabilities") or []:
             if str(cap.get("id")) != "gate":
@@ -185,5 +186,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
     raise SystemExit(main())

@@ -35,7 +35,7 @@ import re
 import sys
 from pathlib import Path
 
-from _workflow_yaml import REPO_ROOT
+from ci_workflows_tools._workflow_yaml import REPO_ROOT
 
 # Everything a consumer reads. The catalog is excluded: product-facts.yml is the
 # sanctioned home for dated external figures and has its own freshness gate.
@@ -127,5 +127,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
     raise SystemExit(main())

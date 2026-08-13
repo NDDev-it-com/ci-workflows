@@ -14,7 +14,7 @@ from __future__ import annotations
 import sys
 from typing import Any
 
-from _workflow_yaml import WORKFLOWS_DIR, get_on, load_yaml
+from ci_workflows_tools._workflow_yaml import WORKFLOWS_DIR, get_on, load_yaml
 
 BENCHMARK = WORKFLOWS_DIR / "benchmark.yml"
 BENCHMARK_COMPARE = WORKFLOWS_DIR / "benchmark-compare.yml"

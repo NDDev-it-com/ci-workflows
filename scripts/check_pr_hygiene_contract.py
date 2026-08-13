@@ -10,7 +10,8 @@ import tempfile
 from pathlib import Path
 from typing import Any, Callable
 
-from _workflow_yaml import WORKFLOWS_DIR, get_on, load_yaml
+from ci_workflows_tools._workflow_yaml import WORKFLOWS_DIR, get_on, load_yaml
+from ci_workflows_tools.check_python_execution_contract import clean_environment
 
 WORKFLOW = WORKFLOWS_DIR / "pr-hygiene.yml"
 DEFAULT_NAME = "commitlint (default configuration)"
@@ -102,12 +103,11 @@ def _exercise_validator(run: str, supplied: str, make_file: bool) -> subprocess.
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text("export default {};\n", encoding="utf-8")
         output = workspace / "output"
-        env = {
-            **os.environ,
+        env = clean_environment({
             "COMMITLINT_CONFIG": supplied,
             "GITHUB_OUTPUT": str(output),
             "WORKSPACE": str(workspace),
-        }
+        })
         result = subprocess.run(
             ["bash", "-euo", "pipefail", "-c", run], env=env,
             text=True, capture_output=True, check=False,

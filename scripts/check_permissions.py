@@ -9,7 +9,7 @@ from __future__ import annotations
 import sys
 from typing import Any
 
-from _workflow_yaml import load_yaml, workflow_files
+from ci_workflows_tools._workflow_yaml import load_yaml, workflow_files
 
 
 def check() -> list[str]:

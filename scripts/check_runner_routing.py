@@ -8,11 +8,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-from _strict_yaml import strict_load  # noqa: E402
-from _workflow_yaml import REPO_ROOT, get_on, workflow_files  # noqa: E402
-import check_runtime_requirements  # noqa: E402
+from ci_workflows_tools._strict_yaml import strict_load  # noqa: E402
+from ci_workflows_tools._workflow_yaml import REPO_ROOT, get_on, workflow_files  # noqa: E402
+from ci_workflows_tools import check_runtime_requirements  # noqa: E402
 
 CONTRACT = REPO_ROOT / "catalog" / "workflow-routing.yml"
 CONTRACT_SCHEMA = REPO_ROOT / "catalog" / "schema" / "workflow-routing.schema.yaml"

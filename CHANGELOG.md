@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+- Add one hermetic Python execution boundary for every repository validator and
+  generator. A machine-readable policy now pins the interpreter and PyYAML,
+  inventories imports/resources/subprocess edges, strips ambient `PYTHON*`
+  state at every generation, rejects shadow or unregistered tools, and keeps
+  cold startup proof separate from semantic validation. Dependency imports are
+  accepted only from a coherent active venv whose distribution/version matches
+  the hash-pinned requirements policy; dependency subjects transition to the
+  repository venv explicitly and enforce exact per-environment CPython patch
+  identity across local and hosted layouts. Workflow, documentation and AST
+  process edges now share typed invocation/environment semantics, including
+  exact repository-interpreter provisioning and one-way `execve` receipts. A
+  verified `importlib` package boundary now owns every sibling helper without
+  cwd, `PYTHONPATH`, editable-install, or `sys.path` dependence
+  (#129). Dependency-bearing negative probes bind commands to that exact
+  interpreter and refuse setup/import errors as evidence, so a failing control
+  can never masquerade as proof that bad input was rejected.
+
 - Make `public-scorecard.yml` fail closed outside a public default-branch
   push/schedule, assign a deterministic SARIF category, and expose the upload
   identifier. The repository's persistent Scorecard caller now exercises the

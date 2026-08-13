@@ -22,9 +22,9 @@ from pathlib import Path
 
 import yaml
 
-from _strict_yaml import strict_load
+from ci_workflows_tools._strict_yaml import strict_load
 
-from _workflow_yaml import SELF_WORKFLOWS, WORKFLOWS_DIR
+from ci_workflows_tools._workflow_yaml import SELF_WORKFLOWS, WORKFLOWS_DIR
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 COVERAGE = REPO_ROOT / "catalog" / "runtime-coverage.yml"

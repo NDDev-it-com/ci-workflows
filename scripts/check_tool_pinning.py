@@ -21,7 +21,7 @@ import re
 import sys
 from typing import Any
 
-from _workflow_yaml import get_on, load_yaml, workflow_files
+from ci_workflows_tools._workflow_yaml import get_on, load_yaml, workflow_files
 
 # `${VAR:+@$VAR}` / `${VAR:+@${VAR}}` — a conditional "@version" that expands to
 # nothing (→ latest) when VAR is empty.

@@ -22,13 +22,15 @@ contracts below are strict.
 ## Commands
 
 ```bash
-uv pip install --system --require-hashes -r requirements-ci.txt   # PyYAML only
-python3 scripts/validate_all.py --tier core                       # what ci-gate blocks on
-python3 scripts/validate_all.py                                   # everything
+python3.13 -I -B -m venv --copies .venv
+uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt  # PyYAML only
+.venv/bin/python -I -B scripts/check_python_syntax.py
+.venv/bin/python -I -B scripts/check_python_execution_contract.py --launch validate_all.py -- --tier core
+.venv/bin/python -I -B scripts/check_python_execution_contract.py --launch validate_all.py --
 actionlint
 GH_TOKEN=$(gh auth token) uvx zizmor@1.26.1 --persona regular --min-severity low .github/workflows
-python3 scripts/generate_docs.py                                  # after any catalog change
-python3 scripts/resolve_profile.py --visibility private --plan team --code-security
+.venv/bin/python -I -B scripts/check_python_execution_contract.py --launch generate_docs.py --
+.venv/bin/python -I -B scripts/check_python_execution_contract.py --launch resolve_profile.py -- --visibility private --plan team --code-security
 ```
 
 Use `uv`, never `pip`/`pipx`/`npm`, and never a mutable version (`@latest`). Run
@@ -67,8 +69,8 @@ Touch this → also do this:
   gates are covered, `zizmor-no-sarif` among them. A gate that never fails is
   not a gate, and a probe that never passes is not a test. A gate
   that never fails is not a gate, and a probe that never passes is not a test.
-- **a catalog file** → `python3 scripts/generate_docs.py`.
-- **a skill** → `python3 scripts/sync_skills.py`.
+- **a catalog file** → run `generate_docs.py` through the isolated launcher above.
+- **a skill** → run `sync_skills.py` through the isolated launcher above.
 - **a product fact** → re-read its `source_urls` and correct it. Bumping the
   date alone is precisely what the freshness gate exists to prevent. Stagger the
   new expiry: 38 of 41 facts once shared one date and would have failed together.
@@ -101,7 +103,9 @@ the named script — its fixtures say what the contract is.
 Two rules no validator can catch for you:
 
 - **Never interpolate `${{ inputs.* }}` or `${{ github.event.* }}` inside
-  `run:`** — pass through `env:`. Embedded Python runs as `python3 -I`.
+  `run:`** — pass through `env:`. Embedded Python runs as `python3 -I`;
+  repository tools run through the launcher defined in
+  `catalog/python-execution.yml`.
 - **Never make a push/schedule-only workflow a required status check.** OSSF
   Scorecard is the trap: it cannot run on a pull-request head, so it protects
   nothing while blocking every merge. The requirement can live in *classic*

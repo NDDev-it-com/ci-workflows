@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from _strict_yaml import strict_load
+from ci_workflows_tools._strict_yaml import strict_load
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PROFILES = REPO_ROOT / "catalog" / "profiles.yml"

@@ -53,17 +53,25 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up Python
+        id: python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: "3.13"
+          update-environment: false
       - name: Set up uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
         with:
           version: 0.11.30
       - name: Install validator dependencies
-        run: uv pip install --system --require-hashes -r requirements-ci.txt
+        env:
+          PYTHON_PATH: ${{ steps.python.outputs.python-path }}
+        run: |
+          "$PYTHON_PATH" -I -B -m venv --copies .venv
+          uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
       - name: Run static validators
-        run: python3 scripts/validate_all.py --tier core
+        run: |
+          .venv/bin/python -I -B scripts/check_python_syntax.py
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch validate_all.py -- --tier core
 
   # Blocking, but scoped: a product fact is checked for expiry only when the
   # changed capability declares it, and a runtime-coverage waiver only when its
@@ -95,15 +103,21 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Set up Python
+        id: python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: "3.13"
+          update-environment: false
       - name: Set up uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
         with:
           version: 0.11.30
       - name: Install validator dependencies
-        run: uv pip install --system --require-hashes -r requirements-ci.txt
+        env:
+          PYTHON_PATH: ${{ steps.python.outputs.python-path }}
+        run: |
+          "$PYTHON_PATH" -I -B -m venv --copies .venv
+          uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
       - name: Resolve the change base
         id: base
         env:
@@ -131,11 +145,12 @@ jobs:
           BASE_REF: ${{ steps.base.outputs.ref }}
         run: |
           set -euo pipefail
+          .venv/bin/python -I -B scripts/check_python_syntax.py
           if [ -z "$BASE_REF" ]; then
             echo "no resolvable base; running the full sweep instead of scoping to nothing"
-            python3 scripts/validate_all.py --tier scheduled
+            .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch validate_all.py -- --tier scheduled
           else
-            python3 scripts/validate_all.py --tier touched --changed-from "$BASE_REF"
+            .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch validate_all.py -- --tier touched --changed-from "$BASE_REF"
           fi
 
   actionlint:
@@ -202,57 +217,67 @@ jobs:
         with:
           terraform_wrapper: false
 
+      - name: Set up Python
+        id: python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.13'
+          update-environment: false
+
       - name: Set up uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
         with:
           version: 0.11.30
-          python-version: '3.13'
-          activate-environment: true
           enable-cache: false
 
       - name: Install the probe's dependency and both Python fixtures
+        env:
+          PYTHON_PATH: ${{ steps.python.outputs.python-path }}
         run: |
           set -euo pipefail
+          "$PYTHON_PATH" -I -B -m venv --copies .venv
           # The probe reads workflow YAML through the repository's strict
           # loader, so it needs PyYAML — from the hash-locked file CI already
           # uses, not an ad-hoc install.
-          uv pip install --require-hashes -r requirements-ci.txt
+          uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
           # Both fixture packages must be importable in one environment: the
           # probe runs the same step twice and only the directory changes.
-          uv pip install -e tests/fixtures/python -e tests/fixtures/negative/python pytest
+          uv pip install --python .venv/bin/python \
+            -e tests/fixtures/python -e tests/fixtures/negative/python pytest
 
       - name: terraform-ci must reject unformatted HCL
         run: |
-          python3 -I scripts/negative_gate_probe.py \
+          .venv/bin/python -I -B scripts/check_python_syntax.py
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch negative_gate_probe.py -- \
             --workflow .github/workflows/terraform-ci.yml --job terraform \
             --step 'Format check' \
             --bad tests/fixtures/negative/terraform --good tests/fixtures/terraform
 
       - name: go-ci must report a failing test
         run: |
-          python3 -I scripts/negative_gate_probe.py \
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch negative_gate_probe.py -- \
             --workflow .github/workflows/go-ci.yml --job go \
             --step 'Run tests' \
             --bad tests/fixtures/negative/go --good tests/fixtures/go
 
       - name: sql-ci must reject SQL the dialect refuses
         run: |
-          python3 -I scripts/negative_gate_probe.py \
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch negative_gate_probe.py -- \
             --workflow .github/workflows/sql-ci.yml --job sql \
             --step 'Lint' \
             --bad tests/fixtures/negative/sql --good tests/fixtures/sql
 
       - name: python-ci must report a failing test
         run: |
-          python3 -I scripts/negative_gate_probe.py \
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch negative_gate_probe.py -- \
             --workflow .github/workflows/python-ci.yml --job python \
             --step 'Run tests' \
             --bad tests/fixtures/negative/python --good tests/fixtures/python \
-            --input test_command='python -m pytest -q'
+            --python-input test_command='-m pytest -q'
 
       - name: docs-ci must reject a broken relative link
         run: |
-          python3 -I scripts/negative_gate_probe.py \
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch negative_gate_probe.py -- \
             --workflow .github/workflows/docs-ci.yml --job docs \
             --step 'Check relative Markdown links' \
             --bad . --good . \
@@ -266,7 +291,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          python3 -I scripts/negative_gate_probe.py \
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch negative_gate_probe.py -- \
             --workflow .github/workflows/zizmor-no-sarif.yml --job zizmor \
             --step 'Run zizmor (plain, enforced)' \
             --bad . --good . \
@@ -289,25 +314,34 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Set up Python
+        id: python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.13'
+          update-environment: false
+
       - name: Set up uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
         with:
           version: 0.11.30
-          python-version: '3.13'
-          activate-environment: true
           enable-cache: false
 
       - name: Install the probe's dependency
+        env:
+          PYTHON_PATH: ${{ steps.python.outputs.python-path }}
         run: |
           set -euo pipefail
-          uv pip install --require-hashes -r requirements-ci.txt
+          "$PYTHON_PATH" -I -B -m venv --copies .venv
+          uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
 
       # hadolint varies by input rather than by directory, and its binary is
       # installed by an earlier step of the workflow itself, so --before runs
       # that download instead of assuming a hadolint is already present.
       - name: hadolint-ci must reject an unpinned base and package
         run: |
-          python3 -I scripts/negative_gate_probe.py \
+          .venv/bin/python -I -B scripts/check_python_syntax.py
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch negative_gate_probe.py -- \
             --workflow .github/workflows/hadolint-ci.yml --job hadolint \
             --before 'Download hadolint (pinned + checksum-verified)' \
             --step 'Run hadolint' \
