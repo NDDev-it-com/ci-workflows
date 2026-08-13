@@ -187,14 +187,20 @@ entries:
     waiver: null
   - workflow: .github/workflows/pr-hygiene.yml
     criticality: required-gate
-    status: blocked
-    evidence: 'No current-digest pull_request caller has run. The first harness attempt failed closed at graph startup because GitHub requires the caller permission ceiling to cover even a disabled nested stale job; no runner or token started. The corrected harness will prove commitlint, title validation, label mutation and exact state restoration; stale remains outside that event scope.'
-    last_run: null
+    status: partial-runtime
+    evidence: 'Recovery-cycle Attempt 1 ran two current-digest pull_request callers: omitted commitlint_config succeeded through upstream default discovery, and an exact validated explicit config path succeeded. PR-title and labeler also succeeded; cleanup first observed the ci label write and then restored its prior absent state, and the evidence guard succeeded. Stale was deliberately not claimed: its broad issue/PR population still needs an isolated event estate. Earlier attempts remain visible in #127, including the permission-ceiling startup failure and the pre-ACK EISDIR/default-path draft.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31657431178
+    proven_digest: 6954d674ea6ffb6c3078d0eb549c4635e5e801115874efc59cad9198b40f5242
+    proven_jobs:
+      - commitlint-default-discovery
+      - commitlint-explicit-config
+      - pr-title
+      - labeler
     runtime_debt:
       risk: high
       barrier: event-context
-      required_capability: Event-correct pull request plus isolated stale issue/PR population.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/127
+      required_capability: Isolated stale issue/PR population where every mutation and restoration can be scoped and observed.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/133
     waiver: null
   - workflow: .github/workflows/private-static.yml
     criticality: required-gate
@@ -273,7 +279,7 @@ entries:
       risk: critical
       barrier: external-authority
       required_capability: GitHub-verified maintainer signing identity, private control-plane read authority, exact promotion record, numeric tag and protected release environment.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/127
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/134
     waiver: null
   - workflow: .github/workflows/release-supply-chain-free.yml
     criticality: release
@@ -285,7 +291,7 @@ entries:
       risk: critical
       barrier: destructive-release
       required_capability: Dedicated disposable repository where publishing and deleting a unique release/tag cannot affect consumers or protected project history.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/127
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/135
     waiver: null
   - workflow: .github/workflows/release-supply-chain.yml
     criticality: release
@@ -300,7 +306,7 @@ entries:
       risk: critical
       barrier: destructive-release
       required_capability: Dedicated disposable public repository authorized for release publication and irreversible Sigstore transparency-log attestations.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/127
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/135
     waiver: null
   - workflow: .github/workflows/rust-ci.yml
     proven_os: [linux, macos, windows]
