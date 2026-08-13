@@ -203,6 +203,7 @@ jobs:
     with:
       runner: ubuntu-latest
       working_directory: tests/fixtures/rust
+      deny_arguments: '--all-features --config tests/fixtures/rust/deny.toml'
       enable_deny: true
       enable_audit: true
       enable_machete: true
