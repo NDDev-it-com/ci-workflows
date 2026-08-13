@@ -232,25 +232,17 @@ entries:
     waiver: null
   - workflow: .github/workflows/public-scorecard-analysis.yml
     criticality: supporting
-    status: unverified
-    evidence: "The physical read-only entrypoint executed successfully on owned public default-branch run 31663872580, but runtime-proven promotion is withheld until the corrected exact category-set contract is merged and freshly re-proven."
-    last_run: null
-    runtime_debt:
-      risk: medium
-      barrier: event-context
-      required_capability: Fresh post-contract default-branch Scorecard analysis with jobs nonempty and no publication authority.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/128
+    status: runtime-proven
+    evidence: "Owned public default-branch push run 31665252755 executed the physical analysis-only entrypoint as job 94338313497 with Scorecard analysis successful and no OIDC, artifact, or SARIF-upload authority. The exact merged ref/SHA and reusable digest are bound by catalog/scorecard-evidence.yml; JSON sibling evidence is explicitly ineligible."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31665252755
+    proven_digest: 1dcc639b5bc7f12bb1529aee473103c445eea54a498575ad6610534d8fff9998
     waiver: null
   - workflow: .github/workflows/public-scorecard.yml
     criticality: supporting
-    status: unverified
-    evidence: "Run 31663872580 executed Scorecard and upload-sarif, revealing three authoritative upstream categories; no claim is eligible until a fresh merged push satisfies the corrected exact SHA/ref/workflow/tool/category-set contract. JSON sibling evidence is explicitly ineligible."
-    last_run: null
-    runtime_debt:
-      risk: medium
-      barrier: event-context
-      required_capability: Default-branch Scorecard run with SARIF upload and exact three-category API evidence.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/128
+    status: runtime-proven
+    evidence: "Owned public default-branch push run 31665252755 executed Scorecard analysis and SARIF upload as job 94338313401. Code Scanning accepted exactly the three upstream Scorecard v5.5.0 categories for refs/heads/main at de7128a2ce7ceaa3b85c9e73c08eb344171aec2a under the expected workflow analysis key; immutable artifact and API receipts live in catalog/scorecard-evidence.yml."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31665252755
+    proven_digest: 5e47a29cbb5375589bfd61bc57b6db91d2ce9bebb98f56ae53d3d1d57746fc79
     waiver: null
   - workflow: .github/workflows/python-ci.yml
     proven_os: [linux, macos, windows]

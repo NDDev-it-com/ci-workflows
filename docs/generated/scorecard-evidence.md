@@ -29,7 +29,11 @@ private, fork, skipped-step, wrong-tool, and wrong-category runs are rejected.
 | Failure receipt | [issue receipt](https://github.com/NDDev-it-com/ci-workflows/issues/128#issuecomment-5275483568) (base `d1d5376da29bb2c494498630e04c5454287575a4`) |
 | Preserved recovery failure | `1` / `product-contract-failure` |
 | Recovery receipt | [issue receipt](https://github.com/NDDev-it-com/ci-workflows/issues/128#issuecomment-5275586641) / [run](https://github.com/NDDev-it-com/ci-workflows/actions/runs/31663872580) |
-| Runtime status | `pending post-merge default-branch proof` |
+| Runtime status | `accepted` |
+| Caller SHA | `de7128a2ce7ceaa3b85c9e73c08eb344171aec2a` |
+| Run / job | [run](https://github.com/NDDev-it-com/ci-workflows/actions/runs/31665252755) / [job](https://github.com/NDDev-it-com/ci-workflows/actions/runs/31665252755/job/94338313401) |
+| Analysis IDs | `1611438989, 1611439032, 1611439071` |
+| Reusable digest | `5e47a29cbb5375589bfd61bc57b6db91d2ce9bebb98f56ae53d3d1d57746fc79` |
 
 ---
 Generated from catalog/scorecard-evidence.yml.

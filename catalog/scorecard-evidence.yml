@@ -129,4 +129,68 @@ designated_consumer:
   analysis_only_permissions:
     actions: read
     contents: read
-proof: null
+proof:
+  repository: NDDev-it-com/ci-workflows
+  caller_sha: de7128a2ce7ceaa3b85c9e73c08eb344171aec2a
+  caller_ref: refs/heads/main
+  caller_workflow: .github/workflows/scorecard.yml
+  event: push
+  run_id: 31665252755
+  run_url: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31665252755
+  job_id: 94338313401
+  job_url: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31665252755/job/94338313401
+  analysis_only_job_id: 94338313497
+  analysis_only_job_url: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31665252755/job/94338313497
+  analysis_only_step: success
+  analysis_step: success
+  upload_step: success
+  reusable_sha: de7128a2ce7ceaa3b85c9e73c08eb344171aec2a
+  reusable_digest: 5e47a29cbb5375589bfd61bc57b6db91d2ce9bebb98f56ae53d3d1d57746fc79
+  reusable_workflow: .github/workflows/public-scorecard.yml
+  analysis_reusable_sha: de7128a2ce7ceaa3b85c9e73c08eb344171aec2a
+  analysis_reusable_digest: 1dcc639b5bc7f12bb1529aee473103c445eea54a498575ad6610534d8fff9998
+  analysis_reusable_workflow: .github/workflows/public-scorecard-analysis.yml
+  artifact_id: 9167681947
+  artifact_sha256: 1f7960814496809b3d223fc023907c4841d05bc950ec58fd171870ab268e3af4
+  run_started_at: '2026-08-13T03:52:53Z'
+  run_completed_at: '2026-08-13T03:54:00Z'
+  analyses:
+    - id: 1611438989
+      url: https://api.github.com/repos/NDDev-it-com/ci-workflows/code-scanning/analyses/1611438989
+      analysis_key: .github/workflows/scorecard.yml:scorecard
+      ref: refs/heads/main
+      commit_sha: de7128a2ce7ceaa3b85c9e73c08eb344171aec2a
+      category: supply-chain/branch-protection
+      tool:
+        name: Scorecard
+        version: v5.5.0
+        guid: null
+      created_at: '2026-08-13T03:53:50Z'
+      sarif_id: 9743c3bc-96ca-11f1-9b91-8d63f84a8ed2
+      error: ''
+    - id: 1611439032
+      url: https://api.github.com/repos/NDDev-it-com/ci-workflows/code-scanning/analyses/1611439032
+      analysis_key: .github/workflows/scorecard.yml:scorecard
+      ref: refs/heads/main
+      commit_sha: de7128a2ce7ceaa3b85c9e73c08eb344171aec2a
+      category: supply-chain/local
+      tool:
+        name: Scorecard
+        version: v5.5.0
+        guid: null
+      created_at: '2026-08-13T03:53:50Z'
+      sarif_id: 9743c3bc-96ca-11f1-9b91-8d63f84a8ed2
+      error: ''
+    - id: 1611439071
+      url: https://api.github.com/repos/NDDev-it-com/ci-workflows/code-scanning/analyses/1611439071
+      analysis_key: .github/workflows/scorecard.yml:scorecard
+      ref: refs/heads/main
+      commit_sha: de7128a2ce7ceaa3b85c9e73c08eb344171aec2a
+      category: supply-chain/online-scm
+      tool:
+        name: Scorecard
+        version: v5.5.0
+        guid: null
+      created_at: '2026-08-13T03:53:51Z'
+      sarif_id: 9743c3bc-96ca-11f1-9b91-8d63f84a8ed2
+      error: ''
