@@ -233,23 +233,23 @@ entries:
   - workflow: .github/workflows/public-scorecard-analysis.yml
     criticality: supporting
     status: unverified
-    evidence: "Physical read-only entrypoint staged for a fresh owned public default-branch run; static parity is not runtime proof."
+    evidence: "The physical read-only entrypoint executed successfully on owned public default-branch run 31663872580, but runtime-proven promotion is withheld until the corrected exact category-set contract is merged and freshly re-proven."
     last_run: null
     runtime_debt:
       risk: medium
       barrier: event-context
-      required_capability: Default-branch Scorecard analysis with jobs nonempty and no publication authority.
+      required_capability: Fresh post-contract default-branch Scorecard analysis with jobs nonempty and no publication authority.
       handoff: https://github.com/NDDev-it-com/ci-workflows/issues/128
     waiver: null
   - workflow: .github/workflows/public-scorecard.yml
     criticality: supporting
     status: unverified
-    evidence: "The owned public default-branch consumer is staged in scorecard.yml, but no claim is eligible until a merged push executes both Scorecard and upload-sarif and the Code Scanning API accepts the exact SHA/category/tool analysis. JSON sibling evidence is explicitly ineligible."
+    evidence: "Run 31663872580 executed Scorecard and upload-sarif, revealing three authoritative upstream categories; no claim is eligible until a fresh merged push satisfies the corrected exact SHA/ref/workflow/tool/category-set contract. JSON sibling evidence is explicitly ineligible."
     last_run: null
     runtime_debt:
       risk: medium
       barrier: event-context
-      required_capability: Default-branch Scorecard run with SARIF upload enabled.
+      required_capability: Default-branch Scorecard run with SARIF upload and exact three-category API evidence.
       handoff: https://github.com/NDDev-it-com/ci-workflows/issues/128
     waiver: null
   - workflow: .github/workflows/python-ci.yml

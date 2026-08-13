@@ -251,7 +251,9 @@ def scorecard_evidence_ledger() -> str:
         f"| Analysis reusable | `{consumer['analysis_reusable_workflow']}` |",
         f"| Events | {', '.join(consumer['supported_events'])} |",
         f"| Runner | `{consumer['runner']}` |",
-        f"| SARIF category / tool | `{consumer['sarif_category']}` / `{consumer['sarif_tool']}` |",
+        f"| SARIF fallback category | `{consumer['sarif_fallback_category']}` (used only when an upstream run has no identity) |",
+        f"| Required API categories | `{', '.join(consumer['sarif_categories'])}` |",
+        f"| Scorecard tool | `{consumer['sarif_tool']['name']}` / `{consumer['sarif_tool']['version']}` / guid `{consumer['sarif_tool']['guid']}` |",
         f"| Scorecard API publish | `{'enabled' if consumer['publish_results'] else 'disabled'}` |",
     ]
     lines.extend([
@@ -294,12 +296,19 @@ def scorecard_evidence_ledger() -> str:
                 f"| Failure receipt | [issue receipt]({attempt['issue_receipt']}) "
                 f"(base `{attempt['base_sha']}`) |"
             )
+    recovery_attempts = contract.get("recovery_attempts") or []
+    if recovery_attempts:
+        recovery = recovery_attempts[-1]
+        lines.extend([
+            f"| Preserved recovery failure | `{recovery['attempt']}` / `{recovery['classification']}` |",
+            f"| Recovery receipt | [issue receipt]({recovery['issue_receipt']}) / [run]({recovery['run_url']}) |",
+        ])
     if proof:
         lines.extend([
             f"| Runtime status | `accepted` |",
             f"| Caller SHA | `{proof['caller_sha']}` |",
             f"| Run / job | [run]({proof['run_url']}) / [job]({proof['job_url']}) |",
-            f"| Analysis ID | `{proof['analysis_id']}` |",
+            f"| Analysis IDs | `{', '.join(str(item['id']) for item in proof['analyses'])}` |",
             f"| Reusable digest | `{proof['reusable_digest']}` |",
         ])
     else:

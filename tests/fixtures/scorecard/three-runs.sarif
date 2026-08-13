@@ -1,0 +1,21 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "automationDetails": {"id": "supply-chain/branch-protection/fixture-run"},
+      "tool": {"driver": {"name": "Scorecard", "semanticVersion": "v5.5.0"}},
+      "results": []
+    },
+    {
+      "automationDetails": {"id": "supply-chain/local/fixture-run"},
+      "tool": {"driver": {"name": "Scorecard", "semanticVersion": "v5.5.0"}},
+      "results": []
+    },
+    {
+      "automationDetails": {"id": "supply-chain/online-scm/fixture-run"},
+      "tool": {"driver": {"name": "Scorecard", "semanticVersion": "v5.5.0"}},
+      "results": []
+    }
+  ]
+}

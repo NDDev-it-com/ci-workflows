@@ -2,6 +2,7 @@
 """Fail-closed contract for event-correct Scorecard SARIF runtime evidence."""
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -17,6 +18,27 @@ CONTRACT_PATH = REPO_ROOT / "catalog" / "scorecard-evidence.yml"
 CALLER_PATH = WORKFLOWS_DIR / "scorecard.yml"
 REUSABLE_PATH = WORKFLOWS_DIR / "public-scorecard.yml"
 ANALYSIS_REUSABLE_PATH = WORKFLOWS_DIR / "public-scorecard-analysis.yml"
+SARIF_FIXTURE_PATH = REPO_ROOT / "tests" / "fixtures" / "scorecard" / "three-runs.sarif"
+EXPECTED_CATEGORIES = [
+    "supply-chain/branch-protection",
+    "supply-chain/local",
+    "supply-chain/online-scm",
+]
+EXPECTED_TOOL = {"name": "Scorecard", "version": "v5.5.0", "guid": None}
+EXPECTED_CATEGORY_CONTRACT = {
+    "authority": "upstream-run-automation-details",
+    "category_separator": "last-forward-slash",
+    "upload_fallback_category": "ossf-scorecard",
+    "expected_categories": EXPECTED_CATEGORIES,
+    "expected_tool": EXPECTED_TOOL,
+    "source_urls": [
+        "https://github.com/ossf/scorecard/blob/v5.5.0/pkg/scorecard/sarif.go",
+        "https://github.com/github/codeql-action/blob/"
+        "d1ba80a13dd99fba24a470575428917156a28b43/src/upload-lib.ts",
+        "https://docs.github.com/en/code-security/reference/code-scanning/"
+        "sarif-files/sarif-support-for-code-scanning",
+    ],
+}
 EXPECTED_CONSUMER = {
     "repository": "NDDev-it-com/ci-workflows",
     "visibility": "public",
@@ -27,8 +49,9 @@ EXPECTED_CONSUMER = {
     "supported_events": ["push", "schedule"],
     "runner": "ubuntu-latest",
     "publish_results": True,
-    "sarif_category": "ossf-scorecard",
-    "sarif_tool": "Scorecard",
+    "sarif_fallback_category": "ossf-scorecard",
+    "sarif_categories": EXPECTED_CATEGORIES,
+    "sarif_tool": EXPECTED_TOOL,
     "required_permissions": {
         "actions": "read",
         "contents": "read",
@@ -85,7 +108,8 @@ EXPECTED_MATRIX = [{
     },
     "evidence_obligations": [
         "analysis-and-upload-steps-success", "exact-caller-and-reusable-sha",
-        "accepted-code-scanning-analysis", "exact-ref-sha-tool-and-category",
+        "accepted-code-scanning-analysis-set",
+        "exact-ref-sha-workflow-tool-and-category-set",
     ],
 }]
 EXPECTED_ATTEMPTS = [{
@@ -123,6 +147,25 @@ EXPECTED_ATTEMPTS = [{
     "reason": (
         "The physical public analysis entrypoint was absent from the exact "
         "Harden-Runner public/GHAS allowlist."
+    ),
+}]
+EXPECTED_RECOVERY_ATTEMPTS = [{
+    "attempt": 1,
+    "classification": "product-contract-failure",
+    "caller_sha": "292bd5b4cb4b0df6848a204ffcb85367475b9f4e",
+    "run_id": 31663872580,
+    "run_url": "https://github.com/NDDev-it-com/ci-workflows/actions/runs/31663872580",
+    "job_ids": [94334223400, 94334223449],
+    "analysis_ids": [1611368002, 1611367941, 1611367893],
+    "artifact_id": 9167197636,
+    "artifact_sha256": "d0343578d2def1f7c6b4a0a139a381876f76b376fb0662e39ce9c80b06e3ea33",
+    "issue_receipt": (
+        "https://github.com/NDDev-it-com/ci-workflows/issues/128"
+        "#issuecomment-5275586641"
+    ),
+    "reason": (
+        "The verifier required one caller category, but upstream Scorecard emitted "
+        "three authoritative runAutomationDetails categories that upload-sarif preserved."
     ),
 }]
 
@@ -204,6 +247,104 @@ def _caller_contract_problems(caller: dict[str, Any], consumer: dict[str, Any]) 
     return problems
 
 
+def _category_from_automation_id(value: Any) -> str | None:
+    if not isinstance(value, str) or "/" not in value:
+        return None
+    category, run_id = value.rsplit("/", 1)
+    return category if category and run_id else None
+
+
+def verify_sarif_contract(sarif_log: Any, consumer: dict[str, Any]) -> list[str]:
+    """Validate the upstream-owned multi-run identities before SARIF upload."""
+    if not isinstance(sarif_log, dict):
+        return ["Scorecard SARIF must be a mapping"]
+    problems: list[str] = []
+    if sarif_log.get("version") != "2.1.0":
+        problems.append("Scorecard SARIF version must be 2.1.0")
+    runs = sarif_log.get("runs")
+    if not isinstance(runs, list):
+        return problems + ["Scorecard SARIF runs must be a list"]
+    observed: list[str | None] = []
+    for index, run in enumerate(runs):
+        if not isinstance(run, dict):
+            problems.append(f"Scorecard SARIF run {index} must be a mapping")
+            continue
+        automation_id = (run.get("automationDetails") or {}).get("id")
+        category = _category_from_automation_id(automation_id)
+        observed.append(category)
+        if category is None:
+            problems.append(f"Scorecard SARIF run {index} lacks a category/run-id automationDetails.id")
+        driver = (run.get("tool") or {}).get("driver") or {}
+        actual_tool = {
+            "name": driver.get("name"),
+            "version": driver.get("semanticVersion"),
+            "guid": driver.get("guid"),
+        }
+        if actual_tool != consumer["sarif_tool"]:
+            problems.append(f"Scorecard SARIF run {index} tool identity drifted")
+    if sorted(observed, key=lambda item: str(item)) != sorted(consumer["sarif_categories"]):
+        problems.append(
+            f"Scorecard SARIF category multiset is {observed!r}, "
+            f"expected {consumer['sarif_categories']!r}"
+        )
+    return problems
+
+
+def _analysis_problems(analyses: Any, proof: dict[str, Any], consumer: dict[str, Any]) -> list[str]:
+    if not isinstance(analyses, list):
+        return ["scorecard proof analyses must be a list"]
+    problems: list[str] = []
+    categories: list[Any] = []
+    analysis_ids: list[Any] = []
+    sarif_ids: list[Any] = []
+    required = {
+        "id", "url", "analysis_key", "ref", "commit_sha", "category",
+        "tool", "created_at", "sarif_id", "error",
+    }
+    for index, analysis in enumerate(analyses):
+        if not isinstance(analysis, dict):
+            problems.append(f"scorecard proof analysis {index} must be a mapping")
+            continue
+        if set(analysis) != required:
+            problems.append(f"scorecard proof analysis {index} fields drifted")
+            continue
+        categories.append(analysis["category"])
+        analysis_ids.append(analysis["id"])
+        sarif_ids.append(analysis["sarif_id"])
+        expected = {
+            "analysis_key": f"{consumer['caller_workflow']}:scorecard",
+            "ref": f"refs/heads/{consumer['default_branch']}",
+            "commit_sha": proof.get("caller_sha"),
+            "tool": consumer["sarif_tool"],
+        }
+        for key, value in expected.items():
+            if analysis.get(key) != value:
+                problems.append(f"scorecard proof analysis {index} {key} drifted")
+        if not isinstance(analysis["id"], int) or analysis["id"] <= 0:
+            problems.append(f"scorecard proof analysis {index} id must be positive")
+        expected_url = (
+            f"https://api.github.com/repos/{consumer['repository']}/"
+            f"code-scanning/analyses/{analysis['id']}"
+        )
+        if analysis["url"] != expected_url:
+            problems.append(f"scorecard proof analysis {index} URL is not its exact GitHub API receipt")
+        if str(analysis["created_at"]) < str(proof.get("run_started_at", "")):
+            problems.append(f"scorecard proof analysis {index} predates the caller run")
+        if str(analysis["created_at"]) > str(proof.get("run_completed_at", "")):
+            problems.append(f"scorecard proof analysis {index} postdates the completed caller run")
+        if not isinstance(analysis["sarif_id"], str) or not analysis["sarif_id"]:
+            problems.append(f"scorecard proof analysis {index} lacks its upload SARIF ID")
+        if analysis["error"] != "":
+            problems.append(f"scorecard proof analysis {index} was not accepted without error")
+    if sorted(str(category) for category in categories) != sorted(consumer["sarif_categories"]):
+        problems.append("scorecard proof analysis categories are not the exact expected set")
+    if len({repr(value) for value in analysis_ids}) != len(analysis_ids):
+        problems.append("scorecard proof contains duplicate analysis IDs")
+    if len({repr(value) for value in sarif_ids}) != 1:
+        problems.append("scorecard proof analyses do not share one upload SARIF ID")
+    return problems
+
+
 def verify_proof(proof: Any, consumer: dict[str, Any]) -> list[str]:
     """Validate an immutable post-merge API receipt; synthetic self-tests use this too."""
     if proof is None:
@@ -216,10 +357,8 @@ def verify_proof(proof: Any, consumer: dict[str, Any]) -> list[str]:
         "analysis_only_job_url", "analysis_only_step", "analysis_step",
         "upload_step", "reusable_sha", "reusable_digest", "reusable_workflow",
         "analysis_reusable_sha", "analysis_reusable_digest",
-        "analysis_reusable_workflow",
-        "analysis_id", "analysis_url", "analysis_key", "analysis_ref",
-        "analysis_commit_sha", "analysis_category", "analysis_tool",
-        "run_started_at", "analysis_created_at",
+        "analysis_reusable_workflow", "artifact_id", "artifact_sha256",
+        "run_started_at", "run_completed_at", "analyses",
     }
     missing = required - set(proof)
     extra = set(proof) - required
@@ -240,91 +379,138 @@ def verify_proof(proof: Any, consumer: dict[str, Any]) -> list[str]:
         "upload_step": "success",
         "reusable_workflow": consumer["reusable_workflow"],
         "analysis_reusable_workflow": consumer["analysis_reusable_workflow"],
-        "analysis_ref": f"refs/heads/{consumer['default_branch']}",
-        "analysis_category": consumer["sarif_category"],
-        "analysis_tool": consumer["sarif_tool"],
-        "analysis_key": f"{consumer['caller_workflow']}:scorecard",
     }
     for key, value in expected.items():
         if proof.get(key) != value:
             problems.append(f"scorecard proof {key} is {proof.get(key)!r}, expected {value!r}")
     if not SHA_RE.fullmatch(str(proof.get("caller_sha", ""))):
         problems.append("scorecard proof caller_sha must be a full commit SHA")
-    if proof.get("analysis_commit_sha") != proof.get("caller_sha"):
-        problems.append("Scorecard analysis commit does not equal caller default-branch SHA")
-    if proof.get("reusable_sha") != proof.get("caller_sha"):
-        problems.append("local reusable was not loaded from the exact caller commit")
-    if proof.get("analysis_reusable_sha") != proof.get("caller_sha"):
-        problems.append("analysis reusable was not loaded from the exact caller commit")
-    if not DIGEST_RE.fullmatch(str(proof.get("reusable_digest", ""))):
-        problems.append("scorecard proof reusable_digest must be a lowercase SHA-256")
-    if not DIGEST_RE.fullmatch(str(proof.get("analysis_reusable_digest", ""))):
-        problems.append("scorecard proof analysis_reusable_digest must be a lowercase SHA-256")
-    for key in ("run_id", "job_id", "analysis_only_job_id", "analysis_id"):
+    for key in ("reusable_sha", "analysis_reusable_sha"):
+        if proof.get(key) != proof.get("caller_sha"):
+            problems.append(f"scorecard proof {key} does not equal the exact caller commit")
+    for key in ("reusable_digest", "analysis_reusable_digest", "artifact_sha256"):
+        if not DIGEST_RE.fullmatch(str(proof.get(key, ""))):
+            problems.append(f"scorecard proof {key} must be a lowercase SHA-256")
+    for key in ("run_id", "job_id", "analysis_only_job_id", "artifact_id"):
         if not isinstance(proof.get(key), int) or proof[key] <= 0:
             problems.append(f"scorecard proof {key} must be a positive integer")
-    for key in ("run_url", "job_url", "analysis_only_job_url", "analysis_url"):
-        allowed_prefixes = ("https://github.com/", "https://api.github.com/")
-        if not str(proof.get(key, "")).startswith(allowed_prefixes):
+    for key in ("run_url", "job_url", "analysis_only_job_url"):
+        if not str(proof.get(key, "")).startswith("https://github.com/"):
             problems.append(f"scorecard proof {key} must be an immutable GitHub URL")
-    if str(proof.get("analysis_created_at", "")) < str(proof.get("run_started_at", "")):
-        problems.append("Scorecard analysis predates the caller run")
+    problems += _analysis_problems(proof.get("analyses"), proof, consumer)
     return problems
 
 
 def _proof_selftests(consumer: dict[str, Any]) -> list[str]:
+    base_analysis = {
+        "id": 3,
+        "url": "https://api.github.com/repos/NDDev-it-com/ci-workflows/code-scanning/analyses/3",
+        "analysis_key": ".github/workflows/scorecard.yml:scorecard",
+        "ref": "refs/heads/main",
+        "commit_sha": "a" * 40,
+        "category": "",
+        "tool": deepcopy(consumer["sarif_tool"]),
+        "created_at": "2026-08-13T00:01:00Z",
+        "sarif_id": "upload-1",
+        "error": "",
+    }
+    analyses = []
+    for index, category in enumerate(consumer["sarif_categories"]):
+        analysis = deepcopy(base_analysis)
+        analysis_id = index + 3
+        analysis.update({
+            "id": analysis_id,
+            "url": (
+                "https://api.github.com/repos/NDDev-it-com/ci-workflows/"
+                f"code-scanning/analyses/{analysis_id}"
+            ),
+            "category": category,
+        })
+        analyses.append(analysis)
     base = {
-        "repository": consumer["repository"],
-        "caller_sha": "a" * 40,
-        "caller_ref": "refs/heads/main",
-        "caller_workflow": consumer["caller_workflow"],
-        "event": "push",
-        "run_id": 1,
+        "repository": consumer["repository"], "caller_sha": "a" * 40,
+        "caller_ref": "refs/heads/main", "caller_workflow": consumer["caller_workflow"],
+        "event": "push", "run_id": 1,
         "run_url": "https://github.com/NDDev-it-com/ci-workflows/actions/runs/1",
-        "job_id": 2,
-        "job_url": "https://github.com/NDDev-it-com/ci-workflows/actions/runs/1/job/2",
+        "job_id": 2, "job_url": "https://github.com/NDDev-it-com/ci-workflows/actions/runs/1/job/2",
         "analysis_only_job_id": 4,
         "analysis_only_job_url": "https://github.com/NDDev-it-com/ci-workflows/actions/runs/1/job/4",
-        "analysis_only_step": "success",
-        "analysis_step": "success",
-        "upload_step": "success",
-        "reusable_sha": "a" * 40,
-        "reusable_digest": "b" * 64,
+        "analysis_only_step": "success", "analysis_step": "success", "upload_step": "success",
+        "reusable_sha": "a" * 40, "reusable_digest": "b" * 64,
         "reusable_workflow": consumer["reusable_workflow"],
-        "analysis_reusable_sha": "a" * 40,
-        "analysis_reusable_digest": "d" * 64,
+        "analysis_reusable_sha": "a" * 40, "analysis_reusable_digest": "d" * 64,
         "analysis_reusable_workflow": consumer["analysis_reusable_workflow"],
-        "analysis_id": 3,
-        "analysis_url": "https://github.com/NDDev-it-com/ci-workflows/security/code-scanning/tools/Scorecard/status/",
-        "analysis_key": ".github/workflows/scorecard.yml:scorecard",
-        "analysis_ref": "refs/heads/main",
-        "analysis_commit_sha": "a" * 40,
-        "analysis_category": "ossf-scorecard",
-        "analysis_tool": "Scorecard",
+        "artifact_id": 5, "artifact_sha256": "e" * 64,
         "run_started_at": "2026-08-13T00:00:00Z",
-        "analysis_created_at": "2026-08-13T00:01:00Z",
+        "run_completed_at": "2026-08-13T00:02:00Z", "analyses": analyses,
     }
     if verify_proof(base, consumer):
-        return ["scorecard proof self-test rejected the valid receipt"]
-    mutations = {
+        return ["scorecard proof self-test rejected the valid exact-set receipt"]
+    problems: list[str] = []
+    top_mutations = {
         "non-default-ref": {"caller_ref": "refs/heads/fixtures/test"},
         "private-or-nondesignated": {"repository": "NDDev-it-com/other"},
         "skipped-analysis": {"analysis_step": "skipped"},
         "skipped-analysis-only": {"analysis_only_step": "skipped"},
         "skipped-upload": {"upload_step": "skipped"},
         "unpinned-reusable": {"reusable_sha": "main"},
-        "wrong-sha": {"analysis_commit_sha": "c" * 40},
-        "wrong-category": {"analysis_category": "default"},
-        "wrong-tool": {"analysis_tool": "CodeQL"},
         "json-only": {"reusable_workflow": ".github/workflows/public-scorecard-json.yml"},
         "wrong-analysis-entrypoint": {"analysis_reusable_workflow": ".github/workflows/public-scorecard.yml"},
     }
-    problems: list[str] = []
-    for label, values in mutations.items():
+    for label, values in top_mutations.items():
         candidate = deepcopy(base)
         candidate.update(values)
         if not verify_proof(candidate, consumer):
             problems.append(f"scorecard proof self-test accepted {label}")
+    analysis_mutations = {
+        "wrong-ref": {"ref": "refs/heads/other"},
+        "wrong-sha": {"commit_sha": "c" * 40},
+        "wrong-tool": {"tool": {"name": "CodeQL", "version": "v5.5.0", "guid": None}},
+        "wrong-version": {"tool": {"name": "Scorecard", "version": "v0", "guid": None}},
+        "wrong-analysis-key": {"analysis_key": ".github/workflows/other.yml:scorecard"},
+        "stale-analysis": {"created_at": "2026-08-12T23:59:59Z"},
+        "later-run-analysis": {"created_at": "2026-08-13T00:03:00Z"},
+        "api-error": {"error": "processing failed"},
+    }
+    for label, values in analysis_mutations.items():
+        candidate = deepcopy(base)
+        candidate["analyses"][0].update(values)
+        if not verify_proof(candidate, consumer):
+            problems.append(f"scorecard proof self-test accepted {label}")
+    list_mutations = {
+        "missing-category": lambda values: values.pop(),
+        "extra-category": lambda values: values.append({**deepcopy(values[0]), "id": 99, "category": "supply-chain/extra"}),
+        "duplicate-category": lambda values: values.__setitem__(1, deepcopy(values[0])),
+        "duplicate-analysis-id": lambda values: values[1].update({"id": values[0]["id"]}),
+        "different-upload": lambda values: values[1].update({"sarif_id": "upload-2"}),
+    }
+    for label, mutate in list_mutations.items():
+        candidate = deepcopy(base)
+        mutate(candidate["analyses"])
+        if not verify_proof(candidate, consumer):
+            problems.append(f"scorecard proof self-test accepted {label}")
+    return problems
+
+
+def _sarif_selftests(consumer: dict[str, Any]) -> list[str]:
+    fixture = json.loads(SARIF_FIXTURE_PATH.read_text(encoding="utf-8"))
+    if verify_sarif_contract(fixture, consumer):
+        return ["Scorecard SARIF fixture rejected the valid upstream exact set"]
+    mutations = {
+        "missing-run": lambda value: value["runs"].pop(),
+        "extra-run": lambda value: value["runs"].append(deepcopy(value["runs"][0])),
+        "duplicate-run": lambda value: value["runs"].__setitem__(1, deepcopy(value["runs"][0])),
+        "missing-id": lambda value: value["runs"][0].pop("automationDetails"),
+        "wrong-category": lambda value: value["runs"][0]["automationDetails"].update({"id": "supply-chain/other/run"}),
+        "wrong-tool": lambda value: value["runs"][0]["tool"]["driver"].update({"name": "Other"}),
+        "wrong-version": lambda value: value["runs"][0]["tool"]["driver"].update({"semanticVersion": "v0"}),
+    }
+    problems: list[str] = []
+    for label, mutate in mutations.items():
+        candidate = deepcopy(fixture)
+        mutate(candidate)
+        if not verify_sarif_contract(candidate, consumer):
+            problems.append(f"Scorecard SARIF self-test accepted {label}")
     return problems
 
 
@@ -356,6 +542,8 @@ def check() -> list[str]:
     contract = strict_load(CONTRACT_PATH)
     if contract.get("schema") != "nddev-ci-scorecard-evidence/v1":
         problems.append("scorecard evidence catalog has an unknown schema")
+    if contract.get("category_contract") != EXPECTED_CATEGORY_CONTRACT:
+        problems.append("Scorecard upstream category authority contract drifted")
     problems += _matrix_contract_problems(contract.get("entrypoint_matrix"))
     problems += _matrix_selftests()
     matrix_workflows = {row["workflow"].rsplit("/", 1)[-1] for row in EXPECTED_MATRIX}
@@ -365,6 +553,8 @@ def check() -> list[str]:
         problems.append("Harden-Runner allowlist must enumerate exact workflow filenames")
     if contract.get("attempts") != EXPECTED_ATTEMPTS:
         problems.append("Scorecard preserved product-failure receipts drifted")
+    if contract.get("recovery_attempts") != EXPECTED_RECOVERY_ATTEMPTS:
+        problems.append("Scorecard recovery-cycle failure receipts drifted")
     consumer = contract.get("designated_consumer")
     if consumer != EXPECTED_CONSUMER:
         problems.append("scorecard evidence consumer must be the exact owned public default-branch contract")
@@ -420,6 +610,15 @@ def check() -> list[str]:
         "type": "boolean", "default": True,
     }:
         problems.append("publish_results must remain an exact typed boolean with its compatible default")
+    category_input = reusable_call.get("inputs", {}).get("sarif_category", {})
+    if category_input != {
+        "description": (
+            "Fail-closed upload fallback; upstream Scorecard runAutomationDetails "
+            "define the three analysis categories."
+        ),
+        "type": "string", "default": "ossf-scorecard",
+    }:
+        problems.append("sarif_category must remain the compatible upload fallback contract")
     expected_analysis_inputs = {
         key: deepcopy(value) for key, value in reusable_call.get("inputs", {}).items()
         if key not in {"publish_results", "upload_sarif_on_forks"}
@@ -527,6 +726,7 @@ def check() -> list[str]:
         problems.append("Scorecard analysis/upload failures must never be hidden")
     problems += verify_proof(contract.get("proof"), consumer)
     problems += _proof_selftests(consumer)
+    problems += _sarif_selftests(consumer)
     return problems
 
 

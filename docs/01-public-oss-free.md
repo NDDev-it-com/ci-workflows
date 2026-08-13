@@ -67,7 +67,7 @@ Copilot Autofix.
 
 Scorecard scores your repository against supply-chain best practices (pinned
 actions, branch protection, token permissions, etc.). Use `public-scorecard.yml`
-for SARIF/code-scanning upload with a deterministic `sarif_category`, or
+for SARIF/code-scanning upload, or
 `public-scorecard-json.yml` when Scorecard
 should remain a JSON artifact/check signal instead of a persistent
 code-scanning alert source. `public-scorecard-json.yml` defaults
@@ -104,7 +104,11 @@ Grant `id-token: write` and `security-events: write` only to
 `public-scorecard-analysis.yml`; its physical workflow graph contains neither
 OIDC nor artifact/SARIF upload authority and requires only `contents: read` plus
 `actions: read`. The two entrypoints' common analysis steps are machine-checked
-for semantic parity.
+for semantic parity. Scorecard v5.5.0 deliberately emits separate SARIF runs for
+`supply-chain/branch-protection`, `supply-chain/local`, and
+`supply-chain/online-scm`. GitHub preserves those upstream
+`runAutomationDetails.id` categories; the caller's `ossf-scorecard` input is a
+fail-closed fallback only and does not collapse the three analyses.
 
 <a id="dependency-review"></a>
 ## Dependency review — `public-dependency-review.yml`

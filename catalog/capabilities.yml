@@ -87,9 +87,11 @@ capabilities:
       - "Public repository (Scorecard is public-oriented; forks unsupported)"
       - "Code scanning enabled to render SARIF results"
       - "security-events: write and id-token: write only for publish_results: true"
+      - "Code Scanning preserves Scorecard v5.5.0 upstream categories: supply-chain/branch-protection, supply-chain/local, supply-chain/online-scm"
     risks:
       - "Supported triggers are push and schedule on the default branch only; pull_request and workflow_dispatch are experimental"
       - "Do not place under pull_request in caller workflows"
+      - "The sarif_category input is an upload fallback; upstream runAutomationDetails.id takes precedence"
     deprecations: null
     last_verified: 2026-08-13
     sources:

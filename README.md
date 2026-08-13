@@ -171,6 +171,12 @@ publication entrypoint. A former caller that explicitly passed
 `publish_results: false` must move to the analysis entrypoint; permission
 preflight makes that physical split necessary.
 
+The pinned Scorecard emits three authoritative SARIF categories —
+`supply-chain/branch-protection`, `supply-chain/local`, and
+`supply-chain/online-scm`. The `ossf-scorecard` upload category is only the
+fallback used when a SARIF run lacks `automationDetails.id`; it does not replace
+or merge upstream run identities.
+
 ### Private repository (no paid add-ons)
 
 ```yaml

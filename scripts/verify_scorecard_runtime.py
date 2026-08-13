@@ -9,9 +9,11 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 from typing import Any
 
@@ -20,7 +22,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _strict_yaml import strict_load  # noqa: E402
 from _workflow_yaml import REPO_ROOT  # noqa: E402
-from check_scorecard_evidence_contract import verify_proof  # noqa: E402
+from check_scorecard_evidence_contract import verify_proof, verify_sarif_contract  # noqa: E402
 
 
 def fail(message: str) -> None:
@@ -39,6 +41,46 @@ def api(endpoint: str) -> Any:
         return json.loads(result.stdout)
     except json.JSONDecodeError as exc:
         fail(f"GitHub API {endpoint!r} returned invalid JSON: {exc}")
+
+
+def api_bytes(endpoint: str) -> bytes:
+    result = subprocess.run(
+        ["gh", "api", endpoint], cwd=REPO_ROOT,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+    )
+    if result.returncode != 0:
+        fail(f"GitHub API {endpoint!r} failed: {result.stderr.decode(errors='replace').strip()}")
+    return result.stdout
+
+
+def artifact_sarif(repo: str, run_id: int, consumer: dict[str, Any]) -> tuple[int, str]:
+    artifacts = api(f"repos/{repo}/actions/runs/{run_id}/artifacts").get("artifacts") or []
+    matches = [item for item in artifacts if item.get("name") == "scorecard-results"]
+    if len(matches) != 1 or matches[0].get("expired") is not False:
+        fail(f"expected one live scorecard-results artifact, found {len(matches)}")
+    artifact = matches[0]
+    archive = api_bytes(f"repos/{repo}/actions/artifacts/{artifact['id']}/zip")
+    try:
+        with zipfile.ZipFile(io.BytesIO(archive)) as bundle:
+            members = bundle.infolist()
+            if len(members) != 1 or members[0].filename != "results.sarif":
+                fail("Scorecard artifact must contain only results.sarif")
+            mode = members[0].external_attr >> 16
+            if mode and (mode & 0o170000) not in {0, 0o100000}:
+                fail("Scorecard artifact results.sarif is not a regular file")
+            raw = bundle.read(members[0])
+    except (zipfile.BadZipFile, KeyError) as exc:
+        fail(f"Scorecard artifact is not a valid exact archive: {exc}")
+    try:
+        sarif_log = json.loads(raw)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        fail(f"Scorecard artifact results.sarif is invalid JSON: {exc}")
+    sarif_problems = verify_sarif_contract(sarif_log, consumer)
+    if sarif_problems:
+        for problem in sarif_problems:
+            print(f"  - {problem}", file=sys.stderr)
+        fail("uploaded Scorecard artifact violates the upstream multi-run contract")
+    return artifact["id"], hashlib.sha256(raw).hexdigest()
 
 
 def main() -> int:
@@ -122,20 +164,29 @@ def main() -> int:
     if forbidden_runtime_steps & set(analysis_only_steps):
         fail("analysis-only job unexpectedly contains a publication step")
 
+    artifact_id, artifact_digest = artifact_sarif(args.repo, run["id"], consumer)
     analyses = api(f"repos/{args.repo}/code-scanning/analyses?per_page=100")
-    candidates = [
-        item for item in analyses
-        if item.get("ref") == expected_ref
-        and item.get("commit_sha") == run.get("head_sha")
-        and item.get("category") == consumer["sarif_category"]
-        and item.get("tool", {}).get("name") == consumer["sarif_tool"]
-        and item.get("analysis_key") == f"{consumer['caller_workflow']}:scorecard"
-        and not item.get("error")
+    candidates = [item for item in analyses if (
+        item.get("tool", {}).get("name") == consumer["sarif_tool"]["name"]
         and str(item.get("created_at", "")) >= str(run.get("run_started_at", ""))
-    ]
-    if len(candidates) != 1:
-        fail(f"expected one accepted exact Scorecard analysis, found {len(candidates)}")
-    analysis = candidates[0]
+        and str(item.get("created_at", "")) <= str(run.get("updated_at", ""))
+    )]
+    analysis_receipts = []
+    for candidate in candidates:
+        analysis = api(f"repos/{args.repo}/code-scanning/analyses/{candidate['id']}")
+        analysis_receipts.append({
+            "id": analysis["id"], "url": analysis["url"],
+            "analysis_key": analysis["analysis_key"], "ref": analysis["ref"],
+            "commit_sha": analysis["commit_sha"], "category": analysis["category"],
+            "tool": {
+                "name": analysis.get("tool", {}).get("name"),
+                "version": analysis.get("tool", {}).get("version"),
+                "guid": analysis.get("tool", {}).get("guid"),
+            },
+            "created_at": analysis["created_at"], "sarif_id": analysis["sarif_id"],
+            "error": analysis.get("error"),
+        })
+    analysis_receipts.sort(key=lambda item: item["category"])
     reusable_path = REPO_ROOT / consumer["reusable_workflow"]
     analysis_reusable_path = REPO_ROOT / consumer["analysis_reusable_workflow"]
     digest = hashlib.sha256(reusable_path.read_bytes()).hexdigest()
@@ -161,15 +212,11 @@ def main() -> int:
         "analysis_reusable_sha": exact_analysis_refs[0]["sha"],
         "analysis_reusable_digest": analysis_digest,
         "analysis_reusable_workflow": consumer["analysis_reusable_workflow"],
-        "analysis_id": analysis["id"],
-        "analysis_url": analysis["url"],
-        "analysis_key": analysis["analysis_key"],
-        "analysis_ref": analysis["ref"],
-        "analysis_commit_sha": analysis["commit_sha"],
-        "analysis_category": analysis["category"],
-        "analysis_tool": analysis["tool"]["name"],
+        "artifact_id": artifact_id,
+        "artifact_sha256": artifact_digest,
         "run_started_at": run["run_started_at"],
-        "analysis_created_at": analysis["created_at"],
+        "run_completed_at": run["updated_at"],
+        "analyses": analysis_receipts,
     }
     problems = verify_proof(proof, consumer)
     if problems:

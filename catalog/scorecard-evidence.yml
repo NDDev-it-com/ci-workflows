@@ -50,8 +50,24 @@ entrypoint_matrix:
     evidence_obligations:
       - analysis-and-upload-steps-success
       - exact-caller-and-reusable-sha
-      - accepted-code-scanning-analysis
-      - exact-ref-sha-tool-and-category
+      - accepted-code-scanning-analysis-set
+      - exact-ref-sha-workflow-tool-and-category-set
+category_contract:
+  authority: upstream-run-automation-details
+  category_separator: last-forward-slash
+  upload_fallback_category: ossf-scorecard
+  expected_categories:
+    - supply-chain/branch-protection
+    - supply-chain/local
+    - supply-chain/online-scm
+  expected_tool:
+    name: Scorecard
+    version: v5.5.0
+    guid: null
+  source_urls:
+    - https://github.com/ossf/scorecard/blob/v5.5.0/pkg/scorecard/sarif.go
+    - https://github.com/github/codeql-action/blob/d1ba80a13dd99fba24a470575428917156a28b43/src/upload-lib.ts
+    - https://docs.github.com/en/code-security/reference/code-scanning/sarif-files/sarif-support-for-code-scanning
 attempts:
   - attempt: 1
     classification: product-failure
@@ -74,6 +90,18 @@ attempts:
     command: python3 scripts/validate_all.py --tier core
     failed_contract: harden-runner-contract
     reason: "The physical public analysis entrypoint was absent from the exact Harden-Runner public/GHAS allowlist."
+recovery_attempts:
+  - attempt: 1
+    classification: product-contract-failure
+    caller_sha: 292bd5b4cb4b0df6848a204ffcb85367475b9f4e
+    run_id: 31663872580
+    run_url: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31663872580
+    job_ids: [94334223400, 94334223449]
+    analysis_ids: [1611368002, 1611367941, 1611367893]
+    artifact_id: 9167197636
+    artifact_sha256: d0343578d2def1f7c6b4a0a139a381876f76b376fb0662e39ce9c80b06e3ea33
+    issue_receipt: https://github.com/NDDev-it-com/ci-workflows/issues/128#issuecomment-5275586641
+    reason: "The verifier required one caller category, but upstream Scorecard emitted three authoritative runAutomationDetails categories that upload-sarif preserved."
 designated_consumer:
   repository: NDDev-it-com/ci-workflows
   visibility: public
@@ -84,8 +112,15 @@ designated_consumer:
   supported_events: [push, schedule]
   runner: ubuntu-latest
   publish_results: true
-  sarif_category: ossf-scorecard
-  sarif_tool: Scorecard
+  sarif_fallback_category: ossf-scorecard
+  sarif_categories:
+    - supply-chain/branch-protection
+    - supply-chain/local
+    - supply-chain/online-scm
+  sarif_tool:
+    name: Scorecard
+    version: v5.5.0
+    guid: null
   required_permissions:
     actions: read
     contents: read
