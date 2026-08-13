@@ -12,6 +12,13 @@ required repository resources, subprocess edges, and child-environment policy.
 The launcher rejects unknown or traversing tool names, reconstructs `sys.path`
 from the repository `scripts/` directory, the standard library, and the exact
 hash-pinned PyYAML installation when the registered import graph needs it.
+The compatibility contract is CPython `3.13`, not one cross-host patch number:
+uv may resolve that minor request to a newer supported patch. Each individual
+environment is nevertheless exact and fail-closed: runtime `version_info`,
+CPython implementation version, import cache tag, `pyvenv.cfg` version, base
+installation, and executable must all describe the same patch. A
+dependency-bearing subject is physically launched with `.venv/bin/python`;
+the ambient `python3`, `PATH`, and `VIRTUAL_ENV` cannot select its interpreter.
 PyYAML is trusted only from the active Python 3.13 virtual environment: the
 interpreter, prefix, base interpreter, `pyvenv.cfg`, non-system site-packages,
 distribution metadata and import origin must form one coherent non-escaping
@@ -52,4 +59,8 @@ semantics](https://docs.python.org/3.13/using/cmdline.html), [Python 3.13
 subprocess environment replacement](https://docs.python.org/3.13/library/subprocess.html),
 [Python 3.13 virtual environments](https://docs.python.org/3.13/library/venv.html),
 [Python 3.13 `sys` prefixes](https://docs.python.org/3.13/library/sys.html), and
-[Python 3.13 `runpy`](https://docs.python.org/3.13/library/runpy.html).
+[Python 3.13 `runpy`](https://docs.python.org/3.13/library/runpy.html). The
+[uv Python-version contract](https://docs.astral.sh/uv/concepts/python-versions/)
+defines a minor-only request as a compatible line whose preferred patch can be
+upgraded; this repository therefore checks exact in-environment coherence
+instead of hard-coding whichever patch one runner resolved today.

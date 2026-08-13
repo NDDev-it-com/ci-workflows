@@ -8,7 +8,9 @@
   state at every generation, rejects shadow or unregistered tools, and keeps
   cold startup proof separate from semantic validation. Dependency imports are
   accepted only from a coherent active venv whose distribution/version matches
-  the hash-pinned requirements policy (#129).
+  the hash-pinned requirements policy; dependency subjects transition to the
+  repository venv explicitly and enforce exact per-environment CPython patch
+  identity across local and hosted layouts (#129).
 
 - Make `public-scorecard.yml` fail closed outside a public default-branch
   push/schedule, assign a deterministic SARIF category, and expose the upload

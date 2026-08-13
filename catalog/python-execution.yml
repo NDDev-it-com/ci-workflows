@@ -5,12 +5,16 @@
     "subject_count": 41,
     "launcher": "scripts/check_python_execution_contract.py",
     "launcher_prefix": ["python3", "-I", "-B", "scripts/check_python_execution_contract.py", "--launch"],
+    "dependency_interpreter": ".venv/bin/python",
     "argument_separator": "--",
     "embedded_prefix": ["python3", "-I"],
     "dependency_lock": "requirements-ci.txt",
     "venv": {
       "path": ".venv",
       "implementation": "CPython",
+      "implementation_name": "cpython",
+      "release_level": "final",
+      "patch_policy": "per-environment-exact",
       "include_system_site_packages": false,
       "home_interpreter_names": ["python3.13", "python3", "python", "python3.13.exe", "python.exe"]
     },
