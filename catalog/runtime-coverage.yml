@@ -37,7 +37,7 @@ entries:
     criticality: supporting
     status: unverified
     validator: scripts/check_benchmark_contract.py
-    evidence: "Still not fixtured, and the earlier reason recorded here was wrong. It is not auto-push: external_data_json_path now stops the action touching a Git branch at all. The actual obstacle is permissions — benchmark.yml's job declares contents: write, a reusable cannot request more than its caller grants, and a caller job granting write would hand the fixture estate the power to change the repository it runs in. That is a deliberate refusal, not an impossibility. Calling it with contents: read is what produced a startup_failure with no annotation."
+    evidence: "The first graph attempt failed before runners because a disabled nested job still contributes to a reusable caller's permission ceiling. The retry reached the pinned benchmark action and exposed a product gap: the action rejects external_data_json_path together with auto-push true. The corrected publish lane now disables auto-push only for file-backed history; current-digest live proof awaits the final attempt."
     last_run: null
     runtime_debt:
       risk: high

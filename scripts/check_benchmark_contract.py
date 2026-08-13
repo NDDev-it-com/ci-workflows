@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Least-privilege contract for the split benchmark lanes.
 
-benchmark.yml is the history-publishing lane (`contents: write`,
-`auto-push: true`); benchmark-compare.yml is the read-only lane
+benchmark.yml is the history-publishing lane (`contents: write`, with
+`auto-push` enabled only for branch-backed history); benchmark-compare.yml is the read-only lane
 (`contents: read`, `auto-push: false`) whose job-scoped GITHUB_TOKEN cannot
 write. The two lanes must stay byte-parallel except for that one
 publish/compare difference, so a future edit cannot silently reintroduce a
@@ -19,6 +19,7 @@ from _workflow_yaml import WORKFLOWS_DIR, get_on, load_yaml
 BENCHMARK = WORKFLOWS_DIR / "benchmark.yml"
 BENCHMARK_COMPARE = WORKFLOWS_DIR / "benchmark-compare.yml"
 GITHUB_TOKEN_EXPR = "${{ secrets.GITHUB_TOKEN }}"
+PUBLISH_AUTO_PUSH_EXPR = "${{ inputs.external_data_json_path == '' }}"
 
 
 def _job(workflow: dict[str, Any], job_id: str) -> dict[str, Any]:
@@ -90,8 +91,11 @@ def check() -> list[str]:
         if not isinstance(publish_with, dict) or not isinstance(compare_with, dict):
             problems.append("benchmark Compare and alert steps are malformed")
             continue
-        if publish_with.get("auto-push") is not True:
-            problems.append("benchmark.yml: publish lane must set auto-push: true")
+        if publish_with.get("auto-push") != PUBLISH_AUTO_PUSH_EXPR:
+            problems.append(
+                "benchmark.yml: publish lane must auto-push only when file-backed "
+                "history is disabled"
+            )
         if compare_with.get("auto-push") is not False:
             problems.append(
                 "benchmark-compare.yml: compare lane must set auto-push: false"
