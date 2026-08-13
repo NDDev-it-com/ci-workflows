@@ -317,11 +317,12 @@ entries:
     proven_digest: d78f0ff76fa9db7801738b87a5c68afa0a0f2426350bea6462389b813d8b93b6
     waiver: null
   - workflow: .github/workflows/secret-scan.yml
+    proven_os: [linux]
     criticality: security-blocking
     status: runtime-proven
-    evidence: 'Called by runtime-fixtures.yml; full-history gitleaks executed through the digest-pinned container.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621986220
-    proven_digest: 283c40be1e8b6f3018425f6cc38373dd11f2d4c02777082589476788ea482b9f
+    evidence: 'Fresh fixture run executed two independent Linux X64 workflow_call jobs: job 94323980245 ran the unchanged digest-pinned container path, and job 94323980234 downloaded the allowlisted release asset, verified size/SHA-256/version, scanned full history without invoking the container step, cleanup-proved its temporary state, and emitted its summary. The aggregate evidence job succeeded; skipped mutually-exclusive steps are expected mode separation, not claimed evidence. Executable negative probes additionally reject unknown mode/version/OS/arch, missing/malformed/mismatched digest, and corrupt/traversal/duplicate/link/special archives.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31660449006
+    proven_digest: 97d45022fbddb41249cb804b09a40312adeddc8b56079f2099d1ada9f2e47b01
     waiver: null
   - workflow: .github/workflows/semgrep-ci.yml
     criticality: security-blocking

@@ -65,11 +65,15 @@ uses Harden-Runner, uploads to code scanning, and needs
 
 ## gitleaks
 
-gitleaks scans the working tree **and full git history** for secrets, using a
-digest-pinned container image with `--redact` (never prints matched values) and
-`--exit-code 1` (fails on any finding). It is free on public and private, making
-it the private-tier stand-in for native secret scanning. The caller uses
-`fetch-depth: 0` so history is available.
+gitleaks scans the working tree **and full git history** for secrets. The
+compatibility default uses a digest-pinned container image. An explicit
+`execution_mode: binary` path is available for Linux X64 workers without
+Docker; it accepts only the catalog-pinned release tuple, verifies asset size
+and SHA-256 before safe extraction, verifies the executable version, and proves
+temporary-state cleanup. Both paths use `--redact` (never prints matched
+values) and `--exit-code 1` (fails on any finding). It is free on public and
+private, making it the private-tier stand-in for native secret scanning. The
+caller uses `fetch-depth: 0` so history is available.
 
 ## Native secret scanning + push protection
 

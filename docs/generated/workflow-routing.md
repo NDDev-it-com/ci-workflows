@@ -45,7 +45,7 @@ of a value is not proof that a workflow runs on that platform.
 | `.github/workflows/release-supply-chain.yml` | `linux-shell` | linux | shell only | — |
 | `.github/workflows/rust-ci.yml` | `portable-shell` | linux, macos, windows | shell only | linux, macos, windows |
 | `.github/workflows/rust-supply-chain.yml` | `linux-shell` | linux | shell only | — |
-| `.github/workflows/secret-scan.yml` | `linux-container` | linux | container-runtime | — |
+| `.github/workflows/secret-scan.yml` | `linux-container` | linux | container-runtime | linux |
 | `.github/workflows/semgrep-ci.yml` | `linux-shell` | linux | shell only | — |
 | `.github/workflows/sql-ci.yml` | `portable-shell` | linux, macos, windows | shell only | linux, macos, windows |
 | `.github/workflows/swift-ci.yml` | `macos-shell` | macos | shell only | macos |

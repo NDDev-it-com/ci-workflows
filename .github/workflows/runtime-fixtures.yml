@@ -74,6 +74,17 @@ jobs:
     with:
       runner: ubuntu-latest
 
+  # security-blocking — the same full-history scan through the independently
+  # pinned native release asset. No Docker command is reachable in this mode.
+  fixture-secret-scan-binary:
+    name: fixture / secret-scan / binary
+    permissions:
+      contents: read
+    uses: ./.github/workflows/secret-scan.yml
+    with:
+      runner: ubuntu-latest
+      execution_mode: binary
+
   # required-gate — the private-free validation lane. Runs this repository's own
   # blocking tier, which is a real caller command rather than a toy one.
   fixture-private-static:
@@ -253,6 +264,7 @@ jobs:
       - fixture-actionlint
       - fixture-zizmor-no-sarif
       - fixture-secret-scan
+      - fixture-secret-scan-binary
       - fixture-private-static
       - fixture-monorepo-router
       - fixture-osv-scan
@@ -281,7 +293,7 @@ jobs:
           RESULTS: ${{ toJSON(needs) }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           PROVES: >-
-            {"fixture-actionlint":"actionlint.yml","fixture-zizmor-no-sarif":"zizmor-no-sarif.yml","fixture-secret-scan":"secret-scan.yml","fixture-private-static":"private-static.yml","fixture-monorepo-router":"monorepo-changed-paths.yml","fixture-osv-scan":"osv-scan.yml","fixture-semgrep":"semgrep-ci.yml","fixture-coverage-gate":"coverage-gate.yml","fixture-grype-scan":"grype-scan.yml","fixture-iac-scan":"iac-scan.yml","fixture-public-codeql":"public-codeql.yml","fixture-zizmor-sarif":"zizmor-sarif.yml","fixture-rust-supply-chain":"rust-supply-chain.yml","fixture-docs-ci":"docs-ci.yml","fixture-gate-report":"gate.yml"}
+            {"fixture-actionlint":"actionlint.yml","fixture-zizmor-no-sarif":"zizmor-no-sarif.yml","fixture-secret-scan":"secret-scan.yml","fixture-secret-scan-binary":"secret-scan.yml","fixture-private-static":"private-static.yml","fixture-monorepo-router":"monorepo-changed-paths.yml","fixture-osv-scan":"osv-scan.yml","fixture-semgrep":"semgrep-ci.yml","fixture-coverage-gate":"coverage-gate.yml","fixture-grype-scan":"grype-scan.yml","fixture-iac-scan":"iac-scan.yml","fixture-public-codeql":"public-codeql.yml","fixture-zizmor-sarif":"zizmor-sarif.yml","fixture-rust-supply-chain":"rust-supply-chain.yml","fixture-docs-ci":"docs-ci.yml","fixture-gate-report":"gate.yml"}
         run: |
           set -euo pipefail
           python3 -I scripts/render_runtime_evidence.py

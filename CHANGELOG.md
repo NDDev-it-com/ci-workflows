@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- Add an explicit, fail-closed non-Docker Gitleaks mode for Linux X64. The
+  existing digest-pinned container remains the default; binary execution binds
+  version, platform, architecture, official asset size, and SHA-256, rejects
+  unsafe archives, verifies the executable version, records timings, and proves
+  cleanup without weakening finding/report/post-command semantics (#137).
+
 ### Fixed
 
 - Add a side-effect-safe runtime fixture for benchmark and pull-request hygiene
