@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+- Make the ruleset gate assert force, not only shape. `enforcement` was checked
+  against an enum that accepts `disabled`, so the default-branch ruleset could
+  have been switched off entirely while this gate stayed green and the required
+  `ci-gate` context protected nothing. Branch and tag rulesets must now be
+  `active`; a ruleset that deliberately runs below that has to record a reason in
+  the validator. Tag validation was a single "a tag ruleset exists" boolean even
+  though the consumer-adoption skill promises immutable tags, so the exact rule
+  set behind that promise — `deletion`, `non_fast_forward`, `update`,
+  `required_signatures` — is now required. Bypass actors are pinned to an
+  expected set, so adding one is a reviewed validator change rather than a silent
+  JSON edit. Proven to reject all four weakenings.
+
 - Execute `catalog/schema/capability.schema.yaml` instead of merely shipping it.
   The schema was documented as the enforced shape of `capabilities.yml`, but the
   only thing any validator did with it was assert the file existed, so it drifted
