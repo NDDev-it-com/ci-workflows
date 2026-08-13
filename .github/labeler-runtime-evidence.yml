@@ -2,3 +2,5 @@ ci:
   - changed-files:
       - any-glob-to-any-file:
           - catalog/runtime-coverage.yml
+          - .github/workflows/runtime-fixtures-event-write.yml
+          - scripts/check_side_effect_fixture_contract.py

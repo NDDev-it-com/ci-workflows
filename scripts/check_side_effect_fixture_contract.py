@@ -15,6 +15,7 @@ from _workflow_yaml import get_on
 
 ROOT = Path(__file__).resolve().parent.parent
 WORKFLOW = ROOT / ".github/workflows/runtime-fixtures-event-write.yml"
+LABELER = ROOT / ".github/labeler-runtime-evidence.yml"
 
 
 def _run_with_fake_gh(run: str, mode: str, extra_env: dict[str, str]) -> subprocess.CompletedProcess[str]:
@@ -200,6 +201,20 @@ def validate(doc: dict[str, Any]) -> list[str]:
 def check() -> list[str]:
     doc = strict_load(WORKFLOW)
     problems = validate(doc)
+    labeler = strict_load(LABELER)
+    label_paths = set(
+        (((labeler.get("ci") or [{}])[0].get("changed-files") or [{}])[0]
+         .get("any-glob-to-any-file") or [])
+    ) if isinstance(labeler, dict) else set()
+    expected_label_paths = {
+        "catalog/runtime-coverage.yml",
+        ".github/workflows/runtime-fixtures-event-write.yml",
+        "scripts/check_side_effect_fixture_contract.py",
+    }
+    if label_paths != expected_label_paths:
+        problems.append(
+            "runtime labeler must cover exactly the ledger, harness and its validator"
+        )
     probes: list[tuple[str, Callable[[dict[str, Any]], object]]] = [
         ("broad benchmark permission", lambda d: _job(d, "fixture-benchmark")["permissions"].update({"issues": "write"})),
         ("stale false-green", lambda d: _job(d, "fixture-pr-hygiene")["with"].update({"stale": True})),
