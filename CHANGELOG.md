@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+- Hold `secret-scan.yml`'s container lane to the standard its binary lane already
+  met. The binary path is exhaustively allowlisted — version, OS, architecture,
+  SHA-256, asset size, exact tar member set, no links or traversal, verified
+  executable version, proven cleanup — while the container path, which is the
+  **default**, validated nothing: the guard returned before it looked, and
+  `gitleaks_image` was not even in the step's environment, so any caller string
+  reached `docker run` in a workflow whose job is reading every secret in the
+  tree. The step summary printed "digest-pinned caller contract" unconditionally,
+  a claim nothing checked. The guard now requires an `@sha256:` digest and
+  rejects a tag-only, `latest`, empty, short or uppercase-digest image; six new
+  executable cases prove it. The lone unclosed file handle in the repository,
+  which wrote that step's mode, is closed.
+
 - Bind documented tool commands to the ones `ci-gate` actually runs. Four places
   told a contributor how to run zizmor and three were wrong, each differently:
   `AGENTS.md` and the `nddev-repo-flow` skill named `--persona regular` while

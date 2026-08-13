@@ -45,22 +45,35 @@ def _run(program: str, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
 
 
 def _guard_cases(program: str, problems: list[str]) -> None:
+    # The container lane is the default, and its image used to reach `docker
+    # run` without any validation at all: the guard returned before it looked,
+    # and `gitleaks_image` was not even in the step's env. The step summary
+    # nonetheless printed "digest-pinned caller contract" unconditionally. The
+    # tag-only and mutable cases below are what makes that summary true.
+    tag_only = "zricethezav/gitleaks:v8.30.1"
     cases = [
-        ("container-default", "container", EXPECTED_VERSION, EXPECTED_SHA256, "macOS", "ARM64", True),
-        ("binary-linux-x64", "binary", EXPECTED_VERSION, EXPECTED_SHA256, "Linux", "X64", True),
-        ("unknown-mode", "native", EXPECTED_VERSION, EXPECTED_SHA256, "Linux", "X64", False),
-        ("missing-digest", "binary", EXPECTED_VERSION, "", "Linux", "X64", False),
-        ("uppercase-digest", "binary", EXPECTED_VERSION, EXPECTED_SHA256.upper(), "Linux", "X64", False),
-        ("bad-digest", "binary", EXPECTED_VERSION, "0" * 64, "Linux", "X64", False),
-        ("unknown-version", "binary", "8.30.0", EXPECTED_SHA256, "Linux", "X64", False),
-        ("unsupported-os", "binary", EXPECTED_VERSION, EXPECTED_SHA256, "macOS", "X64", False),
-        ("unsupported-arch", "binary", EXPECTED_VERSION, EXPECTED_SHA256, "Linux", "ARM64", False),
+        ("container-default", "container", EXPECTED_CONTAINER, EXPECTED_VERSION, EXPECTED_SHA256, "macOS", "ARM64", True),
+        ("container-digest-no-tag", "container", f"zricethezav/gitleaks@sha256:{'a' * 64}", EXPECTED_VERSION, EXPECTED_SHA256, "Linux", "X64", True),
+        ("container-tag-only", "container", tag_only, EXPECTED_VERSION, EXPECTED_SHA256, "Linux", "X64", False),
+        ("container-latest", "container", "zricethezav/gitleaks:latest", EXPECTED_VERSION, EXPECTED_SHA256, "Linux", "X64", False),
+        ("container-empty-image", "container", "", EXPECTED_VERSION, EXPECTED_SHA256, "Linux", "X64", False),
+        ("container-short-digest", "container", "zricethezav/gitleaks@sha256:abc", EXPECTED_VERSION, EXPECTED_SHA256, "Linux", "X64", False),
+        ("container-uppercase-digest", "container", f"zricethezav/gitleaks@sha256:{'A' * 64}", EXPECTED_VERSION, EXPECTED_SHA256, "Linux", "X64", False),
+        ("binary-linux-x64", "binary", EXPECTED_CONTAINER, EXPECTED_VERSION, EXPECTED_SHA256, "Linux", "X64", True),
+        ("unknown-mode", "native", EXPECTED_CONTAINER, EXPECTED_VERSION, EXPECTED_SHA256, "Linux", "X64", False),
+        ("missing-digest", "binary", EXPECTED_CONTAINER, EXPECTED_VERSION, "", "Linux", "X64", False),
+        ("uppercase-digest", "binary", EXPECTED_CONTAINER, EXPECTED_VERSION, EXPECTED_SHA256.upper(), "Linux", "X64", False),
+        ("bad-digest", "binary", EXPECTED_CONTAINER, EXPECTED_VERSION, "0" * 64, "Linux", "X64", False),
+        ("unknown-version", "binary", EXPECTED_CONTAINER, "8.30.0", EXPECTED_SHA256, "Linux", "X64", False),
+        ("unsupported-os", "binary", EXPECTED_CONTAINER, EXPECTED_VERSION, EXPECTED_SHA256, "macOS", "X64", False),
+        ("unsupported-arch", "binary", EXPECTED_CONTAINER, EXPECTED_VERSION, EXPECTED_SHA256, "Linux", "ARM64", False),
     ]
-    for label, mode, version, digest, runner_os, arch, success in cases:
+    for label, mode, image, version, digest, runner_os, arch, success in cases:
         with tempfile.TemporaryDirectory(prefix="gitleaks-guard-") as raw:
             root = Path(raw)
             result = _run(program, {
                 "GITLEAKS_EXECUTION_MODE": mode,
+                "GITLEAKS_IMAGE": image,
                 "GITLEAKS_BINARY_VERSION": version,
                 "GITLEAKS_BINARY_SHA256": digest,
                 "GITLEAKS_RUNNER_OS": runner_os,
