@@ -84,10 +84,22 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Normalize commitlint configuration
+        id: commitlint_opts
+        shell: bash
+        env:
+          COMMITLINT_CONFIG: ${{ inputs.commitlint_config }}
+        run: |
+          set -euo pipefail
+          config_file="$COMMITLINT_CONFIG"
+          if [ -z "$config_file" ]; then
+            config_file='./commitlint.config.mjs'
+          fi
+          printf 'config_file=%s\n' "$config_file" >>"$GITHUB_OUTPUT"
       - name: commitlint
         uses: wagoid/commitlint-github-action@b948419dd99f3fd78a6548d48f94e3df7f6bf3ed  # v6.2.1
         with:
-          configFile: ${{ inputs.commitlint_config }}
+          configFile: ${{ steps.commitlint_opts.outputs.config_file }}
 
   pr-title:
     if: ${{ inputs.pr_title }}

@@ -60,6 +60,7 @@ import check_side_effect_fixture_contract
 import compile_evidence_plan
 import check_pinned_actions
 import check_privileged_ref_guard
+import check_pr_hygiene_contract
 import check_release_graph
 import check_release_promotion_gate
 import check_release_supply_chain
@@ -90,6 +91,7 @@ CORE = [
     ("workflow-contracts", check_workflow_contracts.check),
     ("harden-runner-contract", check_harden_runner_contract.check),
     ("privileged-ref-guard", check_privileged_ref_guard.check),
+    ("pr-hygiene-contract", check_pr_hygiene_contract.check),
     ("release-supply-chain", check_release_supply_chain.check),
     ("release-promotion-gate", check_release_promotion_gate.check),
     ("release-graph", check_release_graph.check),

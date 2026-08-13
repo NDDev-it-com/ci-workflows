@@ -1339,6 +1339,7 @@ capabilities:
       - "Callers must grant the union of the enabled jobs' permissions"
       - "A caller cannot grant a reusable more than the reusable declares, so a missing scope here needs a library fix, not a caller change"
       - "pr_title_types is comma-separated at the input boundary but converted to the newline-delimited `types:` the action expects; leaving it empty keeps the Conventional Commits defaults"
+      - "An empty commitlint_config is normalized to the action's default file path; passing an empty configFile makes cosmiconfig read the checkout directory and fail with EISDIR"
       - "The labeler checks out the caller ref with credentials disabled so a branch-local configuration is the exact policy executed"
     deprecations: null
     last_verified: "2026-08-13"
