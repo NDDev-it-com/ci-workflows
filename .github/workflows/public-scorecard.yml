@@ -26,12 +26,22 @@ on:
         description: 'Upload SARIF to code scanning even on fork PRs. Default false (skip forks).'
         type: boolean
         default: false
+      sarif_category:
+        description: 'Deterministic Code Scanning analysis category.'
+        type: string
+        default: 'ossf-scorecard'
+    outputs:
+      sarif_id:
+        description: 'Code Scanning SARIF upload identifier returned by upload-sarif.'
+        value: ${{ jobs.scorecard.outputs.sarif_id }}
 
 permissions: {}
 
 jobs:
   scorecard:
     name: OSSF Scorecard
+    outputs:
+      sarif_id: ${{ steps.upload-sarif.outputs.sarif-id }}
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 15
     permissions:
@@ -44,6 +54,48 @@ jobs:
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920  # v2.20.0
         with:
           egress-policy: audit
+
+      - name: Validate public default-branch contract
+        shell: bash
+        env:
+          SCORECARD_EVENT_NAME: ${{ github.event_name }}
+          SCORECARD_REF: ${{ github.ref }}
+          SCORECARD_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          SCORECARD_REPOSITORY_PRIVATE: ${{ github.event.repository.private }}
+          SCORECARD_REPOSITORY_FORK: ${{ github.event.repository.fork }}
+          SCORECARD_SERVER_URL: ${{ github.server_url }}
+          SCORECARD_SARIF_CATEGORY: ${{ inputs.sarif_category }}
+        run: |
+          set -euo pipefail
+          python3 -I <<'PY'
+          import os
+          import re
+
+          def fail(message):
+              print(f"Scorecard contract rejected: {message}")
+              raise SystemExit(1)
+
+          event = os.environ["SCORECARD_EVENT_NAME"]
+          default_branch = os.environ["SCORECARD_DEFAULT_BRANCH"]
+          expected_ref = f"refs/heads/{default_branch}"
+          if os.environ["SCORECARD_SERVER_URL"] != "https://github.com":
+              fail("OpenSSF Scorecard Action does not support GitHub Enterprise Server")
+          if os.environ["SCORECARD_REPOSITORY_PRIVATE"] != "false":
+              fail("the SARIF workflow requires a public repository")
+          if os.environ["SCORECARD_REPOSITORY_FORK"] != "false":
+              fail("OpenSSF Scorecard Action does not support fork repositories")
+          if event not in {"push", "schedule"}:
+              fail("supported events are push and schedule only")
+          if not default_branch or os.environ["SCORECARD_REF"] != expected_ref:
+              fail(f"the run must evaluate the actual default-branch ref {expected_ref!r}")
+          category = os.environ["SCORECARD_SARIF_CATEGORY"]
+          if not re.fullmatch(r"[a-z0-9][a-z0-9._-]{0,63}", category):
+              fail("sarif_category must be 1-64 lowercase URI-safe characters")
+          print(
+              f"validated public Scorecard run: event={event} "
+              f"ref={expected_ref} category={category}"
+          )
+          PY
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -100,7 +152,9 @@ jobs:
           retention-days: 5
 
       - name: Upload SARIF to code scanning
+        id: upload-sarif
         if: ${{ github.event_name != 'pull_request' || inputs.upload_sarif_on_forks || github.event.pull_request.head.repo.full_name == github.repository }}
         uses: github/codeql-action/upload-sarif@d1ba80a13dd99fba24a470575428917156a28b43  # v4.37.5
         with:
           sarif_file: results.sarif
+          category: ${{ inputs.sarif_category }}

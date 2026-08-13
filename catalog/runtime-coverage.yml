@@ -233,7 +233,7 @@ entries:
   - workflow: .github/workflows/public-scorecard.yml
     criticality: supporting
     status: unverified
-    evidence: "Not fixtured, and not fixturable from a branch. This is the SARIF variant; this repository's scorecard.yml calls the JSON variant instead, and Scorecard evaluates a default branch, so a fixtures/** push cannot exercise it. Its JSON sibling is runtime-proven and shares the analysis step."
+    evidence: "The owned public default-branch consumer is staged in scorecard.yml, but no claim is eligible until a merged push executes both Scorecard and upload-sarif and the Code Scanning API accepts the exact SHA/category/tool analysis. JSON sibling evidence is explicitly ineligible."
     last_run: null
     runtime_debt:
       risk: medium

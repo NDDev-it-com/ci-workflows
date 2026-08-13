@@ -1,0 +1,18 @@
+schema: nddev-ci-scorecard-evidence/v1
+designated_consumer:
+  repository: NDDev-it-com/ci-workflows
+  visibility: public
+  default_branch: main
+  caller_workflow: .github/workflows/scorecard.yml
+  reusable_workflow: .github/workflows/public-scorecard.yml
+  supported_events: [push, schedule]
+  runner: ubuntu-latest
+  publish_results: false
+  sarif_category: ossf-scorecard
+  sarif_tool: Scorecard
+  required_permissions:
+    actions: read
+    contents: read
+    security-events: write
+  forbidden_permissions: [id-token]
+proof: null

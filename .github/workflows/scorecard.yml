@@ -1,5 +1,4 @@
-# OSSF Scorecard — push-to-default + weekly schedule only. The Scorecard action
-# supports only push and schedule on the default branch.
+# Canonical public default-branch consumer for Scorecard SARIF evidence.
 name: scorecard
 
 on:
@@ -10,12 +9,20 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: scorecard-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   scorecard:
     permissions:
-      id-token: write # OIDC token for Scorecard provenance checks
-      contents: read
+      security-events: write # upload the Scorecard SARIF to Code Scanning
+      contents: read # read the public repository Scorecard evaluates
       actions: read # inspect workflow definitions for the scoring checks
-    uses: ./.github/workflows/public-scorecard-json.yml
+      # Deliberately no id-token: publish_results is false because OpenSSF's
+      # publishing verifier does not accept reusable-workflow caller shape.
+    uses: ./.github/workflows/public-scorecard.yml
     with:
       runner: ubuntu-latest
+      publish_results: false
+      sarif_category: ossf-scorecard
