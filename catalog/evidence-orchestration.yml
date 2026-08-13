@@ -1,0 +1,151 @@
+schema: nddev-ci-evidence-orchestration/v1
+levels: [fast, pr-required, full, release]
+platforms: [github-actions, openobserve-fleet]
+operating_systems: [ubuntu, macos]
+architectures: [x64, arm64]
+profiles: [public, private-no-addons, private-paid, enterprise]
+risks: [code, dependencies, security, supply-chain, release, real-platform]
+changes: [source, tests, dependencies, workflows, catalog, docs, release]
+environment_classes: [standard-hosted-vm, native-disposable-host]
+evidence_classes:
+  operational:
+    intended_downstream_retention_days: 7
+  durable:
+    intended_downstream_retention_days: 30
+timing_policy: observe-only
+lanes:
+  - id: static-contract
+    title: Static workflow and catalog contracts
+    workflow: .github/workflows/private-static.yml
+    handoff: null
+    minimum_level: fast
+    platforms: [github-actions]
+    operating_systems: [ubuntu]
+    architectures: [x64]
+    profiles: [public, private-no-addons, private-paid, enterprise]
+    risks_any: []
+    changes_any: []
+    release: allowed
+    environment_class: standard-hosted-vm
+    host_capabilities: []
+    evidence_class: operational
+  - id: actionlint
+    title: GitHub Actions syntax and semantics
+    workflow: .github/workflows/actionlint.yml
+    handoff: null
+    minimum_level: pr-required
+    platforms: [github-actions]
+    operating_systems: [ubuntu]
+    architectures: [x64]
+    profiles: [public, private-no-addons, private-paid, enterprise]
+    risks_any: [code, security]
+    changes_any: [workflows]
+    release: allowed
+    environment_class: standard-hosted-vm
+    host_capabilities: []
+    evidence_class: operational
+  - id: ubuntu-runtime-smoke
+    title: Ubuntu reusable runtime smoke
+    workflow: .github/workflows/cross-platform-smoke.yml
+    handoff: null
+    minimum_level: full
+    platforms: [github-actions]
+    operating_systems: [ubuntu]
+    architectures: [x64]
+    profiles: [public, private-no-addons, private-paid, enterprise]
+    risks_any: [code, dependencies]
+    changes_any: [source, tests, dependencies, workflows]
+    release: allowed
+    environment_class: standard-hosted-vm
+    host_capabilities: []
+    evidence_class: operational
+  - id: macos-runtime-smoke
+    title: macOS reusable runtime smoke
+    workflow: .github/workflows/cross-platform-smoke.yml
+    handoff: null
+    minimum_level: full
+    platforms: [github-actions]
+    operating_systems: [macos]
+    architectures: [arm64]
+    profiles: [public, private-paid, enterprise]
+    risks_any: [code, dependencies, real-platform]
+    changes_any: [source, tests, dependencies, workflows]
+    release: allowed
+    environment_class: standard-hosted-vm
+    host_capabilities: []
+    evidence_class: durable
+  - id: security-runtime
+    title: Security scanner runtime contract
+    workflow: .github/workflows/secret-scan.yml
+    handoff: null
+    minimum_level: full
+    platforms: [github-actions]
+    operating_systems: [ubuntu]
+    architectures: [x64]
+    profiles: [public, private-no-addons, private-paid, enterprise]
+    risks_any: [security, supply-chain]
+    changes_any: [source, dependencies, workflows]
+    release: allowed
+    environment_class: standard-hosted-vm
+    host_capabilities: []
+    evidence_class: durable
+  - id: release-free
+    title: Checksummed release contract
+    workflow: .github/workflows/release-supply-chain-free.yml
+    handoff: null
+    minimum_level: release
+    platforms: [github-actions]
+    operating_systems: [ubuntu]
+    architectures: [x64]
+    profiles: [private-no-addons]
+    risks_any: [release, supply-chain]
+    changes_any: [release]
+    release: required
+    environment_class: standard-hosted-vm
+    host_capabilities: []
+    evidence_class: durable
+  - id: release-attested
+    title: Attested release contract
+    workflow: .github/workflows/release-supply-chain.yml
+    handoff: null
+    minimum_level: release
+    platforms: [github-actions]
+    operating_systems: [ubuntu]
+    architectures: [x64]
+    profiles: [public, enterprise]
+    risks_any: [release, supply-chain]
+    changes_any: [release]
+    release: required
+    environment_class: standard-hosted-vm
+    host_capabilities: []
+    evidence_class: durable
+  - id: ubuntu-native-host
+    title: Native Ubuntu disposable-host conformance
+    workflow: null
+    handoff: github-actions owner must execute the compiled host contract
+    minimum_level: full
+    platforms: [openobserve-fleet]
+    operating_systems: [ubuntu]
+    architectures: [x64, arm64]
+    profiles: [private-paid, enterprise]
+    risks_any: [real-platform, security]
+    changes_any: [source, tests, workflows]
+    release: allowed
+    environment_class: native-disposable-host
+    host_capabilities: [reboot, ssh-network, system-hardening]
+    evidence_class: durable
+  - id: macos-native-host
+    title: Native macOS disposable-host conformance
+    workflow: null
+    handoff: bootstrap owner must execute the compiled host contract
+    minimum_level: full
+    platforms: [openobserve-fleet]
+    operating_systems: [macos]
+    architectures: [arm64]
+    profiles: [private-paid, enterprise]
+    risks_any: [real-platform, security]
+    changes_any: [source, tests, workflows]
+    release: allowed
+    environment_class: native-disposable-host
+    host_capabilities: [reboot, gui-session, ssh-network, system-hardening]
+    evidence_class: durable

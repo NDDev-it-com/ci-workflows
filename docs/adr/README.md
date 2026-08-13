@@ -8,6 +8,7 @@ accident. Mechanics live in the catalog and the tier docs; rationale lives here.
 
 | ADR | Title | Status | Date |
 |---|---|---|---|
+| [0006](0006-compile-evidence-lanes.md) | Compile evidence lanes; do not infer them from elapsed time | Accepted | 2026-08-13 |
 | [0005](0005-route-platform-and-capability-before-queue.md) | Route platform and machine capability before queueing | Accepted | 2026-08-13 |
 | [0004](0004-callers-choose-their-runner.md) | The caller chooses its runner, never the library | Accepted | 2026-08-10 |
 | [0003](0003-evidence-obligation-for-blocking-workflows.md) | Absence of evidence is a failure for blocking workflows | Accepted | 2026-08-10 |

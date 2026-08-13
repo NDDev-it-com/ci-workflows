@@ -28,6 +28,13 @@
 
 ### Added
 
+- Add a fail-closed evidence-orchestration catalog and compiler. It selects
+  cumulative `fast` / `pr-required` / `full` / `release` lanes from repository
+  profile, risk, change, release, platform, OS, architecture and real-host
+  requirements; reuses existing workflows; and emits explicit downstream
+  handoffs for disposable native Ubuntu/macOS evidence. Timing is observe-only,
+  while semantic operational/durable retention maps downstream to 7/30 days.
+
 - **OS and machine-capability routing now fails before useful jobs enter a
   runner queue.** `catalog/workflow-routing.yml` declares the supported OS and
   derived machine requirements for every reusable without embedding private

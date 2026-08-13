@@ -1,5 +1,26 @@
 # Observability and analytics
 
+## Evidence orchestration
+
+Runtime evidence selection is compiled from
+[`catalog/evidence-orchestration.yml`](../catalog/evidence-orchestration.yml),
+not inferred from job duration or copied fixture lists. The request names its
+level (`fast`, `pr-required`, `full`, or `release`), platform, OS,
+architecture, operating profile, risk, changed surface, release state, and any
+real-host capabilities. Unknown or all-skipped combinations fail closed.
+
+The generated [evidence orchestration ledger](generated/evidence-orchestration.md)
+shows every lane and its current evidence boundary. Workflow lanes call existing
+reusables. Native disposable-host lanes are explicit downstream handoffs for
+reboot, GUI/session, SSH/network, and system-hardening evidence; hosted CI is
+not allowed to simulate those claims.
+
+Timing is telemetry only. It may be logged to compare runs, but elapsed duration
+never selects, skips, cancels, or fails a lane. The catalog's `operational` and
+`durable` evidence classes are intended for OpenObserve retention of 7 and 30
+days respectively. They do not set GitHub artifact or log retention, which is a
+separate repository/organization/enterprise policy.
+
 CI is only trustworthy if you can see how it behaves over time. This doc covers
 Actions performance metrics, job summaries, failure/queue signals, and audit log
 streaming.
