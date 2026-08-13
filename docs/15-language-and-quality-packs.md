@@ -30,6 +30,21 @@ Dual-tier, caller-command-driven with sensible defaults.
 | HTML/CSS/web | `web-ci.yml` | [web](../examples/languages/web.yml) |
 | SQL | `sql-ci.yml` | [sql](../examples/languages/sql.yml) |
 
+The Dart/Flutter, Kotlin/Android, and Qt callers above deliberately retain each
+reusable workflow's default resolve/build/test commands. Pin an exact Flutter or
+Qt release for reproducible evidence. Android projects should commit the Gradle
+wrapper with its published distribution checksum, dependency locks, and strict
+verification metadata covering the complete default `./gradlew build` graph.
+The local provenance generator strips ambient Android/JDK roots, derives them
+from verified `java` and `sdkmanager` executables on its clean `PATH`, then
+injects only coherent JDK 21 and SDK roots into the build child.
+Root validation walks directory identities without following symlinks. On
+Darwin, only the operating system's identity-equivalent `/var` → `/private/var`
+namespace alias is accepted; owned-root symlinks and alternate aliases fail.
+The reusable emits a redacted evidence receipt; fixture observers reject a
+missing/skipped caller, toolchain drift, empty test result, or substituted
+command. Provisioning duration is telemetry, not a correctness threshold.
+
 These join the existing Python, Node, Go, Rust, Java, .NET, container, and
 Terraform packs. Swift defaults to a macOS runner (10x minute multiplier); its
 SwiftLint step runs on macOS only.

@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Add bounded real Flutter, Android, and Qt runtime fixtures with fail-closed
+  toolchain, dependency, task-graph, cache, result, and reusable-digest evidence.
+
 - Add one hermetic Python execution boundary for every repository validator and
   generator. A machine-readable policy now pins the interpreter and PyYAML,
   inventories imports/resources/subprocess edges, strips ambient `PYTHON*`

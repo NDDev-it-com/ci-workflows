@@ -406,6 +406,134 @@ jobs:
       install_command: "cargo install cargo-mutants --locked"
       mutation_command: "cargo mutants --no-shuffle --test-tool=cargo -j 2"
 
+  fixture-dart-flutter-ci:
+    name: fixture / dart-flutter-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/dart-flutter-ci.yml
+    with:
+      runner: ubuntu-latest
+      flutter_version: '3.47.0'
+      working_directory: tests/fixtures/flutter
+
+  fixture-kotlin-android-ci:
+    name: fixture / kotlin-android-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/kotlin-android-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/android
+
+  fixture-qt-ci:
+    name: fixture / qt-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/qt-ci.yml
+    with:
+      runner: ubuntu-latest
+      qt_version: '6.8.4'
+      working_directory: tests/fixtures/qt
+
+  observe-dart-flutter-ci:
+    name: observe / dart-flutter-ci
+    needs: fixture-dart-flutter-ci
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up isolated Python contract runtime
+        id: python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.13'
+          update-environment: false
+      - name: Provision validator
+        env:
+          PYTHON_PATH: ${{ steps.python.outputs.python-path }}
+        run: |
+          "$PYTHON_PATH" -I -B -m venv --copies .venv
+          uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
+      - name: Reject missing, skipped, or partial Flutter evidence
+        env:
+          CALLER_RESULT: ${{ needs.fixture-dart-flutter-ci.result }}
+          SDK_RUNTIME_EVIDENCE: ${{ needs.fixture-dart-flutter-ci.outputs.evidence }}
+        run: |
+          test "$CALLER_RESULT" = success
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch check_sdk_runtime_fixtures.py -- --receipt flutter
+
+  observe-kotlin-android-ci:
+    name: observe / kotlin-android-ci
+    needs: fixture-kotlin-android-ci
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up isolated Python contract runtime
+        id: python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.13'
+          update-environment: false
+      - name: Provision validator
+        env:
+          PYTHON_PATH: ${{ steps.python.outputs.python-path }}
+        run: |
+          "$PYTHON_PATH" -I -B -m venv --copies .venv
+          uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
+      - name: Reject missing, skipped, or partial Android evidence
+        env:
+          CALLER_RESULT: ${{ needs.fixture-kotlin-android-ci.result }}
+          SDK_RUNTIME_EVIDENCE: ${{ needs.fixture-kotlin-android-ci.outputs.evidence }}
+        run: |
+          test "$CALLER_RESULT" = success
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch check_sdk_runtime_fixtures.py -- --receipt android
+
+  observe-qt-ci:
+    name: observe / qt-ci
+    needs: fixture-qt-ci
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up isolated Python contract runtime
+        id: python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.13'
+          update-environment: false
+      - name: Provision validator
+        env:
+          PYTHON_PATH: ${{ steps.python.outputs.python-path }}
+        run: |
+          "$PYTHON_PATH" -I -B -m venv --copies .venv
+          uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
+      - name: Reject missing, skipped, or partial Qt evidence
+        env:
+          CALLER_RESULT: ${{ needs.fixture-qt-ci.result }}
+          SDK_RUNTIME_EVIDENCE: ${{ needs.fixture-qt-ci.outputs.evidence }}
+        run: |
+          test "$CALLER_RESULT" = success
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch check_sdk_runtime_fixtures.py -- --receipt qt
+
   # One place to read the outcome, and the digests to paste into the ledger when
   evidence:
     name: evidence summary (languages)
@@ -413,6 +541,12 @@ jobs:
       - fixture-mutation-testing
       - fixture-r-ci
       - fixture-benchmark-compare
+      - fixture-dart-flutter-ci
+      - fixture-kotlin-android-ci
+      - fixture-qt-ci
+      - observe-dart-flutter-ci
+      - observe-kotlin-android-ci
+      - observe-qt-ci
       - fixture-go-ci
       - fixture-python-ci
       - fixture-node-ci
@@ -466,7 +600,9 @@ jobs:
           RESULTS: ${{ toJSON(needs) }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           PROVES: >-
-            {"fixture-go-ci":"go-ci.yml","fixture-python-ci":"python-ci.yml","fixture-node-ci":"node-ci.yml","fixture-rust-ci":"rust-ci.yml","fixture-cpp-ci":"cpp-ci.yml","fixture-terraform-ci":"terraform-ci.yml","fixture-sql-ci":"sql-ci.yml","fixture-docs-quality":"docs-quality.yml","fixture-hadolint":"hadolint-ci.yml","fixture-web-ci":"web-ci.yml","fixture-container-ci":"container-ci.yml","fixture-cross-platform-smoke":"cross-platform-smoke.yml","fixture-java-ci":"java-ci.yml","fixture-dotnet-ci":"dotnet-ci.yml","fixture-swift-ci":"swift-ci.yml","fixture-mutation-testing":"mutation-testing.yml","fixture-r-ci":"r-ci.yml","fixture-benchmark-compare":"benchmark-compare.yml","fixture-go-ci-os":"go-ci.yml","fixture-python-ci-os":"python-ci.yml","fixture-rust-ci-os":"rust-ci.yml","fixture-dotnet-ci-os":"dotnet-ci.yml","fixture-java-ci-os":"java-ci.yml","fixture-node-ci-os":"node-ci.yml","fixture-terraform-ci-os":"terraform-ci.yml","fixture-sql-ci-os":"sql-ci.yml","fixture-web-ci-os":"web-ci.yml"}
+            {"fixture-go-ci":"go-ci.yml","fixture-python-ci":"python-ci.yml","fixture-node-ci":"node-ci.yml","fixture-rust-ci":"rust-ci.yml","fixture-cpp-ci":"cpp-ci.yml","fixture-terraform-ci":"terraform-ci.yml","fixture-sql-ci":"sql-ci.yml","fixture-docs-quality":"docs-quality.yml","fixture-hadolint":"hadolint-ci.yml","fixture-web-ci":"web-ci.yml","fixture-container-ci":"container-ci.yml","fixture-cross-platform-smoke":"cross-platform-smoke.yml","fixture-java-ci":"java-ci.yml","fixture-dotnet-ci":"dotnet-ci.yml","fixture-swift-ci":"swift-ci.yml","fixture-mutation-testing":"mutation-testing.yml","fixture-r-ci":"r-ci.yml","fixture-benchmark-compare":"benchmark-compare.yml","fixture-dart-flutter-ci":"dart-flutter-ci.yml","fixture-kotlin-android-ci":"kotlin-android-ci.yml","fixture-qt-ci":"qt-ci.yml","fixture-go-ci-os":"go-ci.yml","fixture-python-ci-os":"python-ci.yml","fixture-rust-ci-os":"rust-ci.yml","fixture-dotnet-ci-os":"dotnet-ci.yml","fixture-java-ci-os":"java-ci.yml","fixture-node-ci-os":"node-ci.yml","fixture-terraform-ci-os":"terraform-ci.yml","fixture-sql-ci-os":"sql-ci.yml","fixture-web-ci-os":"web-ci.yml"}
+          GUARDS: >-
+            {"fixture-dart-flutter-ci":["observe-dart-flutter-ci"],"fixture-kotlin-android-ci":["observe-kotlin-android-ci"],"fixture-qt-ci":["observe-qt-ci"]}
         run: |
           set -euo pipefail
           .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch render_runtime_evidence.py --

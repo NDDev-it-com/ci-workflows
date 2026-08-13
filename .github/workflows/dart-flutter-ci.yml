@@ -6,6 +6,10 @@ name: dart-flutter-ci
 
 on:
   workflow_call:
+    outputs:
+      evidence:
+        description: 'Redacted JSON receipt for the resolved SDK and successful default lanes.'
+        value: ${{ jobs.dart-flutter.outputs.evidence }}
     inputs:
       runner:
         type: string
@@ -54,6 +58,8 @@ jobs:
     timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       contents: read
+    outputs:
+      evidence: ${{ steps.evidence.outputs.evidence }}
     defaults:
       run:
         # Explicit, and not redundant with the workflow-level default above:
@@ -70,6 +76,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Flutter
+        id: flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2  # v2.23.0
         with:
           channel: ${{ inputs.flutter_channel }}
@@ -94,6 +101,54 @@ jobs:
         env:
           TEST_COMMAND: ${{ inputs.test_command }}
           FLUTTER_CHANNEL: ${{ inputs.flutter_channel }}
+          TEST_LOG: ${{ runner.temp }}/dart-flutter-tests.log
         run: |
-          bash -euo pipefail -c "$TEST_COMMAND"
+          set -euo pipefail
+          bash -euo pipefail -c "$TEST_COMMAND" 2>&1 | tee "$TEST_LOG"
           echo "Flutter ${FLUTTER_CHANNEL} format + analyze + tests passed." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Emit runtime evidence
+        id: evidence
+        env:
+          CACHE_KEY: ${{ steps.flutter.outputs.CACHE-KEY }}
+          FLUTTER_ARCH: ${{ steps.flutter.outputs.ARCHITECTURE }}
+          FLUTTER_CHANNEL: ${{ steps.flutter.outputs.CHANNEL }}
+          FLUTTER_VERSION: ${{ steps.flutter.outputs.VERSION }}
+          PUB_CACHE_KEY: ${{ steps.flutter.outputs.PUB-CACHE-KEY }}
+          PUB_GET_COMMAND: ${{ inputs.pub_get_command }}
+          TEST_COMMAND: ${{ inputs.test_command }}
+          TEST_LOG: ${{ runner.temp }}/dart-flutter-tests.log
+          WORKFLOW_FILE: ${{ github.workspace }}/.github/workflows/dart-flutter-ci.yml
+        run: |
+          python3 -I <<'PY'
+          import hashlib, json, os, pathlib, re, subprocess
+          lock = pathlib.Path("pubspec.lock")
+          log = pathlib.Path(os.environ["TEST_LOG"])
+          version = json.loads(subprocess.check_output(
+              ["flutter", "--version", "--machine"], text=True))
+          counts = [int(value) for value in re.findall(
+              r"\+(\d+)", log.read_text(encoding="utf-8"))]
+          receipt = {
+              "caller_sha": os.environ["GITHUB_SHA"],
+              "cache_key": os.environ["CACHE_KEY"],
+              "dart_version": version["dartSdkVersion"].split()[0],
+              "flutter_arch": os.environ["FLUTTER_ARCH"],
+              "flutter_channel": os.environ["FLUTTER_CHANNEL"],
+              "flutter_revision": version["frameworkRevision"],
+              "flutter_version": os.environ["FLUTTER_VERSION"],
+              "os": os.environ["RUNNER_OS"],
+              "pub_cache_key": os.environ["PUB_CACHE_KEY"],
+              "pub_get_command": os.environ["PUB_GET_COMMAND"],
+              "pubspec_lock_sha256": hashlib.sha256(lock.read_bytes()).hexdigest(),
+              "runner_arch": os.environ["RUNNER_ARCH"],
+              "test_command": os.environ["TEST_COMMAND"],
+              "test_count": max(counts, default=0),
+              "test_log_sha256": hashlib.sha256(log.read_bytes()).hexdigest(),
+              "workflow_sha256": hashlib.sha256(pathlib.Path(os.environ["WORKFLOW_FILE"]).read_bytes()).hexdigest(),
+          }
+          encoded = json.dumps(receipt, sort_keys=True, separators=(",", ":"))
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"evidence={encoded}\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write(f"\nRuntime evidence: `{encoded}`\n")
+          PY
