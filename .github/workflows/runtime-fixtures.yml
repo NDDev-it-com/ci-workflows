@@ -132,6 +132,82 @@ jobs:
     with:
       runner: ubuntu-latest
 
+  fixture-coverage-gate:
+    name: fixture / coverage gate
+    permissions:
+      contents: read
+    uses: ./.github/workflows/coverage-gate.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/python
+      coverage_command: "mkdir -p coverage && printf '<coverage version=\"1\"/>\\n' > coverage/coverage.xml"
+      use_codecov: false
+      use_coveralls: false
+      upload_artifact: true
+      artifact_name: fixture-coverage-report
+      artifact_path: tests/fixtures/python/coverage/coverage.xml
+
+  fixture-grype-scan:
+    name: fixture / grype scan
+    permissions:
+      contents: read
+    uses: ./.github/workflows/grype-scan.yml
+    with:
+      runner: ubuntu-latest
+      path: tests/fixtures
+      severity_cutoff: critical
+      fail_build: true
+
+  fixture-iac-scan:
+    name: fixture / iac scan
+    permissions:
+      contents: read
+    uses: ./.github/workflows/iac-scan.yml
+    with:
+      runner: ubuntu-latest
+      directory: tests/fixtures/terraform
+      framework: terraform
+      soft_fail: true
+      quiet: false
+
+  fixture-public-codeql:
+    name: fixture / public CodeQL
+    permissions:
+      actions: read           # CodeQL SARIF upload reads this workflow run
+      contents: read          # CodeQL checks out and analyzes this repository
+      security-events: write  # publish the fixture analysis to code scanning
+    uses: ./.github/workflows/public-codeql.yml
+    with:
+      runner: ubuntu-latest
+      languages: '["actions"]'
+      autobuild: false
+
+  fixture-zizmor-sarif:
+    name: fixture / zizmor SARIF
+    permissions:
+      actions: read           # SARIF upload reads this workflow run
+      contents: read          # zizmor checks out and analyzes the clean fixture
+      security-events: write  # publish the fixture SARIF to code scanning
+    uses: ./.github/workflows/zizmor-sarif.yml
+    with:
+      runner: ubuntu-latest
+      persona: regular
+      min_severity: high
+      target: tests/fixtures/zizmor-clean
+
+  fixture-rust-supply-chain:
+    name: fixture / Rust supply chain
+    permissions:
+      contents: read
+    uses: ./.github/workflows/rust-supply-chain.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/rust
+      deny_arguments: '--all-features --config tests/fixtures/rust/deny.toml'
+      enable_deny: true
+      enable_audit: true
+      enable_machete: true
+
   # supporting — documentation lane.
   fixture-docs-ci:
     name: fixture / docs-ci
@@ -181,6 +257,12 @@ jobs:
       - fixture-monorepo-router
       - fixture-osv-scan
       - fixture-semgrep
+      - fixture-coverage-gate
+      - fixture-grype-scan
+      - fixture-iac-scan
+      - fixture-public-codeql
+      - fixture-zizmor-sarif
+      - fixture-rust-supply-chain
       - fixture-docs-ci
       - fixture-gate-report
     if: always()
@@ -198,55 +280,8 @@ jobs:
         env:
           RESULTS: ${{ toJSON(needs) }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PROVES: >-
+            {"fixture-actionlint":"actionlint.yml","fixture-zizmor-no-sarif":"zizmor-no-sarif.yml","fixture-secret-scan":"secret-scan.yml","fixture-private-static":"private-static.yml","fixture-monorepo-router":"monorepo-changed-paths.yml","fixture-osv-scan":"osv-scan.yml","fixture-semgrep":"semgrep-ci.yml","fixture-coverage-gate":"coverage-gate.yml","fixture-grype-scan":"grype-scan.yml","fixture-iac-scan":"iac-scan.yml","fixture-public-codeql":"public-codeql.yml","fixture-zizmor-sarif":"zizmor-sarif.yml","fixture-rust-supply-chain":"rust-supply-chain.yml","fixture-docs-ci":"docs-ci.yml","fixture-gate-report":"gate.yml"}
         run: |
           set -euo pipefail
-          python3 -I <<'PY'
-          import hashlib
-          import json
-          import os
-          import pathlib
-
-          # fixture job id -> the reusable it proves
-          PROVES = {
-              "fixture-actionlint": "actionlint.yml",
-              "fixture-zizmor-no-sarif": "zizmor-no-sarif.yml",
-              "fixture-secret-scan": "secret-scan.yml",
-              "fixture-private-static": "private-static.yml",
-              "fixture-monorepo-router": "monorepo-changed-paths.yml",
-              "fixture-osv-scan": "osv-scan.yml",
-              "fixture-semgrep": "semgrep-ci.yml",
-              "fixture-docs-ci": "docs-ci.yml",
-              "fixture-gate-report": "gate.yml",
-          }
-          results = json.loads(os.environ["RESULTS"])
-          run_url = os.environ["RUN_URL"]
-
-          lines = [
-              "### Runtime evidence",
-              "",
-              f"Run: {run_url}",
-              "",
-              "Only a `success` row is evidence. Copy `last_run` and `proven_digest`",
-              "into `catalog/runtime-coverage.yml` and set the status to",
-              "`runtime-proven`. A failed or skipped row proves nothing — leave that",
-              "record where it is.",
-              "",
-              "| Workflow | Result | proven_digest |",
-              "| --- | --- | --- |",
-          ]
-          for job, workflow in sorted(PROVES.items(), key=lambda kv: kv[1]):
-              result = (results.get(job) or {}).get("result", "missing")
-              path = pathlib.Path(".github/workflows") / workflow
-              digest = (
-                  hashlib.sha256(path.read_bytes()).hexdigest()
-                  if path.is_file()
-                  else "FILE MISSING"
-              )
-              mark = "" if result == "success" else " ⚠"
-              lines.append(f"| `{workflow}` | {result}{mark} | `{digest}` |")
-
-          summary = pathlib.Path(os.environ["GITHUB_STEP_SUMMARY"])
-          with summary.open("a", encoding="utf-8") as handle:
-              handle.write("\n".join(lines) + "\n")
-          print("\n".join(lines))
-          PY
+          python3 -I scripts/render_runtime_evidence.py

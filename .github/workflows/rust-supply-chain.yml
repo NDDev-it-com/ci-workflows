@@ -43,6 +43,10 @@ on:
         description: 'cargo-deny check arguments.'
         type: string
         default: 'check bans licenses advisories sources'
+      deny_arguments:
+        description: 'Global cargo-deny arguments, before the check command (for example --config path/to/deny.toml).'
+        type: string
+        default: '--all-features'
       cargo_audit_version:
         description: 'cargo-audit version to install via taiki-e/install-action.'
         type: string
@@ -74,6 +78,8 @@ jobs:
         uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25  # v2.1.1
         with:
           command: ${{ inputs.deny_command }}
+          manifest-path: ${{ inputs.working_directory }}/Cargo.toml
+          arguments: ${{ inputs.deny_arguments }}
 
   audit:
     name: cargo-audit

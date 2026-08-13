@@ -18,6 +18,7 @@ references).
 | `deprecations.yml` | `deprecations:` | Retiring, deprecated, and removed capabilities and the migration path. |
 | `workflow-routing.yml` | `groups:` | Estate-neutral supported OS and machine requirements for every reusable workflow. |
 | `evidence-orchestration.yml` | `lanes:` | Evidence selection by level, platform, OS, architecture, profile, risk, change, release, and host environment. |
+| `runtime-coverage.yml` | `entries:` | Digest-bound observed runtime proof and typed debt for every reusable workflow. |
 | `schema/capability.schema.yaml` | JSON Schema | Machine-readable shape for `capabilities.yml`; `scripts/validate_catalog.py` is the enforcing validator. |
 | `schema/workflow-routing.schema.yaml` | JSON Schema | Machine-readable shape for OS/capability routing; `scripts/check_runner_routing.py` is the enforcing validator. |
 | `schema/evidence-orchestration.schema.yaml` | JSON Schema | Evidence lane shape; `scripts/compile_evidence_plan.py` validates and compiles it fail-closed. |
@@ -37,6 +38,7 @@ stack packs are materialized workflows, not placeholders.
 - `docs/generated/workflow-inventory.md`
 - `docs/generated/workflow-routing.md`
 - `docs/generated/evidence-orchestration.md`
+- `docs/generated/runtime-coverage.md`
 
 Run `python3 scripts/generate_docs.py --check` before release; `ci.yml` runs it
 through `scripts/validate_all.py` so generated docs cannot drift from the

@@ -4,13 +4,14 @@
 # when a real observed workflow_call run exists (last_run set). Workflows
 # with executable embedded-program/contract validators but no live
 # workflow_call run are 'static-only'. Everything else is 'unverified'
-# until a safe consumer fixture runs it, or 'waived' with an owner and
-# expiry. scripts/validate_runtime_coverage.py enforces completeness
-# (every reusable workflow has exactly one record) and evidence/waiver
-# discipline, and reports the honest status counts.
-schema: nddev-ci-runtime-contract-coverage/v2
+# until a safe consumer fixture runs it. Every non-proven row carries typed
+# risk, barrier, required capability and issue handoff. Waivers are restricted
+# to objective external secrets, licensing or real-host barriers and add owner
+# plus expiry. scripts/validate_runtime_coverage.py enforces completeness and
+# evidence/debt discipline, and reports the honest status counts.
+schema: nddev-ci-runtime-contract-coverage/v3
 repository: NDDev-it-com/ci-workflows
-baseline_ref: 218f63feb6be020e71ff8ac8e18146a12fa23a38
+baseline_ref: a02b0c9d459fd7fda9f4f153d1772ab24c987a94
 entries:
   - workflow: .github/workflows/actionlint.yml
     criticality: required-gate
@@ -33,6 +34,11 @@ entries:
     validator: scripts/check_benchmark_contract.py
     evidence: "Still not fixtured, and the earlier reason recorded here was wrong. It is not auto-push: external_data_json_path now stops the action touching a Git branch at all. The actual obstacle is permissions — benchmark.yml's job declares contents: write, a reusable cannot request more than its caller grants, and a caller job granting write would hand the fixture estate the power to change the repository it runs in. That is a deliberate refusal, not an impossibility. Calling it with contents: read is what produced a startup_failure with no annotation."
     last_run: null
+    runtime_debt:
+      risk: high
+      barrier: permission-side-effect
+      required_capability: Disposable repository where contents write cannot mutate protected project state.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/127
     waiver: null
   - workflow: .github/workflows/container-ci.yml
     criticality: supporting
@@ -43,14 +49,11 @@ entries:
     waiver: null
   - workflow: .github/workflows/coverage-gate.yml
     criticality: required-gate
-    status: waived
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
-    waiver:
-      owner: rldyourmnd
-      reason: >-
-        Coverage threshold gate. The threshold comparison, the artifact upload and the optional Codecov/Coveralls lanes have no fixture and no observed run, so the number it enforces is unexercised.
-      expires_after: "2026-10-08"
+    status: runtime-proven
+    evidence: 'Fixture generated coverage XML, enforced the threshold path, and uploaded the report artifact. Optional external upload integrations remain deliberately disabled and are not claimed.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31654663838
+    proven_digest: 797cad8991416922a21d6095a6026c1e566e0086af0c62c05cd119f0dab73aac
+    waiver: null
   - workflow: .github/workflows/cpp-ci.yml
     criticality: supporting
     status: runtime-proven
@@ -71,6 +74,11 @@ entries:
     status: unverified
     evidence: "Not fixtured. Needs the Flutter SDK, which is a multi-minute provisioning step for one lane; deferred to its own change rather than added to the estate here. No consumer run observed."
     last_run: null
+    runtime_debt:
+      risk: medium
+      barrier: heavy-toolchain
+      required_capability: Minimal Flutter project and hosted-runner SDK provisioning fixture.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/129
     waiver: null
   - workflow: .github/workflows/docs-ci.yml
     criticality: supporting
@@ -99,6 +107,11 @@ entries:
     status: unverified
     evidence: "Not fixtured. The defaults are Rust nightly plus `cargo install cargo-fuzz`, a several-minute install, and a fuzz sub-crate whose lock file cannot be hand-written the way the rust-ci fixture's can. Running it against Go instead would prove the plumbing while skipping the install lane the defaults describe, which would overstate the record. No consumer run observed."
     last_run: null
+    runtime_debt:
+      risk: high
+      barrier: specialized-harness
+      required_capability: Rust nightly cargo-fuzz project with an executable fuzz target.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/130
     waiver: null
   - workflow: .github/workflows/go-ci.yml
     proven_os: [linux, macos, windows]
@@ -110,14 +123,11 @@ entries:
     waiver: null
   - workflow: .github/workflows/grype-scan.yml
     criticality: security-blocking
-    status: waived
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
-    waiver:
-      owner: rldyourmnd
-      reason: >-
-        Container vulnerability scan. No fixture image and no observed run; severity gating is unexercised.
-      expires_after: "2026-12-15"
+    status: runtime-proven
+    evidence: 'Fixture ran the pinned Grype action against the checked-out fixture tree with the critical-severity failure threshold.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31654663838
+    proven_digest: cea5e410d9c4deeead46e9bb57e30d5dc81390c25fdd85f4a0475f298183d5ae
+    waiver: null
   - workflow: .github/workflows/hadolint-ci.yml
     criticality: supporting
     status: runtime-proven
@@ -127,14 +137,11 @@ entries:
     waiver: null
   - workflow: .github/workflows/iac-scan.yml
     criticality: security-blocking
-    status: waived
-    evidence: 'Previously runtime-proven at run 29260835832 (Checkov 3.3.6, seven CKV failures, soft_fail honored); the checkov-action wrapper was bumped v12.3112->v12.3114 (Dependabot), changing the workflow bytes. Re-run the reusable to restore runtime-proven.'
-    last_run: null
-    waiver:
-      owner: rldyourmnd
-      reason: >-
-        IaC misconfiguration scan. No fixture tree and no observed run.
-      expires_after: "2026-12-31"
+    status: runtime-proven
+    evidence: 'Fixture ran the current Checkov wrapper over tests/fixtures/terraform; findings were observed through the explicit soft-fail path.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31654663838
+    proven_digest: dff8209055ca73b8cc53e952c6db5b019d9aa97c64fb51f50c58452e91683923
+    waiver: null
   - workflow: .github/workflows/java-ci.yml
     proven_os: [linux, macos, windows]
     criticality: supporting
@@ -148,6 +155,11 @@ entries:
     status: unverified
     evidence: "Not fixtured. Needs the Android SDK and a Gradle project; deferred to its own change. No consumer run observed."
     last_run: null
+    runtime_debt:
+      risk: medium
+      barrier: heavy-toolchain
+      required_capability: Minimal Gradle Android project using the hosted Android SDK.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/129
     waiver: null
   - workflow: .github/workflows/monorepo-changed-paths.yml
     criticality: required-gate
@@ -180,14 +192,15 @@ entries:
     waiver: null
   - workflow: .github/workflows/pr-hygiene.yml
     criticality: required-gate
-    status: waived
+    status: blocked
     evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
     last_run: null
-    waiver:
-      owner: rldyourmnd
-      reason: >-
-        PR title/label/stale hygiene across four jobs. The pull-requests and issues write scopes are unproven by any observed run.
-      expires_after: "2026-11-05"
+    runtime_debt:
+      risk: high
+      barrier: event-context
+      required_capability: Disposable pull request and issue state for all four mutating jobs.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/127
+    waiver: null
   - workflow: .github/workflows/private-static.yml
     criticality: required-gate
     status: runtime-proven
@@ -197,15 +210,11 @@ entries:
     waiver: null
   - workflow: .github/workflows/public-codeql.yml
     criticality: security-blocking
-    status: waived
-    evidence: 'Workflow inputs changed; awaiting re-validation via a live workflow_call run.'
-    last_run: null
-    proven_digest: b43ec65a54f8430885c589c4c296920c946c3880b2088a8cd60e4ddf536cb8f8
-    waiver:
-      owner: rldyourmnd
-      reason: >-
-        Language-matrix CodeQL. The Go-toolchain provisioning fix (PR #82) changed startup behaviour on persistent runners and has no observed workflow_call run behind it.
-      expires_after: "2026-09-30"
+    status: runtime-proven
+    evidence: 'Fixture initialized and analyzed the Actions language on ubuntu-latest, then uploaded results with security-events write permission.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31654663838
+    proven_digest: c0f79c422d08282e999f44d5b73c72e818ff5745774e6ded65fb7958f6893675
+    waiver: null
   - workflow: .github/workflows/public-dependency-review.yml
     criticality: security-blocking
     status: runtime-proven
@@ -225,6 +234,11 @@ entries:
     status: unverified
     evidence: "Not fixtured, and not fixturable from a branch. This is the SARIF variant; this repository's scorecard.yml calls the JSON variant instead, and Scorecard evaluates a default branch, so a fixtures/** push cannot exercise it. Its JSON sibling is runtime-proven and shares the analysis step."
     last_run: null
+    runtime_debt:
+      risk: medium
+      barrier: event-context
+      required_capability: Default-branch Scorecard run with SARIF upload enabled.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/128
     waiver: null
   - workflow: .github/workflows/python-ci.yml
     proven_os: [linux, macos, windows]
@@ -239,6 +253,11 @@ entries:
     status: unverified
     evidence: "Not fixtured. Needs a Qt installation, the heaviest provisioning step in the library; deferred to its own change. No consumer run observed."
     last_run: null
+    runtime_debt:
+      risk: medium
+      barrier: heavy-toolchain
+      required_capability: Minimal CMake Qt project and hosted-runner Qt provisioning.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/129
     waiver: null
   - workflow: .github/workflows/r-ci.yml
     criticality: supporting
@@ -255,6 +274,11 @@ entries:
       unsigned, wrong-identity, stale, incomplete, failed, and substitution records;
       no live workflow_call run has occurred.'
     last_run: null
+    runtime_debt:
+      risk: critical
+      barrier: destructive-release
+      required_capability: Disposable signed evidence set and protected promotion environment.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/127
     waiver: null
   - workflow: .github/workflows/release-supply-chain-free.yml
     criticality: release
@@ -262,6 +286,11 @@ entries:
     validator: scripts/check_release_supply_chain.py
     evidence: 'Executable contract validator exercises the embedded program(s); no live workflow_call run.'
     last_run: null
+    runtime_debt:
+      risk: critical
+      barrier: destructive-release
+      required_capability: Disposable tag release with source archive and publication boundary.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/127
     waiver: null
   - workflow: .github/workflows/release-supply-chain.yml
     criticality: release
@@ -272,6 +301,11 @@ entries:
       repository CI never calls this workflow, so nothing has run the new bytes. The
       next real release re-proves it.'
     last_run: null
+    runtime_debt:
+      risk: critical
+      barrier: destructive-release
+      required_capability: Disposable public release with artifact attestation and protected environment.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/127
     waiver: null
   - workflow: .github/workflows/rust-ci.yml
     proven_os: [linux, macos, windows]
@@ -336,16 +370,11 @@ entries:
     waiver: null
   - workflow: .github/workflows/zizmor-sarif.yml
     criticality: security-blocking
-    status: waived
-    evidence: 'The prior runtime proof predates the actions/checkout 7.0.1 byte
-      change. Static checks pass, but a fresh workflow_call run has not proven
-      the current bytes.'
-    last_run: null
-    waiver:
-      owner: rldyourmnd
-      reason: >-
-        Workflow static analysis with SARIF upload. The security-events permission path is unproven by any observed run.
-      expires_after: "2026-11-15"
+    status: runtime-proven
+    evidence: 'Fixture audited a valid workflow with online audits enabled, produced valid SARIF, and uploaded it through the code-scanning permission path.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31654663838
+    proven_digest: f3a08601a5a6856c0bbf549fbb48df8d73dec61ddeb61d4a161adf0d190e30d3
+    waiver: null
   - workflow: .github/workflows/gate.yml
     criticality: supporting
     status: runtime-proven
@@ -355,17 +384,19 @@ entries:
     waiver: null
   - workflow: .github/workflows/rust-supply-chain.yml
     criticality: security-blocking
-    status: waived
-    evidence: 'New reusable workflow; awaiting first live workflow_call run from a consumer.'
-    last_run: null
-    waiver:
-      owner: rldyourmnd
-      reason: >-
-        cargo-audit/cargo-deny supply-chain gate. No fixture crate and no observed run.
-      expires_after: "2027-01-15"
+    status: runtime-proven
+    evidence: 'Fixture ran cargo-deny with an explicit policy, cargo-audit, and cargo-machete against the minimal Rust crate; all three top-level jobs completed successfully.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31654663838
+    proven_digest: 33665de4ed2ea34d598205cddcad3663095aeefbc94eb8f43c3fefb69cc59be9
+    waiver: null
   - workflow: .github/workflows/clusterfuzzlite.yml
     criticality: supporting
     status: unverified
     evidence: "Not fixtured. ClusterFuzzLite needs an OSS-Fuzz-shaped harness — a .clusterfuzzlite directory with its own Dockerfile and build.sh — plus a fuzz target to build. That is a project, not a fixture, and no consumer run has been observed."
     last_run: null
+    runtime_debt:
+      risk: high
+      barrier: specialized-harness
+      required_capability: OSS-Fuzz-shaped .clusterfuzzlite build image and executable fuzz target.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/130
     waiver: null

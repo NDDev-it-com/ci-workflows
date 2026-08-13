@@ -23,5 +23,8 @@ jobs:
       enable_deny: true
       enable_audit: true
       enable_machete: true
-      # cargo-deny needs a deny.toml at the working directory.
+      # All three tools resolve the same crate/workspace from this directory.
+      working_directory: .
+      # Point at your reviewed cargo-deny policy when it is not at repository root.
+      deny_arguments: '--all-features --config deny.toml'
       deny_command: "check bans licenses advisories sources"

@@ -69,6 +69,7 @@ import check_tool_registry
 import check_workflow_contracts
 import generate_docs
 import resolve_profile
+import render_runtime_evidence
 import validate_catalog
 import validate_product_facts
 import validate_profiles
@@ -100,6 +101,7 @@ CORE = [
     ("runtime-requirements", check_runtime_requirements.check),
     ("runner-routing", check_runner_routing.check),
     ("evidence-orchestration", compile_evidence_plan.check),
+    ("runtime-evidence-summary", render_runtime_evidence.check),
     ("merge-group", check_merge_group.check),
     ("rulesets", check_rulesets.check),
     ("catalog", validate_catalog.check),

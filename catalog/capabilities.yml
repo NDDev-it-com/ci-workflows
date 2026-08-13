@@ -1610,11 +1610,11 @@ capabilities:
       - "contents: read"
     required_settings: []
     risks:
-      - "cargo-deny requires a deny.toml in the repo root (or XDG config); without it, a default config applies"
+      - "cargo-deny resolves Cargo.toml from working_directory; without a deny.toml, its default policy applies"
       - "cargo-audit reads Cargo.lock; repos without a lockfile will fail"
       - "cargo-machete output is advisory (exits 0 with warnings, not failures)"
     deprecations: null
-    last_verified: "2026-08-04"
+    last_verified: "2026-08-13"
     sources:
       - "https://github.com/EmbarkStudios/cargo-deny"
       - "https://github.com/rustsec/rustsec"

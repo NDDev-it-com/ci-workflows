@@ -28,7 +28,7 @@ from _workflow_yaml import SELF_WORKFLOWS, WORKFLOWS_DIR
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 COVERAGE = REPO_ROOT / "catalog" / "runtime-coverage.yml"
-SCHEMA = "nddev-ci-runtime-contract-coverage/v2"
+SCHEMA = "nddev-ci-runtime-contract-coverage/v3"
 VALID_STATUS = {
     "runtime-proven", "static-only", "unverified", "waived", "unsupported",
     "blocked",
@@ -38,6 +38,13 @@ VALID_STATUS = {
 # obligation, so a benchmark helper and the release publisher were equally
 # allowed to sit at `unverified` forever while ci-gate stayed green.
 VALID_CRITICALITY = {"release", "security-blocking", "required-gate", "supporting"}
+VALID_DEBT_RISK = {"low", "medium", "high", "critical"}
+VALID_DEBT_BARRIER = {
+    "event-context", "permission-side-effect", "heavy-toolchain",
+    "specialized-harness", "destructive-release", "external-secret",
+    "licensing", "real-host",
+}
+OBJECTIVE_WAIVER_TYPES = {"external-secret", "licensing", "real-host"}
 # For these tiers, absence of evidence is itself a failure. `unverified` — the
 # default, and the honest label for "nobody has run this" — is not an accepted
 # resting state: prove it, name the executable contract validator that stands
@@ -142,6 +149,31 @@ def validate_coverage(data: object, reusables: set[str], as_of: dt.date,
         status = entry.get("status")
         if status not in VALID_STATUS:
             problems.append(f"{where}: invalid status {status!r}")
+        debt = entry.get("runtime_debt")
+        if status == "runtime-proven":
+            if debt is not None:
+                problems.append(f"{where}: runtime-proven may not carry runtime_debt")
+        elif not isinstance(debt, dict) or not all(
+            debt.get(field) for field in
+            ("risk", "barrier", "required_capability", "handoff")
+        ):
+            problems.append(
+                f"{where}: non-proven status requires runtime_debt with "
+                "risk/barrier/required_capability/handoff"
+            )
+        else:
+            if debt["risk"] not in VALID_DEBT_RISK:
+                problems.append(f"{where}: invalid runtime_debt.risk {debt['risk']!r}")
+            if debt["barrier"] not in VALID_DEBT_BARRIER:
+                problems.append(
+                    f"{where}: invalid runtime_debt.barrier {debt['barrier']!r}"
+                )
+            if not isinstance(debt["handoff"], str) or not debt["handoff"].startswith(
+                f"https://github.com/{REPO_SLUG}/issues/"
+            ):
+                problems.append(
+                    f"{where}: runtime_debt.handoff must be a {REPO_SLUG} issue URL"
+                )
         proven_os = entry.get("proven_os")
         if proven_os is not None:
             if status != "runtime-proven":
@@ -209,12 +241,27 @@ def validate_coverage(data: object, reusables: set[str], as_of: dt.date,
         if status == "waived":
             waiver = entry.get("waiver")
             if not isinstance(waiver, dict) or not all(
-                waiver.get(field) for field in ("owner", "reason", "expires_after")
+                waiver.get(field) for field in
+                ("type", "owner", "reason", "expires_after", "required_capability", "handoff")
             ):
                 problems.append(
-                    f"{where}: waived requires waiver.owner/reason/expires_after"
+                    f"{where}: waived requires type/owner/reason/expires_after/"
+                    "required_capability/handoff"
                 )
             else:
+                if waiver["type"] not in OBJECTIVE_WAIVER_TYPES:
+                    problems.append(
+                        f"{where}: waiver.type must be an objective external barrier "
+                        f"from {sorted(OBJECTIVE_WAIVER_TYPES)}"
+                    )
+                if isinstance(debt, dict) and waiver["type"] != debt.get("barrier"):
+                    problems.append(
+                        f"{where}: waiver.type must match runtime_debt.barrier"
+                    )
+                if not str(waiver["handoff"]).startswith(
+                    f"https://github.com/{REPO_SLUG}/issues/"
+                ):
+                    problems.append(f"{where}: waiver.handoff must be a repository issue URL")
                 try:
                     expiry = dt.date.fromisoformat(str(waiver["expires_after"]))
                 except ValueError:
@@ -268,10 +315,19 @@ def _fixture_tests() -> list[str]:
               "criticality": "security-blocking",
               "last_run": good_url, "proven_digest": digest_a, "waiver": None}
     unverified_b = {"workflow": ".github/workflows/b.yml", "status": "unverified",
-                    "criticality": "supporting", "last_run": None, "waiver": None}
+                    "criticality": "supporting", "last_run": None, "waiver": None,
+                    "runtime_debt": {
+                        "risk": "medium", "barrier": "heavy-toolchain",
+                        "required_capability": "fixture SDK",
+                        "handoff": f"https://github.com/{REPO_SLUG}/issues/129",
+                    }}
 
     if run(cov(proven, unverified_b)):
         problems.append("runtime-coverage fixture valid should pass")
+    no_debt = {key: value for key, value in unverified_b.items()
+               if key != "runtime_debt"}
+    if not run(cov(proven, no_debt)):
+        problems.append("runtime-coverage fixture non-proven-without-debt should fail")
     if not run(cov(proven)):
         problems.append("runtime-coverage fixture missing-workflow should fail")
     if not run(cov({**proven, "last_run": None}, unverified_b)):
@@ -288,7 +344,14 @@ def _fixture_tests() -> list[str]:
     if not run(cov({**proven, "proven_digest": "c" * 64}, unverified_b)):
         problems.append("runtime-coverage fixture stale-digest should fail")
     expired_waiver = {"workflow": ".github/workflows/b.yml", "status": "waived",
-                      "waiver": {"owner": "x", "reason": "y",
+                      "criticality": "supporting",
+                      "runtime_debt": {
+                          "risk": "high", "barrier": "real-host",
+                          "required_capability": "disposable host",
+                          "handoff": f"https://github.com/{REPO_SLUG}/issues/129"},
+                      "waiver": {"type": "real-host", "owner": "x", "reason": "y",
+                                 "required_capability": "disposable host",
+                                 "handoff": f"https://github.com/{REPO_SLUG}/issues/129",
                                  "expires_after": "2026-01-01"}}
     if not run(cov(proven, expired_waiver)):
         problems.append("runtime-coverage fixture expired-waiver should fail")
@@ -304,11 +367,22 @@ def _fixture_tests() -> list[str]:
         problems.append(
             "runtime-coverage fixture unverified-release should fail")
     waived_critical = {**unverified_b, "status": "waived", "criticality": "release",
-                       "waiver": {"owner": "o", "reason": "r",
+                       "runtime_debt": {**unverified_b["runtime_debt"],
+                                        "barrier": "real-host"},
+                       "waiver": {"type": "real-host", "owner": "o", "reason": "r",
+                                  "required_capability": "fixture host",
+                                  "handoff": f"https://github.com/{REPO_SLUG}/issues/129",
                                   "expires_after": "2026-12-31"}}
     if run(cov(proven, waived_critical)):
         problems.append(
             "runtime-coverage fixture waived-release should pass")
+    fake_waiver = {**waived_critical,
+                   "runtime_debt": {**waived_critical["runtime_debt"],
+                                    "barrier": "heavy-toolchain"},
+                   "waiver": {**waived_critical["waiver"],
+                              "type": "heavy-toolchain"}}
+    if not run(cov(proven, fake_waiver)):
+        problems.append("runtime-coverage fixture non-objective waiver should fail")
     static_critical = {**unverified_b, "status": "static-only",
                        "criticality": "release",
                        "validator": "scripts/validate_runtime_coverage.py"}

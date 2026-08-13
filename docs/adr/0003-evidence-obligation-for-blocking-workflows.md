@@ -26,25 +26,28 @@ which is why that contract now takes a serialised `needs_json`.
 
 - Every record declares `criticality`: `release`, `security-blocking`,
   `required-gate` or `supporting`.
-- For `release` and `security-blocking`, `unverified` is **rejected**. Those
+- For `release`, `security-blocking`, and `required-gate`, `unverified` is **rejected**. Those
   must be proven, `static-only` behind a validator that exists, or `waived` with
   a named owner and an unexpired date.
-- `supporting` may rest at `unverified` indefinitely. That is the honest state
-  for a benchmark helper, and the reason the tier exists.
+- Every non-proven row carries typed runtime debt: risk, barrier, required
+  capability, and a repository issue handoff. Supporting status does not erase
+  that debt or reduce the eventual evidence obligation.
 - The blocking families are pinned in `PINNED_CRITICALITY`, so relabelling a
   record `supporting` to escape the obligation is itself a gate failure rather
   than something only review can catch.
-- Waiver expiries are staggered, one per date.
+- A waiver is valid only for an objective external secret, licence, or real-host
+  barrier, and also carries owner, reason, required capability, handoff and an
+  expiry. Event setup, a large SDK, or fixture engineering are tracked as debt,
+  not waived as impossibilities.
 
 ## Consequences
 
-- Thirteen workflows entered the obligation. Two moved to `static-only` behind
-  `check_release_supply_chain.py`, which executes real fixtures; nine took dated
-  waivers spread from 2026-09-15 to 2027-01-15.
-- Those waivers expire, and when they do the gate goes red. That is the point:
-  a waiver is a dated debt, unlike `unverified`, which never comes due.
-- The obligation does not prove anything by itself. It converts silence into a
-  decision — prove it, stand in for it, or own the exception with a date. The
-  fixture estate that would supply real proof is still absent.
+- The post-merge closure batch raised runtime proof to 35 of 46 and removed all
+  legacy waivers. The remaining rows are visible in the generated closure
+  ledger with typed risk and child-issue ownership.
+- The obligation does not prove anything by itself. Only a successful,
+  non-skipped top-level reusable caller job for the current digest is eligible.
+  Failed, cancelled, skipped and missing callers fail the summary and emit
+  repair context; a diagnostic retry cannot overwrite the first failure.
 - Adding a reusable workflow to a blocking family now means editing
   `PINNED_CRITICALITY` too.
