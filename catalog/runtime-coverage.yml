@@ -23,27 +23,17 @@ entries:
     waiver: null
   - workflow: .github/workflows/benchmark-compare.yml
     criticality: supporting
-    status: static-only
-    validator: scripts/check_benchmark_contract.py
-    evidence: 'The history-branch input changed the workflow bytes; the paired-lane validator passes, but the current digest awaits the branch fixture run.'
-    last_run: null
-    runtime_debt:
-      risk: medium
-      barrier: specialized-harness
-      required_capability: Current-digest Go benchmark comparison fixture.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/127
+    status: runtime-proven
+    evidence: 'The language fixture ran the current-digest read-only comparison lane against the Go benchmark project with auto-push disabled.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31656810653
+    proven_digest: 96300e25a2a7aaae947e90c97b8439244d87bcf4c2d0fe2b126f7c120c8d9364
     waiver: null
   - workflow: .github/workflows/benchmark.yml
     criticality: supporting
-    status: unverified
-    validator: scripts/check_benchmark_contract.py
-    evidence: "The first graph attempt failed before runners because a disabled nested job still contributes to a reusable caller's permission ceiling. The retry reached the pinned benchmark action and exposed a product gap: the action rejects external_data_json_path together with auto-push true. The corrected publish lane now disables auto-push only for file-backed history; current-digest live proof awaits the final attempt."
-    last_run: null
-    runtime_debt:
-      risk: high
-      barrier: permission-side-effect
-      required_capability: Disposable repository where contents write cannot mutate protected project state.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/127
+    status: runtime-proven
+    evidence: 'The side-effect fixture ran the current-digest Go publish lane in file-backed mode. Its run-scoped branch was proven absent before and after the caller; cleanup and the evidence guard both succeeded. The first graph attempt failed before runners on the nested permission ceiling, and the retry exposed the invalid auto-push/file-backed combination; neither failure was hidden.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31656810730
+    proven_digest: 9cdadfbcc0fcb34d8ee5f4fd309d913d08b3504e1ade53e4fdeb775d33761cae
     waiver: null
   - workflow: .github/workflows/container-ci.yml
     criticality: supporting
