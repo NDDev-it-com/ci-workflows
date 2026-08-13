@@ -7,6 +7,13 @@ name: pr-hygiene
 
 on:
   workflow_call:
+    outputs:
+      labeler_new_labels:
+        description: 'Comma-separated labels added by the enabled labeler job.'
+        value: ${{ jobs.labeler.outputs.new_labels }}
+      labeler_all_labels:
+        description: 'Comma-separated labels present after the enabled labeler job.'
+        value: ${{ jobs.labeler.outputs.all_labels }}
     inputs:
       # Defaults hosted, unlike most reusables here. This workflow is triggered
       # by `pull_request`, so on a public caller it runs fork-authored code; a
@@ -166,12 +173,16 @@ jobs:
     permissions:
       contents: read          # read the labeler configuration from the tree
       pull-requests: write    # apply labels to the pull request
+    outputs:
+      new_labels: ${{ steps.label.outputs.new-labels }}
+      all_labels: ${{ steps.label.outputs.all-labels }}
     steps:
       - name: Checkout labeler configuration
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
       - name: Label pull request
+        id: label
         uses: actions/labeler@bf12e9b00b37c5c0ca2b87b79b2daf7891dbda13  # v7.0.0
         with:
           configuration-path: ${{ inputs.labeler_config }}

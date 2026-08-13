@@ -230,12 +230,26 @@ jobs:
           CALLER_RESULT: ${{ needs.fixture-pr-hygiene.result }}
           GH_TOKEN: ${{ github.token }}
           HAD_LABEL: ${{ needs.prepare-pr-hygiene.outputs.had_label }}
+          LABELER_ALL_LABELS: ${{ needs.fixture-pr-hygiene.outputs.labeler_all_labels }}
+          LABELER_NEW_LABELS: ${{ needs.fixture-pr-hygiene.outputs.labeler_new_labels }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPOSITORY: ${{ github.repository }}
         run: |
           set -euo pipefail
           if ! [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]] || [ "$HAD_LABEL" != false ]; then
             echo "PR cleanup: invalid disposable scope" >&2
+            exit 1
+          fi
+          output_has_label() {
+            local output="$1"
+            tr ',' '\n' <<<"$output" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -Fxq ci
+          }
+          if ! output_has_label "$LABELER_NEW_LABELS"; then
+            echo "PR cleanup: labeler new-labels output does not prove a ci write" >&2
+            exit 1
+          fi
+          if ! output_has_label "$LABELER_ALL_LABELS"; then
+            echo "PR cleanup: labeler all-labels output does not contain ci" >&2
             exit 1
           fi
           labels="$(gh api --paginate "repos/${REPOSITORY}/issues/${PR_NUMBER}/labels" --jq '.[].name')"

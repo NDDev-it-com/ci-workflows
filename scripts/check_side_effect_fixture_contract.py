@@ -40,8 +40,13 @@ if [[ " $* " == *" --include "* ]]; then
       printf 'HTTP/2.0 404 Not Found\n'; exit 1 ;;
   esac
 fi
-if [[ " $* " == *" --method DELETE "* ]]; then exit 0; fi
+if [[ " $* " == *" --method DELETE "* ]]; then
+  if [ "$FAKE_GH_MODE" = label-lifecycle ]; then printf 'absent\n' >"$FAKE_LABEL_STATE"; fi
+  exit 0
+fi
 if [ "$FAKE_GH_MODE" = label-present ]; then printf 'ci\n'; fi
+if [ "$FAKE_GH_MODE" = label-lifecycle ] && [ "$(cat "$FAKE_LABEL_STATE")" = present ]; then printf 'ci\n'; fi
+if [ "$FAKE_GH_MODE" = label-api-error ]; then printf 'permission denied\n' >&2; exit 1; fi
 """, encoding="utf-8")
         fake_gh.chmod(0o755)
         output = root / "output"
@@ -49,12 +54,15 @@ if [ "$FAKE_GH_MODE" = label-present ]; then printf 'ci\n'; fi
             **os.environ,
             "FAKE_COUNTER": str(root / "counter"),
             "FAKE_GH_MODE": mode,
+            "FAKE_LABEL_STATE": str(root / "label-state"),
             "GITHUB_OUTPUT": str(output),
             "GH_TOKEN": "fixture-token",
             "PATH": f"{fake_bin}{os.pathsep}{os.environ['PATH']}",
             "RUNNER_TEMP": str(root),
             **extra_env,
         }
+        if mode == "label-lifecycle":
+            Path(env["FAKE_LABEL_STATE"]).write_text("present\n", encoding="utf-8")
         result = subprocess.run(
             ["bash", "-euo", "pipefail", "-c", run], env=env,
             text=True, capture_output=True, check=False,
@@ -160,6 +168,8 @@ def validate(doc: dict[str, Any]) -> list[str]:
     pr_text = str((pr_cleanup.get("steps") or [{}])[0].get("run", ""))
     for marker in (
         "labeler did not apply the expected ci label",
+        "labeler new-labels output does not prove a ci write",
+        "labeler all-labels output does not contain ci",
         "--method DELETE",
         "prior label state was not restored",
         "CALLER_RESULT",
@@ -167,6 +177,12 @@ def validate(doc: dict[str, Any]) -> list[str]:
     ):
         if marker not in pr_text:
             problems.append(f"PR cleanup missing fail-closed marker {marker!r}")
+    pr_env = ((pr_cleanup.get("steps") or [{}])[0].get("env") or {})
+    if pr_env.get("LABELER_NEW_LABELS") != \
+            "${{ needs.fixture-pr-hygiene.outputs.labeler_new_labels }}" or \
+            pr_env.get("LABELER_ALL_LABELS") != \
+            "${{ needs.fixture-pr-hygiene.outputs.labeler_all_labels }}":
+        problems.append("PR cleanup must consume both documented labeler outputs")
 
     prepare_pr = _job(doc, "prepare-pr-hygiene")
     prepare_pr_text = str((prepare_pr.get("steps") or [{}])[0].get("run", ""))
@@ -224,6 +240,7 @@ def check() -> list[str]:
         ("pre-existing label accepted", lambda d: _job(d, "prepare-pr-hygiene")["steps"][0].update({"run": "echo had_label=true >>\"$GITHUB_OUTPUT\""})),
         ("API errors treated as missing ref", lambda d: _job(d, "cleanup-benchmark")["steps"][0].update({"run": "gh api missing >/dev/null 2>&1 || echo missing"})),
         ("prepare API errors treated as missing ref", lambda d: _job(d, "prepare-benchmark")["steps"][0].update({"run": "echo branch=unsafe >>\"$GITHUB_OUTPUT\""})),
+        ("label outputs ignored", lambda d: _job(d, "cleanup-pr-hygiene")["steps"][0]["env"].pop("LABELER_NEW_LABELS")),
     ]
     for label, mutate in probes:
         candidate = copy.deepcopy(doc)
@@ -281,6 +298,33 @@ def check() -> list[str]:
         prepare_pr_run, "label-present", prepare_env
     ).returncode == 0:
         problems.append("PR preparation accepted a pre-existing label as observable write")
+
+    cleanup_pr_run = str(
+        (_job(doc, "cleanup-pr-hygiene").get("steps") or [{}])[0].get("run", "")
+    )
+    cleanup_pr_env = {
+        "CALLER_RESULT": "success",
+        "HAD_LABEL": "false",
+        "LABELER_ALL_LABELS": "docs, ci",
+        "LABELER_NEW_LABELS": "ci",
+        "PR_NUMBER": "132",
+        "REPOSITORY": "NDDev-it-com/ci-workflows",
+    }
+    if _run_with_fake_gh(
+        cleanup_pr_run, "label-lifecycle", cleanup_pr_env
+    ).returncode != 0:
+        problems.append("PR cleanup rejected documented outputs and present-to-absent lifecycle")
+    for label, overrides, mode in (
+        ("no-match", {"LABELER_NEW_LABELS": ""}, "label-lifecycle"),
+        ("all-labels missing", {"LABELER_ALL_LABELS": "docs"}, "label-lifecycle"),
+        ("missing action output", {"LABELER_NEW_LABELS": "missing"}, "label-lifecycle"),
+        ("API permission error", {}, "label-api-error"),
+        ("skipped caller", {"CALLER_RESULT": "skipped"}, "label-lifecycle"),
+    ):
+        if _run_with_fake_gh(
+            cleanup_pr_run, mode, {**cleanup_pr_env, **overrides}
+        ).returncode == 0:
+            problems.append(f"PR cleanup accepted false-green {label}")
     return problems
 
 

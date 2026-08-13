@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Callable
 
-from _workflow_yaml import WORKFLOWS_DIR, load_yaml
+from _workflow_yaml import WORKFLOWS_DIR, get_on, load_yaml
 
 WORKFLOW = WORKFLOWS_DIR / "pr-hygiene.yml"
 DEFAULT_NAME = "commitlint (default configuration)"
@@ -36,6 +36,17 @@ def validate(doc: dict[str, Any]) -> list[str]:
     validation = by_name.get(VALIDATE_NAME, {})
     default = by_name.get(DEFAULT_NAME, {})
     explicit = by_name.get(EXPLICIT_NAME, {})
+    on = get_on(doc)
+    workflow_call = on.get("workflow_call", {}) if isinstance(on, dict) else {}
+    workflow_outputs = workflow_call.get("outputs", {}) \
+        if isinstance(workflow_call, dict) else {}
+    expected_workflow_outputs = {
+        "labeler_new_labels": "${{ jobs.labeler.outputs.new_labels }}",
+        "labeler_all_labels": "${{ jobs.labeler.outputs.all_labels }}",
+    }
+    for name, value in expected_workflow_outputs.items():
+        if (workflow_outputs.get(name) or {}).get("value") != value:
+            problems.append(f"workflow output {name} must expose the labeler output")
 
     if validation.get("if") != "${{ inputs.commitlint_config != '' }}":
         problems.append("explicit config validation must run only for non-empty input")
@@ -65,6 +76,21 @@ def validate(doc: dict[str, Any]) -> list[str]:
     if (explicit.get("with") or {}).get("configFile") != \
             "${{ steps.commitlint_config.outputs.config_file }}":
         problems.append("explicit action must receive the exact validated path")
+
+    jobs = doc.get("jobs") or {}
+    labeler = jobs.get("labeler", {}) if isinstance(jobs, dict) else {}
+    label_steps = {
+        step.get("name"): step for step in labeler.get("steps", [])
+        if isinstance(step, dict)
+    }
+    label_step = label_steps.get("Label pull request", {})
+    if label_step.get("id") != "label":
+        problems.append("label action needs a stable id for observable outputs")
+    if labeler.get("outputs") != {
+        "new_labels": "${{ steps.label.outputs.new-labels }}",
+        "all_labels": "${{ steps.label.outputs.all-labels }}",
+    }:
+        problems.append("labeler job must expose upstream new-labels and all-labels")
     return problems
 
 
