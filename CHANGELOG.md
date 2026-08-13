@@ -10,7 +10,12 @@
   accepted only from a coherent active venv whose distribution/version matches
   the hash-pinned requirements policy; dependency subjects transition to the
   repository venv explicitly and enforce exact per-environment CPython patch
-  identity across local and hosted layouts (#129).
+  identity across local and hosted layouts. Workflow, documentation and AST
+  process edges now share typed invocation/environment semantics, including
+  exact repository-interpreter provisioning and one-way `execve` receipts. A
+  verified `importlib` package boundary now owns every sibling helper without
+  cwd, `PYTHONPATH`, editable-install, or `sys.path` dependence
+  (#129).
 
 - Make `public-scorecard.yml` fail closed outside a public default-branch
   push/schedule, assign a deterministic SARIF category, and expose the upload

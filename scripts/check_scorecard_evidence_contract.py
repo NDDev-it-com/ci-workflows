@@ -10,10 +10,10 @@ import sys
 from copy import deepcopy
 from typing import Any
 
-from _strict_yaml import strict_load
-from _workflow_yaml import REPO_ROOT, WORKFLOWS_DIR, get_on, load_yaml
-from check_harden_runner_contract import HARDENED_WORKFLOWS, HARDEN_RUNNER
-from check_python_execution_contract import clean_environment
+from ci_workflows_tools._strict_yaml import strict_load
+from ci_workflows_tools._workflow_yaml import REPO_ROOT, WORKFLOWS_DIR, get_on, load_yaml
+from ci_workflows_tools.check_harden_runner_contract import HARDENED_WORKFLOWS, HARDEN_RUNNER
+from ci_workflows_tools.check_python_execution_contract import clean_environment
 
 CONTRACT_PATH = REPO_ROOT / "catalog" / "scorecard-evidence.yml"
 CALLER_PATH = WORKFLOWS_DIR / "scorecard.yml"

@@ -10,8 +10,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from _strict_yaml import strict_load
-from _workflow_yaml import get_on
+from ci_workflows_tools._strict_yaml import strict_load
+from ci_workflows_tools._workflow_yaml import get_on
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CATALOG = REPO_ROOT / "catalog" / "evidence-orchestration.yml"

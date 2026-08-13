@@ -225,7 +225,7 @@ caller. Do not create an Actions "routing job": that job has already entered a
 runner queue and therefore cannot enforce pre-queue routing.
 
 ```bash
-python3 -I -B scripts/check_python_execution_contract.py --launch check_runner_routing.py -- \
+.venv/bin/python -I -B scripts/check_python_execution_contract.py --launch check_runner_routing.py -- \
   --workflow .github/workflows/secret-scan.yml \
   --platform linux --class integration --visibility private
 ```

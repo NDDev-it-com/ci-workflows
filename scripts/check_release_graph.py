@@ -23,8 +23,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from _strict_yaml import strict_loads
-from _workflow_yaml import REPO_ROOT, load_yaml
+from ci_workflows_tools._strict_yaml import strict_loads
+from ci_workflows_tools._workflow_yaml import REPO_ROOT, load_yaml
 
 RELEASE = REPO_ROOT / ".github" / "workflows" / "release.yml"
 DOC = REPO_ROOT / "docs" / "09-releases-packages.md"

@@ -12,17 +12,23 @@ import os
 import py_compile
 import re
 import runpy
+import shlex
 import site
 import subprocess
 import sys
 import sysconfig
 import tempfile
+from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from symtable import SymbolTable, symtable
+from types import ModuleType
 from typing import Any, Mapping, Sequence
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS = REPO_ROOT / "scripts"
+PACKAGE_NAME = "ci_workflows_tools"
+PACKAGE_INIT = "__init__.py"
 POLICY_PATH = REPO_ROOT / "catalog" / "python-execution.yml"
 META_GATE = "check_python_execution_contract.py"
 SPECIAL_GLOBALS = {
@@ -37,6 +43,318 @@ MUTATING_CALLS = {
 PROCESS_CALLS = {"run", "Popen", "check_call", "check_output"}
 OS_PROCESS_PREFIXES = ("exec", "spawn")
 OS_PROCESS_NAMES = {"system", "popen"}
+
+
+@dataclass(frozen=True)
+class Invocation:
+    executable: str
+    flags: tuple[str, ...]
+    launcher: str
+    verb: str
+    subject: str
+    arguments: tuple[str, ...]
+
+
+class SourceRole(str, Enum):
+    WORKFLOW = "workflow"
+    REPOSITORY_LAUNCHER = "repository-launcher"
+    ADOPTION_GUIDE = "adoption-guide"
+    CONSUMER_COMMAND = "consumer-command"
+    SHELL_FIXTURE = "shell-fixture"
+
+
+class SourceLanguage(str, Enum):
+    YAML = "yaml"
+    MARKDOWN = "markdown"
+    PYTHON = "python"
+    SHELL = "shell"
+
+
+@dataclass(frozen=True)
+class InvocationSource:
+    path: Path
+    text: str
+    role: SourceRole
+    language: SourceLanguage
+
+
+@dataclass(frozen=True)
+class ExtractedCommand:
+    source_path: Path
+    line: int
+    location: str
+    role: SourceRole
+    language: SourceLanguage
+    grammar: SourceLanguage
+    text: str
+
+
+def _repository_package_spec(root: Path) -> tuple[Any | None, list[str]]:
+    """Build one exact package spec and report typed origin failures."""
+    problems: list[str] = []
+    package_init = root / PACKAGE_INIT
+    if root.is_symlink() or package_init.is_symlink() or not package_init.is_file():
+        return None, ["repository tool package root is missing or unsafe"]
+    try:
+        text = package_init.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        return None, [f"repository tool package manifest is unreadable: {exc}"]
+    if text != (
+        '"""Repository-owned validator package; loaded only by the isolated launcher."""\n'
+        "\nPACKAGE_CONTRACT = \"ci-workflows-tools-v1\"\n"
+    ):
+        problems.append("repository tool package manifest is stale or duplicated")
+    spec = importlib.util.spec_from_file_location(
+        PACKAGE_NAME, package_init, submodule_search_locations=[str(root)],
+    )
+    if spec is None or spec.loader is None \
+            or spec.origin != str(package_init) \
+            or tuple(spec.submodule_search_locations or ()) != (str(root),):
+        problems.append("cannot construct the repository tool package spec")
+    return spec, problems
+
+
+def _loaded_package_problems(module: ModuleType, root: Path) -> list[str]:
+    spec = getattr(module, "__spec__", None)
+    locations = tuple(getattr(spec, "submodule_search_locations", ()) or ())
+    if getattr(spec, "origin", None) != str(root / PACKAGE_INIT) \
+            or locations != (str(root),):
+        return ["repository tool package is duplicated or has wrong origin"]
+    if getattr(module, "PACKAGE_CONTRACT", None) != "ci-workflows-tools-v1":
+        return ["repository tool package contract is missing or stale"]
+    return []
+
+
+def _register_repository_package() -> None:
+    """Register the exact repository package without changing sys.path."""
+    existing = sys.modules.get(PACKAGE_NAME)
+    if existing is not None:
+        problems = _loaded_package_problems(existing, SCRIPTS)
+        if problems:
+            raise RuntimeError(problems[0])
+        return
+    spec, problems = _repository_package_spec(SCRIPTS)
+    if problems or spec is None:
+        raise RuntimeError(problems[0] if problems else "package spec is unavailable")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[PACKAGE_NAME] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException:
+        sys.modules.pop(PACKAGE_NAME, None)
+        raise
+    problems = _loaded_package_problems(module, SCRIPTS)
+    if problems:
+        sys.modules.pop(PACKAGE_NAME, None)
+        raise RuntimeError(problems[0])
+
+
+def _helper_origin_problems(root: Path, module: str, origin: str | None) -> list[str]:
+    expected = root / f"{module}.py"
+    if not expected.is_file() or expected.is_symlink():
+        return [f"repository helper {module!r} is missing or unsafe"]
+    if origin is None or Path(origin).resolve() != expected.resolve():
+        return [f"repository helper {module!r} has wrong or shadowed origin"]
+    return []
+
+
+def _canonical_invocation(subject: str, arguments: Sequence[str] = ()) -> Invocation:
+    prefix = load_policy()["python"]["launcher_prefix"]
+    return Invocation(prefix[0], tuple(prefix[1:3]), prefix[3], prefix[4], subject,
+                      tuple(arguments))
+
+
+def _render_invocation(invocation: Invocation) -> str:
+    return shlex.join([
+        invocation.executable, *invocation.flags, invocation.launcher,
+        invocation.verb, invocation.subject, "--", *invocation.arguments,
+    ])
+
+
+def _logical_shell_commands(text: str) -> list[tuple[int, str]]:
+    """Join only POSIX backslash continuations while retaining start lines."""
+    commands: list[tuple[int, str]] = []
+    parts: list[str] = []
+    start = 0
+    for number, raw in enumerate(text.splitlines(), start=1):
+        stripped = raw.strip()
+        if not parts and (not stripped or stripped.startswith("#")):
+            continue
+        if not parts:
+            start = number
+        continued = stripped.endswith("\\")
+        parts.append(stripped[:-1].rstrip() if continued else stripped)
+        if not continued:
+            commands.append((start, " ".join(part for part in parts if part)))
+            parts = []
+    if parts:
+        raise ValueError(f"line {start}: truncated POSIX continuation")
+    return commands
+
+
+def _parse_invocation(command: str) -> Invocation | None:
+    marker = "scripts/check_python_execution_contract.py"
+    if marker not in command and "scripts/" not in command and "python" not in command:
+        return None
+    try:
+        tokens = shlex.split(command, posix=True)
+    except ValueError as exc:
+        raise ValueError(f"malformed shell command: {exc}") from exc
+    for operator in ("&&", "||", ";"):
+        if operator in tokens:
+            tokens = tokens[:tokens.index(operator)]
+    try:
+        index = tokens.index(marker)
+    except ValueError:
+        nested = [token for token in tokens if marker in token]
+        if len(nested) == 1 and nested[0] != command:
+            return _parse_invocation(nested[0])
+        return None
+    if index < 3 or len(tokens) <= index + 3:
+        return Invocation(tokens[0] if tokens else "", tuple(tokens[1:index]), marker,
+                          "", "", ())
+    tail = tokens[index + 1:]
+    if tail.count("--") != 1:
+        return Invocation(tokens[0], tuple(tokens[1:index]), marker,
+                          "<invalid-separator>",
+                          tail[1] if len(tail) > 1 else "", ())
+    separator = tail.index("--")
+    subject = tail[1] if len(tail) > 1 else ""
+    return Invocation(tokens[0], tuple(tokens[1:index]), marker, tail[0], subject,
+                      tuple(tail[separator + 1:]))
+
+
+def _workflow_commands(source: InvocationSource) -> tuple[list[ExtractedCommand], list[str]]:
+    """Return only executable step.run scalars from one strict YAML workflow."""
+    try:
+        strict_yaml = importlib.import_module(f"{PACKAGE_NAME}._strict_yaml")
+        document = strict_yaml.strict_loads(source.text, str(source.path))
+    except Exception as exc:
+        return [], [f"{source.path.name}: workflow YAML is invalid: {exc}"]
+    if not isinstance(document, dict):
+        return [], [f"{source.path.name}: workflow root must be a mapping"]
+    jobs = document.get("jobs")
+    if not isinstance(jobs, dict):
+        return [], [f"{source.path.name}: workflow jobs must be a mapping"]
+    commands: list[ExtractedCommand] = []
+    problems: list[str] = []
+    run_lines = iter(
+        number for number, raw in enumerate(source.text.splitlines(), 1)
+        if raw.lstrip().startswith("run:")
+    )
+    for job_name, job in jobs.items():
+        if not isinstance(job, dict):
+            continue
+        steps = job.get("steps", [])
+        if not isinstance(steps, list):
+            problems.append(f"{source.path.name}: jobs.{job_name}.steps must be a list")
+            continue
+        for index, step in enumerate(steps):
+            if not isinstance(step, dict) or "run" not in step:
+                continue
+            location = f"jobs.{job_name}.steps[{index}].run"
+            command = step["run"]
+            if not isinstance(command, str) or not command.strip():
+                problems.append(
+                    f"{source.path.name}: {location} must be a non-empty command scalar"
+                )
+                continue
+            line = next(run_lines, 1)
+            commands.append(ExtractedCommand(
+                source.path, line, location, source.role, source.language,
+                SourceLanguage.SHELL, command,
+            ))
+    return commands, problems
+
+
+def _markdown_commands(source: InvocationSource) -> tuple[list[ExtractedCommand], list[str]]:
+    commands: list[ExtractedCommand] = []
+    problems: list[str] = []
+    fence_language: str | None = None
+    fence_start = 0
+    lines: list[str] = []
+    executable = {"bash", "sh", "shell", "zsh"}
+    for number, raw in enumerate(source.text.splitlines(), 1):
+        match = re.match(r"^\s*```([^\s`]*)\s*$", raw)
+        if match:
+            if fence_language is None:
+                fence_language = match.group(1).lower()
+                fence_start = number + 1
+                lines = []
+            else:
+                if fence_language in executable:
+                    try:
+                        logical = _logical_shell_commands("\n".join(lines))
+                    except ValueError as exc:
+                        problems.append(f"{source.path.name}: fence@{fence_start}: {exc}")
+                        logical = []
+                    for offset, command in logical:
+                        if _is_repository_command_candidate(command):
+                            line = fence_start + offset - 1
+                            commands.append(ExtractedCommand(
+                                source.path, line, f"fence@{line}", source.role,
+                                source.language, SourceLanguage.SHELL, command,
+                            ))
+                fence_language = None
+                lines = []
+            continue
+        if fence_language is not None:
+            lines.append(raw)
+    if fence_language is not None:
+        problems.append(f"{source.path.name}: unterminated Markdown fence at line {fence_start - 1}")
+    return commands, problems
+
+
+def _python_commands(source: InvocationSource) -> tuple[list[ExtractedCommand], list[str]]:
+    try:
+        tree = ast.parse(source.text, filename=str(source.path), feature_version=(3, 13))
+    except SyntaxError as exc:
+        return [], [f"{source.path.name}: Python source is invalid: {exc}"]
+    commands: list[ExtractedCommand] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Constant) or not isinstance(node.value, str):
+            continue
+        try:
+            logical = _logical_shell_commands(node.value)
+        except ValueError as exc:
+            if _is_repository_command_candidate(node.value):
+                return [], [f"{source.path.name}: string@{node.lineno}: {exc}"]
+            continue
+        for offset, command in logical:
+            if _is_repository_command_candidate(command):
+                line = node.lineno + offset - 1
+                commands.append(ExtractedCommand(
+                    source.path, line, f"string@{line}", source.role,
+                    source.language, SourceLanguage.SHELL, command,
+                ))
+    return commands, []
+
+
+def _is_repository_command_candidate(command: str) -> bool:
+    return bool(re.search(
+        r"scripts/(?:check_python_(?:execution_contract|syntax)|[A-Za-z0-9_]+)\.py\b",
+        command,
+    ))
+
+
+def _source_commands(source: InvocationSource) -> tuple[list[ExtractedCommand], list[str]]:
+    if source.language is SourceLanguage.YAML:
+        return _workflow_commands(source)
+    if source.language is SourceLanguage.MARKDOWN:
+        return _markdown_commands(source)
+    if source.language is SourceLanguage.PYTHON:
+        return _python_commands(source)
+    if source.language is not SourceLanguage.SHELL:
+        return [], [f"{source.path.name}: unclassified executable source language"]
+    try:
+        commands = _logical_shell_commands(source.text)
+    except ValueError as exc:
+        return [], [f"{source.path.name}: {exc}"]
+    return [
+        ExtractedCommand(source.path, number, f"line {number}", source.role,
+                         source.language, SourceLanguage.SHELL, command)
+        for number, command in commands
+    ], []
 
 
 def _no_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -193,8 +511,29 @@ def _import_roots(tree: ast.AST) -> set[str]:
         if isinstance(node, ast.Import):
             roots.update(alias.name.split(".", 1)[0] for alias in node.names)
         elif isinstance(node, ast.ImportFrom) and node.module:
-            roots.add(node.module.split(".", 1)[0])
+            if node.module.startswith(f"{PACKAGE_NAME}."):
+                roots.add(node.module.split(".", 1)[1].split(".", 1)[0])
+            elif node.module == PACKAGE_NAME:
+                roots.update(alias.name.split(".", 1)[0] for alias in node.names)
+            else:
+                roots.add(node.module.split(".", 1)[0])
     return roots
+
+
+def _unqualified_sibling_imports(tree: ast.AST, siblings: set[str]) -> list[str]:
+    """Reject sibling imports that bypass the verified repository package."""
+    problems: list[str] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                root = alias.name.split(".", 1)[0]
+                if root in siblings:
+                    problems.append(f"line {node.lineno}: unqualified sibling import {root!r}")
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            root = node.module.split(".", 1)[0]
+            if root in siblings:
+                problems.append(f"line {node.lineno}: unqualified sibling import {root!r}")
+    return problems
 
 
 def _needs_yaml(tool: str, policy: Mapping[str, Any]) -> bool:
@@ -346,6 +685,36 @@ def _read_pyvenv(path: Path) -> tuple[dict[str, str], list[str]]:
     return values, problems
 
 
+def _base_anchor(
+    identity: Mapping[str, Any], config: Mapping[str, str],
+    venv_policy: Mapping[str, Any],
+) -> tuple[Path | None, list[str]]:
+    """Resolve optional runtime and config facts to one base executable."""
+    problems: list[str] = []
+    home = config.get("home")
+    home_path = Path(home).absolute() if home else None
+    home_candidates = [] if home_path is None or not home_path.is_dir() else [
+        home_path / name for name in venv_policy["home_interpreter_names"]
+        if (home_path / name).is_file()
+    ]
+    declared_paths = [
+        Path(value).absolute() for value in (
+            identity.get("base_executable", ""), config.get("executable", ""),
+        ) if value
+    ]
+    if any(not path.is_file() for path in declared_paths):
+        problems.append("declared base executable is missing or non-regular")
+    declared_targets = {path.resolve() for path in declared_paths if path.is_file()}
+    home_targets = {candidate.resolve() for candidate in home_candidates}
+    candidates = declared_targets & home_targets if declared_targets else home_targets
+    if len(candidates) != 1:
+        problems.append("pyvenv home does not identify one coherent base executable")
+        return None, problems
+    if len(declared_targets) > 1:
+        problems.append("runtime and pyvenv base executable identities differ")
+    return next(iter(candidates)), problems
+
+
 def _venv_identity_problems(
     identity: Mapping[str, Any], config: Mapping[str, str], *,
     expected_prefix: Path | None = None,
@@ -382,39 +751,18 @@ def _venv_identity_problems(
         problems.append("active virtual environment is not the repository-owned .venv")
     if exec_prefix != prefix or base_exec_prefix.resolve() != base_prefix.resolve():
         problems.append("interpreter prefix and exec-prefix identities are incoherent")
-    home = config.get("home")
-    home_path = Path(home).absolute() if home else None
-    home_candidates = [] if home_path is None or not home_path.is_dir() else [
-        home_path / name for name in venv_policy["home_interpreter_names"]
-        if (home_path / name).is_file()
-    ]
-    configured_executable = config.get("executable")
-    declared_paths = [
-        Path(value).absolute() for value in (
-            identity.get("base_executable", ""), configured_executable or "",
-        ) if value
-    ]
-    if any(not path.is_file() for path in declared_paths):
-        problems.append("declared base executable is missing or non-regular")
-    declared_targets = {path.resolve() for path in declared_paths if path.is_file()}
-    home_targets = {candidate.resolve() for candidate in home_candidates}
-    common_targets = declared_targets & home_targets if declared_targets else home_targets
-    if len(common_targets) != 1:
-        problems.append("pyvenv home does not identify one coherent base executable")
-        real_base_executable = None
-    else:
-        real_base_executable = next(iter(common_targets))
+    real_base_executable, anchor_problems = _base_anchor(identity, config, venv_policy)
+    problems += anchor_problems
+    if real_base_executable is not None:
         if not _inside(real_base_executable, real_base_prefix):
             problems.append("declared base executable is outside the base installation")
-    if len({path.resolve() for path in declared_paths}) > 1:
-        problems.append("runtime and pyvenv base executable identities differ")
     executable_parents = {prefix / "bin", prefix / "Scripts"}
-    if executable.parent not in executable_parents or not executable.is_file():
+    if executable.parent not in executable_parents or not executable.is_file() \
+            or executable.is_symlink():
         problems.append("venv interpreter is not a regular executable in the venv")
-    elif real_base_executable is not None and executable.resolve() not in {
-        real_base_executable, executable,
-    }:
-        problems.append("venv interpreter does not bind the declared base executable")
+    # A copy-based venv intentionally has a distinct executable inode. Its
+    # base provenance is established by the coherent runtime/config/home
+    # anchors above, while this executable is constrained to the venv root.
     expected_system_site = str(venv_policy["include_system_site_packages"]).lower()
     if config.get("include-system-site-packages", "").lower() != expected_system_site:
         problems.append("pyvenv must disable system site-packages")
@@ -464,6 +812,66 @@ def _active_venv_identity() -> tuple[dict[str, Any] | None, list[str]]:
     return identity, problems
 
 
+def _repository_interpreter(policy: Mapping[str, Any]) -> Path:
+    """Return the single executable named by the repository policy."""
+    raw = policy["python"]["dependency_interpreter"]
+    path = REPO_ROOT / raw
+    expected = REPO_ROOT / policy["python"]["venv"]["path"] / "bin" / "python"
+    if path != expected:
+        raise RuntimeError("repository interpreter policy is not canonical")
+    return path
+
+
+def _bootstrap_receipt(policy: Mapping[str, Any]) -> tuple[str, str]:
+    contract = policy["python"]["bootstrap"]
+    return contract["transition_receipt"], contract["receipt_version"]
+
+
+def _bootstrap_decision(current: Path, expected: Path, receipt: str | None,
+                        receipt_value: str) -> str:
+    """Classify the one-way interpreter edge without executing it."""
+    if receipt not in (None, receipt_value):
+        return "malformed-receipt"
+    if current.resolve() == expected.resolve():
+        return "arrived" if receipt == receipt_value else "current"
+    if receipt == receipt_value:
+        return "loop-or-wrong-target"
+    return "transition"
+
+
+def _ensure_repository_interpreter() -> None:
+    """Perform at most one stdlib-only transition before identity/import checks."""
+    policy = load_policy()
+    expected = _repository_interpreter(policy)
+    receipt_name, receipt_value = _bootstrap_receipt(policy)
+    received = os.environ.get(receipt_name)
+    current = Path(sys.executable).absolute()
+    if received not in (None, receipt_value):
+        print("python-launcher: malformed bootstrap receipt", file=sys.stderr)
+        raise SystemExit(2)
+    if not expected.is_file() or expected.is_symlink() or not os.access(expected, os.X_OK):
+        print("python-launcher: repository interpreter is unavailable or unsafe", file=sys.stderr)
+        raise SystemExit(2)
+    decision = _bootstrap_decision(current, expected, received, receipt_value)
+    if decision in {"current", "arrived"}:
+        if decision == "arrived":
+            print(
+                "python-bootstrap-transition: "
+                + json.dumps(
+                    {"from": "external", "to": str(expected), "version": receipt_value},
+                    sort_keys=True, separators=(",", ":"),
+                ),
+                file=sys.stderr,
+            )
+        return
+    if decision == "loop-or-wrong-target":
+        print("python-launcher: bootstrap transition loop or wrong target", file=sys.stderr)
+        raise SystemExit(2)
+    env = clean_environment({receipt_name: receipt_value})
+    argv = [str(expected), "-I", "-B", str(Path(__file__).resolve()), *sys.argv[1:]]
+    os.execve(expected, argv, env)
+
+
 def _venv_receipt() -> dict[str, Any]:
     """Return non-secret runtime identity evidence from the validated process."""
     identity, problems = _active_venv_identity()
@@ -477,20 +885,17 @@ def _venv_receipt() -> dict[str, Any]:
     config, config_problems = _read_pyvenv(Path(identity["prefix"]) / "pyvenv.cfg")
     if config_problems:
         raise RuntimeError("cannot emit a receipt without pyvenv identity")
-    base_executable = identity.get("base_executable") or config.get("executable")
-    if not base_executable:
-        home = Path(config["home"])
-        names = load_policy()["python"]["venv"]["home_interpreter_names"]
-        candidates = [home / name for name in names if (home / name).is_file()]
-        if len({candidate.resolve() for candidate in candidates}) != 1:
-            raise RuntimeError("cannot emit a receipt without one base executable")
-        base_executable = str(candidates[0])
+    base_executable, anchor_problems = _base_anchor(
+        identity, config, load_policy()["python"]["venv"],
+    )
+    if anchor_problems or base_executable is None:
+        raise RuntimeError("cannot emit a receipt without one base executable")
     def path_identity(raw: str) -> dict[str, str]:
         path = Path(raw)
         return {"raw": raw, "resolved": str(path.resolve())}
 
     return {
-        "base_executable": str(Path(base_executable).resolve()),
+        "base_executable": str(base_executable),
         "cache_tag": identity["cache_tag"],
         "dependency": dependency["distribution"],
         "dependency_origin": str(Path(spec.origin).resolve()),
@@ -509,15 +914,6 @@ def _venv_receipt() -> dict[str, Any]:
         "sys_version": sys.version,
         "version_info": list(identity["version_info"]),
     }
-
-
-def _trusted_paths(dependency_root: Path | None) -> list[Path]:
-    stdlib = Path(sysconfig.get_path("stdlib")).resolve()
-    platstdlib = Path(sysconfig.get_path("platstdlib")).resolve()
-    paths = [SCRIPTS, stdlib, platstdlib, stdlib / "lib-dynload"]
-    if dependency_root is not None:
-        paths.insert(1, dependency_root)
-    return list(dict.fromkeys(path for path in paths if path.exists()))
 
 
 def _runtime_problems(policy: Mapping[str, Any] | None = None) -> list[str]:
@@ -554,7 +950,7 @@ def _bootstrap(
     problems = _runtime_problems(policy)
     surfaces = _policy_surfaces(policy)
     files = _files()
-    expected = surfaces | {META_GATE}
+    expected = surfaces | {META_GATE, PACKAGE_INIT}
     if len(surfaces) != policy["python"]["subject_count"] or set(files) != expected:
         problems.append(
             f"inventory drift: count={len(surfaces)} "
@@ -569,18 +965,20 @@ def _bootstrap(
     if needs_yaml:
         dependency_root, dependency_problems = _dependency_root()
         problems += dependency_problems
-    sys.path[:] = [str(path) for path in _trusted_paths(dependency_root)]
-    for module, path in ((path.stem, path) for path in files.values()):
-        spec = importlib.util.find_spec(module)
-        if spec is None or spec.origin is None or Path(spec.origin).resolve() != path:
-            problems.append(f"sibling module {module!r} resolves outside scripts/")
+    _register_repository_package()
+    for module, path in ((path.stem, path) for path in files.values()
+                         if path.name != PACKAGE_INIT):
+        spec = importlib.util.find_spec(f"{PACKAGE_NAME}.{module}")
+        problems += _helper_origin_problems(
+            SCRIPTS, module, spec.origin if spec is not None else None,
+        )
     problems += _resource_problems(REPO_ROOT, policy)
     if problems:
         for problem in problems:
             print(f"python-bootstrap: {problem}", file=sys.stderr)
         return 2
     if import_only:
-        importlib.import_module(Path(tool).stem)
+        importlib.import_module(f"{PACKAGE_NAME}.{Path(tool).stem}")
         return 0
     if needs_yaml:
         print(
@@ -589,7 +987,9 @@ def _bootstrap(
             file=sys.stderr,
         )
     sys.argv = [str(files[tool]), *args]
-    runpy.run_module(Path(tool).stem, run_name="__main__", alter_sys=False)
+    runpy.run_module(
+        f"{PACKAGE_NAME}.{Path(tool).stem}", run_name="__main__", alter_sys=False,
+    )
     return 0
 
 
@@ -608,6 +1008,7 @@ def _subject_interpreter(
     executable = root / policy["python"]["dependency_interpreter"]
     expected_parent = root / policy["python"]["venv"]["path"] / "bin"
     if executable.parent != expected_parent or not executable.is_file() \
+            or executable.is_symlink() \
             or not os.access(executable, os.X_OK):
         return None, "@active", ["repository dependency interpreter is unavailable"]
     return executable, "@active", []
@@ -813,14 +1214,85 @@ def _process_edges(tree: ast.Module) -> tuple[dict[str, int], list[str]]:
         function = _function_name(node, parents)
         counts[function] = counts.get(function, 0) + 1
         keywords = {item.arg: item.value for item in node.keywords if item.arg}
-        if "env" not in keywords or isinstance(keywords.get("env"), ast.Constant) \
-                and keywords["env"].value is None:
+        positional_env = owner == "os" and name in {"execve", "execvpe"} \
+            and len(node.args) >= 3
+        if not positional_env and (
+            "env" not in keywords or isinstance(keywords.get("env"), ast.Constant)
+            and keywords["env"].value is None
+        ):
             problems.append(f"{function}:{node.lineno}: process edge has implicit env")
-        env_value = keywords.get("env")
+        env_value = node.args[2] if positional_env else keywords.get("env")
         if isinstance(env_value, ast.Attribute) and isinstance(env_value.value, ast.Name) \
                 and env_value.value.id == "os" and env_value.attr == "environ":
             problems.append(f"{function}:{node.lineno}: process edge forwards os.environ")
     return counts, problems
+
+
+def _process_semantic_problems(
+    tree: ast.Module, filename: str, policy: Mapping[str, Any],
+) -> list[str]:
+    """Bind every AST process call to the complete semantics of its profile."""
+    problems: list[str] = []
+    parents = {child: parent for parent in ast.walk(tree) for child in ast.iter_child_nodes(parent)}
+    registered = policy["process_edges"].get(filename, {})
+    profiles = policy["process_profiles"]
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+            continue
+        owner = node.func.value.id if isinstance(node.func.value, ast.Name) else ""
+        name = node.func.attr
+        if owner == "subprocess" and name in PROCESS_CALLS:
+            observed_api = "subprocess"
+        elif owner == "os" and (name in OS_PROCESS_NAMES or name.startswith(OS_PROCESS_PREFIXES)):
+            observed_api = "execve" if name == "execve" else "os-process"
+        else:
+            continue
+        function = _function_name(node, parents)
+        edge = registered.get(function)
+        if not isinstance(edge, dict) or edge.get("profile") not in profiles:
+            continue  # The inventory-drift error owns missing registrations.
+        profile = profiles[edge["profile"]]
+        if profile["api"] != observed_api:
+            problems.append(
+                f"{function}:{node.lineno}: process API differs from profile"
+            )
+        keywords = {item.arg: item.value for item in node.keywords if item.arg}
+        has_cwd = "cwd" in keywords and not (
+            isinstance(keywords["cwd"], ast.Constant) and keywords["cwd"].value is None
+        )
+        if profile["cwd"] == "explicit" and not has_cwd:
+            problems.append(f"{function}:{node.lineno}: profile requires explicit cwd")
+        if profile["cwd"] == "preserve" and has_cwd:
+            problems.append(f"{function}:{node.lineno}: profile requires preserved cwd")
+        if observed_api == "execve":
+            if len(node.args) != 3 or node.keywords:
+                problems.append(f"{function}:{node.lineno}: execve shape is not exact")
+            elif not all(isinstance(item, ast.Name) for item in node.args) \
+                    or [item.id for item in node.args] != ["expected", "argv", "env"]:
+                problems.append(
+                    f"{function}:{node.lineno}: execve path/argv/env binding is not canonical"
+                )
+            else:
+                env_name = node.args[2].id
+                scope = node
+                while scope in parents and not isinstance(
+                    scope, (ast.FunctionDef, ast.AsyncFunctionDef)
+                ):
+                    scope = parents[scope]
+                assignments = [
+                    item for item in ast.walk(scope)
+                    if isinstance(item, ast.Assign)
+                    and any(isinstance(target, ast.Name) and target.id == env_name
+                            for target in item.targets)
+                    and isinstance(item.value, ast.Call)
+                    and isinstance(item.value.func, ast.Name)
+                    and item.value.func.id == "clean_environment"
+                ]
+                if len(assignments) != 1 or assignments[0].lineno >= node.lineno:
+                    problems.append(
+                        f"{function}:{node.lineno}: execve env lacks one prior clean transition"
+                    )
+    return problems
 
 
 def _is_os_environ(node: ast.AST) -> bool:
@@ -899,6 +1371,21 @@ def _inheritance_call_problems(
 
 def _static_problems(policy: Mapping[str, Any], files: Mapping[str, Path]) -> list[str]:
     problems: list[str] = []
+    if policy["python"].get("package") != {
+        "name": PACKAGE_NAME,
+        "root": "scripts",
+        "init": "scripts/__init__.py",
+        "loading": "verified-file-spec",
+        "sys_path_mutation": False,
+        "editable_install": False,
+    }:
+        problems.append("Python repository-tool package policy is non-canonical")
+    if policy["python"].get("dynamic_sibling_imports") != {
+        META_GATE: ["_strict_yaml"],
+    } or f'import_module(f"{{PACKAGE_NAME}}._strict_yaml")' not in Path(
+        __file__
+    ).read_text(encoding="utf-8"):
+        problems.append("Python dynamic sibling-import policy is non-canonical")
     venv_policy = policy["python"].get("venv", {})
     expected_home_names = [
         f"python{policy['python']['major_minor']}", "python3", "python",
@@ -914,8 +1401,48 @@ def _static_problems(policy: Mapping[str, Any], files: Mapping[str, Path]) -> li
         "home_interpreter_names": expected_home_names,
     }:
         problems.append("Python active-venv identity policy is non-canonical")
+    expected_bootstrap = {
+        "transition_receipt": "NDDEV_PYTHON_BOOTSTRAP",
+        "receipt_version": "repository-venv-v1",
+        "maximum_transitions": 1,
+    }
+    if policy["python"].get("bootstrap") != expected_bootstrap:
+        problems.append("Python bootstrap transition policy is non-canonical")
+    expected_prefix = [
+        policy["python"]["dependency_interpreter"], "-I", "-B",
+        "scripts/check_python_execution_contract.py", "--launch",
+    ]
+    if policy["python"].get("launcher_prefix") != expected_prefix:
+        problems.append("Python launcher prefix differs from repository interpreter policy")
+    expected_syntax_prefix = [
+        policy["python"]["dependency_interpreter"], "-I", "-B",
+        "scripts/check_python_syntax.py",
+    ]
+    if policy["python"].get("syntax_gate_prefix") != expected_syntax_prefix:
+        problems.append("Python cold syntax prefix differs from repository interpreter policy")
+    documents = policy["python"].get("invocation_documents")
+    if not isinstance(documents, dict) or list(documents) != sorted(documents):
+        problems.append("Python invocation-document inventory is not canonical")
+    elif any(
+        not isinstance(item, str) or Path(item).is_absolute() or ".." in Path(item).parts
+        or not isinstance(registration, dict)
+        or set(registration) != {"role", "language"}
+        or registration["role"] not in {
+            "adoption-guide", "consumer-command", "repository-launcher",
+        }
+        or registration["language"] not in {"markdown", "python", "yaml"}
+        for item, registration in documents.items()
+    ):
+        problems.append("Python invocation-document inventory contains an unsafe path")
+    expected_source_classes = {
+        "production_workflows": ".github/workflows/*.yml",
+        "negative_corpora": "tests/fixtures/negative/**",
+        "negative_contract": "rejection-only",
+    }
+    if policy["python"].get("source_classes") != expected_source_classes:
+        problems.append("Python executable source-class policy is non-canonical")
     surfaces = _policy_surfaces(policy)
-    expected_files = surfaces | {META_GATE}
+    expected_files = surfaces | {META_GATE, PACKAGE_INIT}
     if len(surfaces) != policy["python"]["subject_count"] or set(files) != expected_files:
         problems.append(
             f"Python inventory drift: count={len(surfaces)} "
@@ -936,13 +1463,15 @@ def _static_problems(policy: Mapping[str, Any], files: Mapping[str, Path]) -> li
         for values in inherited.values()
     ):
         problems.append("Python surface environment contains invalid inheritance")
-    sibling = {path.stem for path in files.values()}
+    sibling = {path.stem for path in files.values() if path.name != PACKAGE_INIT}
     stdlib = set(sys.stdlib_module_names)
     actual_graph: dict[str, list[str]] = {}
     external_graph: dict[str, list[str]] = {}
     actual_edges: dict[str, dict[str, dict[str, Any]]] = {}
     for name, path in files.items():
         source = path.read_text(encoding="utf-8")
+        if re.search(r"sys\.path\s*(?:\[.*\])?\s*=|sys\.path\.(?:insert|append|extend)", source):
+            problems.append(f"{name}: repository tools may not mutate sys.path")
         try:
             tree = ast.parse(source, filename=str(path), feature_version=(3, 13))
         except SyntaxError as exc:
@@ -952,6 +1481,10 @@ def _static_problems(policy: Mapping[str, Any], files: Mapping[str, Path]) -> li
         if undefined:
             problems.append(f"{name}: undefined global names {undefined}")
         roots = _import_roots(tree)
+        problems += [
+            f"{name}: {issue}"
+            for issue in _unqualified_sibling_imports(tree, sibling)
+        ]
         problems += [
             f"{name}: {issue}"
             for issue in _environment_boundary_problems(tree, name, policy)
@@ -967,6 +1500,10 @@ def _static_problems(policy: Mapping[str, Any], files: Mapping[str, Path]) -> li
             problems.append(f"{name}: {issue}")
         counts, edge_problems = _process_edges(tree)
         problems += [f"{name}: {issue}" for issue in edge_problems]
+        problems += [
+            f"{name}: {issue}"
+            for issue in _process_semantic_problems(tree, name, policy)
+        ]
         if counts:
             registered = policy["process_edges"].get(name, {})
             actual_edges[name] = {
@@ -994,6 +1531,29 @@ def _static_problems(policy: Mapping[str, Any], files: Mapping[str, Path]) -> li
         problems.append("Python dependency policy differs from external import graph")
     if actual_edges != policy["process_edges"]:
         problems.append(f"Python process-edge registry drifted: actual={actual_edges}")
+    profile_fields = {"api", "executable", "argv", "cwd", "environment"}
+    profile_values = {
+        "api": {"subprocess", "execve"},
+        "executable": {
+            "current-interpreter", "path-search", "repository-venv",
+            "selected-interpreter",
+        },
+        "argv": {"exact", "sequence"},
+        "cwd": {"explicit", "explicit-or-preserve", "preserve"},
+        "environment": {
+            "replace-clean", "replace-clean-inherit-named",
+            "replace-owned-hostile",
+        },
+    }
+    for name, profile in policy.get("process_profiles", {}).items():
+        if not isinstance(profile, dict) or set(profile) != profile_fields:
+            problems.append(f"Python process profile {name!r} is not total")
+            continue
+        for field, allowed_values in profile_values.items():
+            if profile[field] not in allowed_values:
+                problems.append(
+                    f"Python process profile {name!r} has invalid {field} semantics"
+                )
     referenced_profiles = {
         edge["profile"]
         for functions in policy["process_edges"].values()
@@ -1006,30 +1566,104 @@ def _static_problems(policy: Mapping[str, Any], files: Mapping[str, Path]) -> li
 
 def workflow_python_invocation_problems(
     path: Path, text: str, *, enforce_embedded: bool = False,
+    role: SourceRole = SourceRole.WORKFLOW,
+    language: SourceLanguage | None = None,
 ) -> list[str]:
     """Enforce distinct canonical shapes for subjects and embedded programs."""
     problems: list[str] = []
-    launcher = "python3 -I -B scripts/check_python_execution_contract.py --launch "
-    subject_pattern = re.compile(r"\bpython3\s+(?:-I\s+|-B\s+)*scripts/([\w.-]+\.py)")
     surfaces = _policy_surfaces(load_policy())
-    for line_number, line in enumerate(text.splitlines(), start=1):
-        stripped = line.strip()
-        if "python3" not in stripped:
+    if language is None:
+        if role is SourceRole.WORKFLOW:
+            language = SourceLanguage.YAML
+        elif role is SourceRole.SHELL_FIXTURE:
+            language = SourceLanguage.SHELL
+        else:
+            return [f"{path.name}: executable source language is not registered"]
+    source = InvocationSource(path, text, role, language)
+    commands, source_problems = _source_commands(source)
+    problems += source_problems
+    launcher_count = 0
+    seen: set[tuple[int, str, SourceRole, SourceLanguage, SourceLanguage]] = set()
+    for extracted in commands:
+        location = extracted.location
+        scalar = extracted.text
+        identity = (
+            extracted.line, scalar, extracted.role, extracted.language,
+            extracted.grammar,
+        )
+        if identity in seen:
+            problems.append(f"{path.name}:{location}: duplicate executable surface")
             continue
-        if "scripts/check_python_execution_contract.py" in stripped:
-            if launcher not in stripped or not re.search(r"--(?:\s|$)", stripped):
-                problems.append(f"{path.name}:{line_number}: launcher invocation is not canonical")
+        seen.add(identity)
+        try:
+            logical = _logical_shell_commands(scalar)
+        except ValueError as exc:
+            problems.append(f"{path.name}:{location}: {exc}")
             continue
-        match = subject_pattern.search(stripped)
-        if match and match.group(1) in surfaces:
-            problems.append(
-                f"{path.name}:{line_number}: repository subject must use canonical launcher"
-            )
-            continue
-        if enforce_embedded and "<<'PY'" in stripped and not re.search(
-            r"\bpython3\s+-I(?:\s+-)?(?:\s+[^<]+)?\s+<<'PY'$", stripped,
+        for _, command in logical:
+            embedded_candidate = enforce_embedded and "<<'PY'" in command
+            if not _is_repository_command_candidate(command) and not embedded_candidate:
+                continue
+            try:
+                invocation = _parse_invocation(command)
+            except ValueError as exc:
+                problems.append(f"{path.name}:{location}: {exc}")
+                continue
+            if invocation is not None:
+                launcher_count += 1
+                expected = _canonical_invocation(invocation.subject, invocation.arguments)
+                if invocation != expected or invocation.subject not in surfaces:
+                    problems.append(
+                        f"{path.name}:{location}: launcher invocation is not canonical"
+                    )
+                continue
+            try:
+                tokens = shlex.split(command, posix=True)
+            except ValueError as exc:
+                problems.append(f"{path.name}:{location}: malformed shell command: {exc}")
+                continue
+            direct_subjects = {
+                Path(token).name for token in tokens
+                if token.startswith("scripts/") and Path(token).name in surfaces
+            }
+            syntax_prefix = load_policy()["python"]["syntax_gate_prefix"]
+            if tokens == syntax_prefix:
+                continue
+            if direct_subjects:
+                problems.append(
+                    f"{path.name}:{location}: repository subject must use canonical launcher"
+                )
+                continue
+            if enforce_embedded and "<<'PY'" in command and not re.search(
+                r"\bpython3\s+-I(?:\s+-)?(?:\s+[^<]+)?\s+<<'PY'$", command,
+            ):
+                problems.append(
+                    f"{path.name}:{location}: embedded Python must use isolated mode"
+                )
+    if role is SourceRole.REPOSITORY_LAUNCHER and launcher_count == 0:
+        problems.append(f"{path.name}: repository-launcher source has no launcher invocation")
+    if role is SourceRole.CONSUMER_COMMAND and launcher_count:
+        problems.append(f"{path.name}: consumer-command source invokes repository launcher")
+    return problems
+
+
+def workflow_python_provisioning_problems(path: Path, text: str) -> list[str]:
+    """Require deterministic venv provisioning wherever the launcher is used."""
+    launcher = " ".join(load_policy()["python"]["launcher_prefix"])
+    if launcher not in text:
+        return []
+    problems: list[str] = []
+    if "activate-environment: true" in text:
+        problems.append(f"{path.name}: setup-uv activation may shadow the repository interpreter")
+    if "-m venv --copies .venv" not in text:
+        problems.append(f"{path.name}: launcher has no copy-based repository venv provisioning")
+    if path.name != "runtime-fixtures.yml":
+        for marker in (
+            "update-environment: false",
+            "PYTHON_PATH: ${{ steps.python.outputs.python-path }}",
         ):
-            problems.append(f"{path.name}:{line_number}: embedded Python must use isolated mode")
+            if marker not in text:
+                problems.append(f"{path.name}: launcher provisioning lacks {marker!r}")
     return problems
 
 
@@ -1059,7 +1693,11 @@ def _venv_selftest(root: Path, policy: Mapping[str, Any]) -> list[str]:
     )
     if config_problems:
         return ["cannot derive venv selftests from the active pyvenv.cfg"]
-    base_executable = Path(active_identity["base_executable"])
+    base_executable, anchor_problems = _base_anchor(
+        active_identity, active_config, policy["python"]["venv"],
+    )
+    if anchor_problems or base_executable is None:
+        return ["cannot derive venv selftests from the active base identity"]
     valid_identities: dict[str, dict[str, Any]] = {}
     for label, prefix in {
         "local-captured-shape": root / "local-venv",
@@ -1067,7 +1705,8 @@ def _venv_selftest(root: Path, policy: Mapping[str, Any]) -> list[str]:
     }.items():
         executable = prefix / "bin" / "python3"
         executable.parent.mkdir(parents=True)
-        executable.symlink_to(base_executable)
+        executable.write_text("copied-interpreter-fixture\n", encoding="utf-8")
+        executable.chmod(0o700)
         site_root = prefix / "lib" / "python3.13" / "site-packages"
         site_root.mkdir(parents=True)
         identity = dict(active_identity)
@@ -1103,6 +1742,9 @@ def _venv_selftest(root: Path, policy: Mapping[str, Any]) -> list[str]:
     symlink_site.parent.mkdir()
     symlink_site.symlink_to(outside_site, target_is_directory=True)
     symlink_identity = dict(valid, purelib=str(symlink_site), platlib=str(symlink_site))
+    symlink_executable = Path(valid["prefix"]) / "bin" / "linked-python"
+    symlink_executable.symlink_to(Path(valid["executable"]))
+    symlink_executable_identity = dict(valid, executable=str(symlink_executable))
     for label, identity, candidate_config in (
         ("wrong-prefix", wrong_prefix, config),
         ("wrong-version", valid, wrong_version),
@@ -1114,6 +1756,7 @@ def _venv_selftest(root: Path, policy: Mapping[str, Any]) -> list[str]:
         ("wrong-base-prefix", wrong_base_prefix, config),
         ("wrong-base-executable", wrong_base_executable, config),
         ("symlink-site", symlink_identity, config),
+        ("symlink-executable", symlink_executable_identity, config),
     ):
         if not _venv_identity_problems(identity, candidate_config):
             problems.append(f"active-venv negative selftest passed: {label}")
@@ -1167,15 +1810,78 @@ def _venv_selftest(root: Path, policy: Mapping[str, Any]) -> list[str]:
     config_link.symlink_to(config_file)
     if not _read_pyvenv(config_link)[1]:
         problems.append("pyvenv.cfg symlink negative selftest passed")
+    missing_config = root / "missing-pyvenv.cfg"
+    if not _read_pyvenv(missing_config)[1]:
+        problems.append("missing pyvenv.cfg negative selftest passed")
+    malformed_config = root / "malformed-pyvenv.cfg"
+    malformed_config.write_text("home=/x\nhome=/y\nunknown\n", encoding="utf-8")
+    if len(_read_pyvenv(malformed_config)[1]) != 2:
+        problems.append("duplicate/malformed pyvenv.cfg negative selftest failed")
     return problems
 
 
 def _selftest(policy: Mapping[str, Any]) -> list[str]:
     problems: list[str] = []
+    with tempfile.TemporaryDirectory(prefix="ci-workflows-package-fixture-") as raw_package:
+        package_root = Path(raw_package) / "scripts"
+        package_root.mkdir()
+        package_init = package_root / PACKAGE_INIT
+        canonical_manifest = (SCRIPTS / PACKAGE_INIT).read_text(encoding="utf-8")
+        package_init.write_text(canonical_manifest, encoding="utf-8")
+        helper = package_root / "helper.py"
+        helper.write_text("VALUE = 1\n", encoding="utf-8")
+        if _helper_origin_problems(package_root, "helper", str(helper)):
+            problems.append("repository helper valid-origin selftest failed")
+        if not _helper_origin_problems(package_root, "missing", None):
+            problems.append("missing repository helper negative selftest passed")
+        if not _helper_origin_problems(package_root, "helper", str(outside := Path(raw_package) / "shadow.py")):
+            problems.append("shadowed repository helper negative selftest passed")
+        outside.write_text("VALUE = 2\n", encoding="utf-8")
+        helper.unlink()
+        helper.symlink_to(outside)
+        if not _helper_origin_problems(package_root, "helper", str(helper)):
+            problems.append("symlinked repository helper negative selftest passed")
+        valid_spec, valid_problems = _repository_package_spec(package_root)
+        if valid_problems or valid_spec is None:
+            problems.append("repository package valid-origin selftest failed")
+        package_init.write_text("PACKAGE_CONTRACT = 'stale'\n", encoding="utf-8")
+        if not _repository_package_spec(package_root)[1]:
+            problems.append("stale package manifest negative selftest passed")
+        package_init.unlink()
+        if not _repository_package_spec(package_root)[1]:
+            problems.append("missing package manifest negative selftest passed")
+        outside.write_text(canonical_manifest, encoding="utf-8")
+        package_init.symlink_to(outside)
+        if not _repository_package_spec(package_root)[1]:
+            problems.append("symlinked package manifest negative selftest passed")
+        if valid_spec is not None:
+            valid_module = importlib.util.module_from_spec(valid_spec)
+            valid_module.PACKAGE_CONTRACT = "ci-workflows-tools-v1"
+            if _loaded_package_problems(valid_module, package_root):
+                problems.append("loaded package identity selftest rejected canonical origin")
+            wrong_module = ModuleType(PACKAGE_NAME)
+            wrong_module.__spec__ = importlib.util.spec_from_file_location(
+                PACKAGE_NAME, outside, submodule_search_locations=[str(package_root)],
+            )
+            wrong_module.PACKAGE_CONTRACT = "ci-workflows-tools-v1"
+            if not _loaded_package_problems(wrong_module, package_root):
+                problems.append("wrong-origin package negative selftest passed")
+            stale_module = importlib.util.module_from_spec(valid_spec)
+            stale_module.PACKAGE_CONTRACT = "stale"
+            if not _loaded_package_problems(stale_module, package_root):
+                problems.append("stale loaded package negative selftest passed")
     valid = "import json\nVALUE=1\ndef f(x):\n return json.dumps(x+VALUE)\n"
     invalid = valid + "def broken():\n return NEVER_IMPORTED\n"
     if _undefined_names(valid, "<valid>") or _undefined_names(invalid, "<invalid>") != {"NEVER_IMPORTED"}:
         problems.append("undefined-name selftest failed")
+    sibling_names = {"helper"}
+    if _unqualified_sibling_imports(
+        ast.parse("from ci_workflows_tools import helper\n"), sibling_names,
+    ):
+        problems.append("qualified sibling-import selftest failed")
+    for source in ("import helper\n", "from helper import VALUE\n"):
+        if not _unqualified_sibling_imports(ast.parse(source), sibling_names):
+            problems.append("unqualified sibling-import negative selftest failed")
     if not _import_side_effects(ast.parse("import pathlib\npathlib.Path('x').write_text('x')\n")):
         problems.append("import-write selftest failed")
     safe_surfaces = {"registered.py"}
@@ -1207,6 +1913,16 @@ def _selftest(policy: Mapping[str, Any]) -> list[str]:
         if stdlib_problems or stdlib_executable != Path("/trusted/setup-python") \
                 or stdlib_claim != "-":
             problems.append("stdlib-only subject did not preserve its isolated interpreter")
+        linked_python = dependency_python.with_name("linked-python")
+        linked_python.symlink_to(dependency_python)
+        linked_policy = json.loads(json.dumps(policy))
+        linked_policy["python"]["dependency_interpreter"] = str(
+            linked_python.relative_to(interpreter_root)
+        )
+        if not _subject_interpreter(
+            "validate_catalog.py", linked_policy, root=interpreter_root,
+        )[2]:
+            problems.append("symlinked dependency interpreter negative selftest passed")
         dependency_python.unlink()
         if not _subject_interpreter(
             "validate_catalog.py", policy, root=interpreter_root,
@@ -1224,6 +1940,18 @@ def _selftest(policy: Mapping[str, Any]) -> list[str]:
     ):
         if not _process_edges(ast.parse(source))[1]:
             problems.append("process-alias selftest failed")
+    exec_valid = ast.parse("import os\ndef edge():\n os.execve('/x', ['/x'], {})\n")
+    exec_missing = ast.parse("import os\ndef edge():\n os.execv('/x', ['/x'])\n")
+    duplicate = ast.parse(
+        "import subprocess\ndef edge():\n"
+        " subprocess.run(['x'], env={})\n subprocess.run(['y'], env={})\n"
+    )
+    if _process_edges(exec_valid) != ({"edge": 1}, []):
+        problems.append("execve replacement-environment selftest failed")
+    if not _process_edges(exec_missing)[1]:
+        problems.append("inherited exec environment negative selftest passed")
+    if _process_edges(duplicate)[0] != {"edge": 2}:
+        problems.append("duplicate process-edge selftest failed")
     environment = policy["environment"]
     stripped_name = environment["stripped_names_evidence"]
     inherited_name = environment["inherited_names_evidence"]
@@ -1271,14 +1999,50 @@ def _selftest(policy: Mapping[str, Any]) -> list[str]:
             problems.append(f"environment transition accepted malformed {evidence_name}")
     invocation_cases = {
         "canonical-launcher": (
-            "python3 -I -B scripts/check_python_execution_contract.py "
-            "--launch validate_all.py --",
+            _render_invocation(_canonical_invocation("validate_all.py")),
             False,
         ),
+        "multiline-launcher": (
+            ".venv/bin/python -I -B scripts/check_python_execution_contract.py "
+            "--launch " + "\\" + "\nvalidate_all.py -- --tier core",
+            False,
+        ),
+        "quoted-doc-launcher": (
+            "\".venv/bin/python -I -B "
+            "scripts/check_python_execution_contract.py --launch validate_all.py --\"",
+            False,
+        ),
+        "truncated-continuation": ("run: command \\", True),
+        "setup-python-path-shadow": (
+            "python3 -I -B scripts/check_python_execution_contract.py "
+            "--launch validate_all.py --",
+            True,
+        ),
+        "foreign-venv-launcher": (
+            "/tmp/foreign/.venv/bin/python -I -B "
+            "scripts/check_python_execution_contract.py --launch validate_all.py --",
+            True,
+        ),
         "direct-subject": ("python3 -I scripts/validate_all.py", True),
+        "canonical-cold-syntax": (
+            ".venv/bin/python -I -B scripts/check_python_syntax.py", False,
+        ),
+        "ambient-cold-syntax": (
+            "python3 -I -B scripts/check_python_syntax.py", True,
+        ),
         "missing-bytecode-guard": (
             "python3 -I scripts/check_python_execution_contract.py "
             "--launch validate_all.py --",
+            True,
+        ),
+        "missing-separator": (
+            ".venv/bin/python -I -B scripts/check_python_execution_contract.py "
+            "--launch validate_all.py",
+            True,
+        ),
+        "duplicate-separator": (
+            ".venv/bin/python -I -B scripts/check_python_execution_contract.py "
+            "--launch validate_all.py -- --",
             True,
         ),
         "embedded-isolated": ("python3 -I - '$VALUE' <<'PY'", False),
@@ -1287,9 +2051,153 @@ def _selftest(policy: Mapping[str, Any]) -> list[str]:
     for label, (text, should_fail) in invocation_cases.items():
         failed = bool(workflow_python_invocation_problems(
             Path(label), text, enforce_embedded=label.startswith("embedded-"),
+            role=SourceRole.SHELL_FIXTURE,
         ))
         if failed != should_fail:
             problems.append(f"workflow invocation selftest failed: {label}")
+    canonical = _render_invocation(_canonical_invocation("validate_all.py"))
+    workflow_cases = {
+        "nested-run-mapping": (
+            "jobs:\n  test:\n    defaults:\n      run:\n        shell: bash\n"
+            "    steps:\n      - run: echo ok\n",
+            False,
+        ),
+        "literal-command": (
+            f"jobs:\n  test:\n    steps:\n      - run: |\n          {canonical}\n",
+            False,
+        ),
+        "folded-command": (
+            "jobs:\n  test:\n    steps:\n      - run: >-\n          .venv/bin/python -I -B\n"
+            "          scripts/check_python_execution_contract.py --launch validate_all.py --\n",
+            False,
+        ),
+        "quoted-command": (
+            f"jobs:\n  test:\n    steps:\n      - run: '{canonical}'\n",
+            False,
+        ),
+        "null-step-command": ("jobs:\n  test:\n    steps:\n      - run:\n", True),
+        "mapping-step-command": (
+            "jobs:\n  test:\n    steps:\n      - run:\n          shell: bash\n", True,
+        ),
+        "sequence-step-command": (
+            "jobs:\n  test:\n    steps:\n      - run: [echo, ok]\n", True,
+        ),
+        "malformed-delimiter": (
+            "jobs:\n  test:\n    steps:\n      - run: {broken]\n", True,
+        ),
+        "truncated-scalar": (
+            "jobs:\n  test:\n    steps:\n      - run: 'unterminated\n", True,
+        ),
+    }
+    for label, (text, should_fail) in workflow_cases.items():
+        failed = bool(workflow_python_invocation_problems(Path(label), text))
+        if failed != should_fail:
+            problems.append(f"structured workflow invocation selftest failed: {label}")
+    document_cases = (
+        (SourceRole.REPOSITORY_LAUNCHER, f"```bash\n{canonical}\n```\n", False),
+        (SourceRole.REPOSITORY_LAUNCHER, "```bash\necho consumer\n```\n", True),
+        (SourceRole.ADOPTION_GUIDE, f"prose with ' unmatched\n```bash\n{canonical}\n```\n", False),
+        (SourceRole.CONSUMER_COMMAND, "```bash\necho consumer\n```\n", False),
+        (SourceRole.CONSUMER_COMMAND, f"```bash\n{canonical}\n```\n", True),
+    )
+    for index, (role, text, should_fail) in enumerate(document_cases):
+        failed = bool(workflow_python_invocation_problems(
+            Path(f"document-{index}.md"), text, role=role,
+            language=SourceLanguage.MARKDOWN,
+        ))
+        if failed != should_fail:
+            problems.append(f"typed invocation-source selftest failed: {role.value}/{index}")
+    typed_sources = (
+        InvocationSource(
+            Path("typed.md"),
+            f"prose `{canonical}`\n```text\n{canonical}\n```\n```bash\n{canonical}\n```\n",
+            SourceRole.ADOPTION_GUIDE, SourceLanguage.MARKDOWN,
+        ),
+        InvocationSource(
+            Path("typed.py"),
+            f"# {canonical}\nCOMMAND = {canonical!r}\n",
+            SourceRole.REPOSITORY_LAUNCHER, SourceLanguage.PYTHON,
+        ),
+        InvocationSource(
+            Path("typed.yml"),
+            f"name: {canonical!r}\njobs:\n  test:\n    steps:\n      - run: {canonical!r}\n",
+            SourceRole.WORKFLOW, SourceLanguage.YAML,
+        ),
+    )
+    for source in typed_sources:
+        extracted, extraction_problems = _source_commands(source)
+        if extraction_problems or len(extracted) != 1:
+            problems.append(
+                f"typed {source.language.value} extraction selftest failed: "
+                f"count={len(extracted)} problems={extraction_problems}"
+            )
+        elif extracted[0].role is not source.role \
+                or extracted[0].language is not source.language \
+                or extracted[0].grammar is not SourceLanguage.SHELL \
+                or extracted[0].line < 1:
+            problems.append(f"typed {source.language.value} metadata selftest failed")
+    negative_yaml = InvocationSource(
+        Path("negative.yml"), "jobs:\n  broken: {steps: [}\n",
+        SourceRole.WORKFLOW, SourceLanguage.YAML,
+    )
+    negative_commands, negative_problems = _source_commands(negative_yaml)
+    if negative_commands or not negative_problems:
+        problems.append("negative YAML corpus rejection selftest failed")
+    unclassified = workflow_python_invocation_problems(
+        Path("unclassified.txt"), canonical, role=SourceRole.ADOPTION_GUIDE,
+    )
+    if not unclassified:
+        problems.append("unclassified executable-source selftest failed")
+    provisioning_cases = {
+        "canonical": (
+            "uses: actions/setup-python@sha\n"
+            "id: python\npython-version: '3.13'\nupdate-environment: false\n"
+            "PYTHON_PATH: ${{ steps.python.outputs.python-path }}\n"
+            "run: \"$PYTHON_PATH\" -I -B -m venv --copies .venv\n"
+            ".venv/bin/python -I -B scripts/check_python_execution_contract.py "
+            "--launch validate_all.py --\n",
+            False,
+        ),
+        "setup-action-shadow": (
+            "activate-environment: true\n-m venv --copies .venv\n"
+            ".venv/bin/python -I -B scripts/check_python_execution_contract.py "
+            "--launch validate_all.py --\n",
+            True,
+        ),
+        "missing-copy-provision": (
+            "update-environment: false\n"
+            "PYTHON_PATH: ${{ steps.python.outputs.python-path }}\n"
+            ".venv/bin/python -I -B scripts/check_python_execution_contract.py "
+            "--launch validate_all.py --\n",
+            True,
+        ),
+    }
+    for label, (text, should_fail) in provisioning_cases.items():
+        failed = bool(workflow_python_provisioning_problems(Path(label), text))
+        if failed != should_fail:
+            problems.append(f"workflow provisioning selftest failed: {label}")
+    with tempfile.TemporaryDirectory() as raw_bootstrap:
+        root = Path(raw_bootstrap)
+        expected = root / "repository" / ".venv" / "bin" / "python"
+        current = root / "setup-python" / "bin" / "python"
+        expected.parent.mkdir(parents=True)
+        current.parent.mkdir(parents=True)
+        expected.write_text("expected\n", encoding="utf-8")
+        current.write_text("current\n", encoding="utf-8")
+        receipt = policy["python"]["bootstrap"]["receipt_version"]
+        decisions = {
+            "transition": _bootstrap_decision(current, expected, None, receipt),
+            "loop": _bootstrap_decision(current, expected, receipt, receipt),
+            "current": _bootstrap_decision(expected, expected, None, receipt),
+            "arrived": _bootstrap_decision(expected, expected, receipt, receipt),
+            "malformed": _bootstrap_decision(current, expected, "wrong", receipt),
+        }
+        if decisions != {
+            "transition": "transition", "loop": "loop-or-wrong-target",
+            "current": "current", "arrived": "arrived",
+            "malformed": "malformed-receipt",
+        }:
+            problems.append(f"bootstrap decision selftest drifted: {decisions}")
     with tempfile.TemporaryDirectory() as raw:
         root = Path(raw)
         if not _resource_problems(root, policy):
@@ -1298,22 +2206,40 @@ def _selftest(policy: Mapping[str, Any]) -> list[str]:
     return problems
 
 
+def _registered_invocation_problems(policy: Mapping[str, Any]) -> list[str]:
+    problems: list[str] = []
+    for workflow in sorted((REPO_ROOT / ".github" / "workflows").glob("*.yml")):
+        workflow_text = workflow.read_text(encoding="utf-8")
+        problems += workflow_python_invocation_problems(workflow, workflow_text)
+        problems += workflow_python_provisioning_problems(workflow, workflow_text)
+    for relative, registration in policy["python"].get("invocation_documents", {}).items():
+        document = REPO_ROOT / relative
+        if not document.is_file() or document.is_symlink():
+            problems.append(f"Python invocation document is missing or unsafe: {relative}")
+            continue
+        problems += workflow_python_invocation_problems(
+            document, document.read_text(encoding="utf-8"),
+            role=SourceRole(registration["role"]),
+            language=SourceLanguage(registration["language"]),
+        )
+    return problems
+
+
 def check() -> list[str]:
+    try:
+        _register_repository_package()
+    except RuntimeError as exc:
+        return [str(exc)]
     try:
         policy = load_policy()
     except RuntimeError as exc:
         return [str(exc)]
     problems = _runtime_problems()
-    problems += _selftest(policy)
     files = _files()
     problems += _static_problems(policy, files)
     dependency_root, dependency_problems = _dependency_root()
     problems += dependency_problems
     problems += _resource_problems(REPO_ROOT, policy)
-    for workflow in sorted((REPO_ROOT / ".github" / "workflows").glob("*.yml")):
-        problems += workflow_python_invocation_problems(
-            workflow, workflow.read_text(encoding="utf-8"),
-        )
     if dependency_root is None:
         return problems
     with tempfile.TemporaryDirectory(prefix="ci-workflows-python-contract-") as raw:
@@ -1323,6 +2249,9 @@ def check() -> list[str]:
         hostile_cwd.mkdir()
         cache.mkdir()
         (hostile_cwd / "_workflow_yaml.py").write_text("raise RuntimeError('shadow')\n")
+        (hostile_cwd / "ci_workflows_tools.py").write_text(
+            "raise RuntimeError('package shadow')\n"
+        )
         (hostile_cwd / "yaml.py").write_text("raise RuntimeError('shadow')\n")
         (hostile_cwd / "sitecustomize.py").write_text("raise RuntimeError('shadow')\n")
         for name, path in files.items():
@@ -1336,6 +2265,12 @@ def check() -> list[str]:
             )
             if issue:
                 problems.append(issue)
+        if problems:
+            return problems
+        # Semantic assertions run only after every registered surface has
+        # passed syntax, dependency-graph, origin and cold-import proof.
+        problems += _selftest(policy)
+        problems += _registered_invocation_problems(policy)
         problems += _probe_generations(hostile_cwd)
     return problems
 
@@ -1356,6 +2291,12 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    try:
+        _register_repository_package()
+    except RuntimeError as exc:
+        print(f"python-launcher: {exc}", file=sys.stderr)
+        raise SystemExit(2)
+    _ensure_repository_interpreter()
     if len(sys.argv) >= 3 and sys.argv[1] == "--launch":
         tool = sys.argv[2]
         tail = sys.argv[3:]

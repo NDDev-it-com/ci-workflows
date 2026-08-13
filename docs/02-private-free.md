@@ -60,8 +60,8 @@ The resolver defaults private/internal repositories to the first, fail-closed
 mode. The hosted choice requires an explicit flag:
 
 ```bash
-python3 -I -B scripts/check_python_execution_contract.py --launch resolve_profile.py -- --visibility private --plan free
-python3 -I -B scripts/check_python_execution_contract.py --launch resolve_profile.py -- --visibility private --plan free \
+.venv/bin/python -I -B scripts/check_python_execution_contract.py --launch resolve_profile.py -- --visibility private --plan free
+.venv/bin/python -I -B scripts/check_python_execution_contract.py --launch resolve_profile.py -- --visibility private --plan free \
   --private-compute github-hosted
 ```
 

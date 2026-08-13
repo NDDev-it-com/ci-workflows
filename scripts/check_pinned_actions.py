@@ -7,7 +7,7 @@ from __future__ import annotations
 import re
 import sys
 
-from _workflow_yaml import workflow_files
+from ci_workflows_tools._workflow_yaml import workflow_files
 
 # `uses: owner/repo[/path]@<40-hex>  # vX.Y.Z`
 USES_RE = re.compile(r"^\s*(?:-\s*)?uses:\s*(?P<ref>\S+)(?P<rest>.*)$")

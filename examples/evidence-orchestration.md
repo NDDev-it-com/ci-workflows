@@ -19,11 +19,29 @@ jobs:
           ref: <sha>
           path: .ci-workflows
           persist-credentials: false
+      - id: python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13'
+          update-environment: false
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: 0.11.30
+      - name: Provision the compiler environment
+        env:
+          PYTHON_PATH: ${{ steps.python.outputs.python-path }}
+        run: |
+          "$PYTHON_PATH" -I -B -m venv --copies .ci-workflows/.venv
+          uv pip install --python .ci-workflows/.venv/bin/python \
+            --require-hashes -r .ci-workflows/requirements-ci.txt
       - id: plan
-        run: >-
-          python3 .ci-workflows/scripts/compile_evidence_plan.py
-          --level pr-required --platform github-actions --os ubuntu --arch x64
-          --profile public --risks code,security --changes workflows
+        run: |
+          cd .ci-workflows
+          .venv/bin/python -I -B scripts/check_python_syntax.py
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py \
+            --launch compile_evidence_plan.py -- \
+            --level pr-required --platform github-actions --os ubuntu --arch x64 \
+            --profile public --risks code,security --changes workflows
 
   actionlint:
     needs: evidence-plan

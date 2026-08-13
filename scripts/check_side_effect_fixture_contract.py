@@ -10,9 +10,9 @@ import tempfile
 from pathlib import Path
 from typing import Any, Callable
 
-from _strict_yaml import strict_load
-from _workflow_yaml import get_on
-from check_python_execution_contract import clean_environment
+from ci_workflows_tools._strict_yaml import strict_load
+from ci_workflows_tools._workflow_yaml import get_on
+from ci_workflows_tools.check_python_execution_contract import clean_environment
 
 ROOT = Path(__file__).resolve().parent.parent
 WORKFLOW = ROOT / ".github/workflows/runtime-fixtures-event-write.yml"

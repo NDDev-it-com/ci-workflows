@@ -22,14 +22,15 @@ contracts below are strict.
 ## Commands
 
 ```bash
-uv venv --python 3.13 .venv && source .venv/bin/activate
-uv pip install --require-hashes -r requirements-ci.txt            # PyYAML only
-python3 -I -B scripts/check_python_execution_contract.py --launch validate_all.py -- --tier core
-python3 -I -B scripts/check_python_execution_contract.py --launch validate_all.py --
+python3.13 -I -B -m venv --copies .venv
+uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt  # PyYAML only
+.venv/bin/python -I -B scripts/check_python_syntax.py
+.venv/bin/python -I -B scripts/check_python_execution_contract.py --launch validate_all.py -- --tier core
+.venv/bin/python -I -B scripts/check_python_execution_contract.py --launch validate_all.py --
 actionlint
 GH_TOKEN=$(gh auth token) uvx zizmor@1.26.1 --persona regular --min-severity low .github/workflows
-python3 -I -B scripts/check_python_execution_contract.py --launch generate_docs.py --
-python3 -I -B scripts/check_python_execution_contract.py --launch resolve_profile.py -- --visibility private --plan team --code-security
+.venv/bin/python -I -B scripts/check_python_execution_contract.py --launch generate_docs.py --
+.venv/bin/python -I -B scripts/check_python_execution_contract.py --launch resolve_profile.py -- --visibility private --plan team --code-security
 ```
 
 Use `uv`, never `pip`/`pipx`/`npm`, and never a mutable version (`@latest`). Run

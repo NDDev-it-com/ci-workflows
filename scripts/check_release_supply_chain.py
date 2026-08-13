@@ -23,8 +23,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from _workflow_yaml import WORKFLOWS_DIR, load_yaml
-from check_python_execution_contract import (
+from ci_workflows_tools._workflow_yaml import WORKFLOWS_DIR, load_yaml
+from ci_workflows_tools.check_python_execution_contract import (
     clean_environment,
     workflow_python_invocation_problems,
 )

@@ -50,8 +50,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-from _strict_yaml import strict_load  # noqa: E402
-from check_python_execution_contract import clean_environment
+from ci_workflows_tools._strict_yaml import strict_load  # noqa: E402
+from ci_workflows_tools.check_python_execution_contract import clean_environment
 
 INPUT_EXPR = re.compile(r"\$\{\{\s*inputs\.([A-Za-z_][A-Za-z0-9_]*)\s*\}\}")
 CONTEXT_EXPR = re.compile(r"\$\{\{\s*([A-Za-z_][A-Za-z0-9_.]*)\s*\}\}")

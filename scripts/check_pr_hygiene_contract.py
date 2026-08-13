@@ -10,8 +10,8 @@ import tempfile
 from pathlib import Path
 from typing import Any, Callable
 
-from _workflow_yaml import WORKFLOWS_DIR, get_on, load_yaml
-from check_python_execution_contract import clean_environment
+from ci_workflows_tools._workflow_yaml import WORKFLOWS_DIR, get_on, load_yaml
+from ci_workflows_tools.check_python_execution_contract import clean_environment
 
 WORKFLOW = WORKFLOWS_DIR / "pr-hygiene.yml"
 DEFAULT_NAME = "commitlint (default configuration)"

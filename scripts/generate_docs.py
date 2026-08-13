@@ -11,9 +11,9 @@ import argparse
 from pathlib import Path
 from typing import Any
 
-from _strict_yaml import strict_load
+from ci_workflows_tools._strict_yaml import strict_load
 
-from _workflow_yaml import SELF_WORKFLOWS
+from ci_workflows_tools._workflow_yaml import SELF_WORKFLOWS
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CATALOG = REPO_ROOT / "catalog" / "capabilities.yml"
@@ -357,7 +357,7 @@ def free_tier_matrix(facts: list[dict[str, Any]]) -> str:
 
 
 def profile_matrix(doc: dict[str, Any]) -> str:
-    import resolve_profile
+    from ci_workflows_tools import resolve_profile
     caps = _load_capabilities()
     profiles = doc.get("profiles") or []
     matrix = doc.get("entitlement_matrix") or []

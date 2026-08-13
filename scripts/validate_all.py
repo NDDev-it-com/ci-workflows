@@ -28,9 +28,9 @@ tariff expired today".
              are maintenance debt rather than a defect in someone's change.
 
 Usage:
-    python3 -I -B scripts/check_python_execution_contract.py --launch \
+    .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch \
       validate_all.py --                               # everything (default)
-    python3 -I -B scripts/check_python_execution_contract.py --launch \
+    .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch \
       validate_all.py -- --tier core                   # blocking gate
 """
 
@@ -41,42 +41,45 @@ import subprocess
 import sys
 from pathlib import Path
 
-import _strict_yaml
-import check_actionlint_contract
-import check_benchmark_contract
-import check_docs_links
-import check_examples
-import check_gate_contract
-import check_harden_runner_contract
-import check_merge_group
-import check_monorepo_routing
-import check_permissions
-import check_public_docs
-import check_python_execution_contract
-import check_runtime_requirements
-import check_runner_routing
-import check_secret_scan_contract
-import check_scorecard_evidence_contract
-import check_side_effect_fixture_contract
-import compile_evidence_plan
-import check_pinned_actions
-import check_privileged_ref_guard
-import check_pr_hygiene_contract
-import check_release_graph
-import check_release_promotion_gate
-import check_release_supply_chain
-import check_rulesets
-import check_skills
-import check_tool_pinning
-import check_tool_registry
-import check_workflow_contracts
-import generate_docs
-import resolve_profile
-import render_runtime_evidence
-import validate_catalog
-import validate_product_facts
-import validate_profiles
-import validate_runtime_coverage
+from ci_workflows_tools import (
+    _strict_yaml,
+    check_actionlint_contract,
+    check_benchmark_contract,
+    check_docs_links,
+    check_examples,
+    check_gate_contract,
+    check_harden_runner_contract,
+    check_merge_group,
+    check_monorepo_routing,
+    check_permissions,
+    check_pinned_actions,
+    check_pr_hygiene_contract,
+    check_privileged_ref_guard,
+    check_public_docs,
+    check_python_execution_contract,
+    check_python_syntax,
+    check_release_graph,
+    check_release_promotion_gate,
+    check_release_supply_chain,
+    check_rulesets,
+    check_runner_routing,
+    check_runtime_requirements,
+    check_scorecard_evidence_contract,
+    check_secret_scan_contract,
+    check_side_effect_fixture_contract,
+    check_skills,
+    check_tool_pinning,
+    check_tool_registry,
+    check_workflow_contracts,
+    compile_evidence_plan,
+    generate_docs,
+    render_runtime_evidence,
+    resolve_profile,
+    validate_catalog,
+    validate_product_facts,
+    validate_profiles,
+    validate_runtime_coverage,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -84,6 +87,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 # because of the change in hand.
 CORE = [
     # Parse integrity first: every later check reads these files.
+    ("python-syntax", check_python_syntax.check),
     ("strict-yaml", _strict_yaml.check),
     ("python-execution-contract", check_python_execution_contract.check),
     ("pinned-actions", check_pinned_actions.check),

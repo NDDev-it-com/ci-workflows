@@ -24,7 +24,7 @@ from urllib.parse import urlparse
 
 import yaml
 
-from _strict_yaml import strict_load
+from ci_workflows_tools._strict_yaml import strict_load
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 LEDGER = REPO_ROOT / "catalog" / "product-facts.yml"

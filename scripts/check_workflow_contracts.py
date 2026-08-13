@@ -16,8 +16,8 @@ import re
 import shlex
 import sys
 
-from _runners import is_standard_hosted, resolve_runner_labels
-from _workflow_yaml import SELF_WORKFLOWS, get_on, is_reusable, load_yaml, workflow_files
+from ci_workflows_tools._runners import is_standard_hosted, resolve_runner_labels
+from ci_workflows_tools._workflow_yaml import SELF_WORKFLOWS, get_on, is_reusable, load_yaml, workflow_files
 
 
 def check() -> list[str]:

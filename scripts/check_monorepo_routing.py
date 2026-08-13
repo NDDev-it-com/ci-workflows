@@ -20,8 +20,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from _workflow_yaml import WORKFLOWS_DIR, load_yaml
-from check_python_execution_contract import clean_environment
+from ci_workflows_tools._workflow_yaml import WORKFLOWS_DIR, load_yaml
+from ci_workflows_tools.check_python_execution_contract import clean_environment
 
 ROUTER = WORKFLOWS_DIR / "monorepo-changed-paths.yml"
 ZERO_BEFORE = "0" * 40

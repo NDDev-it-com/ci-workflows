@@ -59,27 +59,32 @@ jobs:
           persist-credentials: false
 
       - name: Set up Python
+        id: python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: "3.13"
+          update-environment: false
 
       - name: Set up uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
         with:
           version: 0.11.30
-          python-version: '3.13'
-          activate-environment: true
 
       - name: Install validator dependencies
-        run: uv pip install --require-hashes -r requirements-ci.txt
+        env:
+          PYTHON_PATH: ${{ steps.python.outputs.python-path }}
+        run: |
+          "$PYTHON_PATH" -I -B -m venv --copies .venv
+          uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
 
       - name: Run the advisory sweep
         id: sweep
         run: |
           set -uo pipefail
+          .venv/bin/python -I -B scripts/check_python_syntax.py
           # Deliberately not `set -e`: a finding is the expected outcome and
           # must be reported, not abort the job before it can be filed.
-          python3 -I -B scripts/check_python_execution_contract.py --launch validate_all.py -- --tier scheduled > sweep.txt 2>&1
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch validate_all.py -- --tier scheduled > sweep.txt 2>&1
           status=$?
           cat sweep.txt
           printf 'status=%s\n' "$status" >> "$GITHUB_OUTPUT"

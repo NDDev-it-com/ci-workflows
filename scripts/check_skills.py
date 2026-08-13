@@ -12,9 +12,10 @@ from __future__ import annotations
 import hashlib
 import re
 import sys
+import tempfile
 from pathlib import Path
 
-from _strict_yaml import strict_loads
+from ci_workflows_tools._strict_yaml import strict_loads
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CANONICAL = REPO_ROOT / ".agents" / "skills"
@@ -68,6 +69,67 @@ def _guard_selftest() -> list[str]:
     for sample in must_pass:
         if VOLATILE_QUOTA_RE.search(sample):
             problems.append(f"check_skills self-test: guard false-positive {sample!r}")
+    return problems
+
+
+def _mirror_problems(source: Path, mirror: Path) -> list[str]:
+    """Require an exact source tree plus the one declared generation marker."""
+    problems: list[str] = []
+    source_files = {
+        path.relative_to(source): path
+        for path in source.rglob("*") if path.is_file()
+    }
+    mirror_files = {
+        path.relative_to(mirror): path
+        for path in mirror.rglob("*") if path.is_file()
+    } if mirror.is_dir() else {}
+    expected = set(source_files) | {Path(MARKER)}
+    if set(mirror_files) != expected:
+        problems.append(
+            f"mirror file inventory drift: missing={sorted(str(p) for p in expected - set(mirror_files))} "
+            f"extra={sorted(str(p) for p in set(mirror_files) - expected)}"
+        )
+    for relative, source_path in source_files.items():
+        mirror_path = mirror_files.get(relative)
+        if mirror_path is not None and source_path.read_bytes() != mirror_path.read_bytes():
+            problems.append(f"mirror byte drift: {relative}")
+    skill = source / "SKILL.md"
+    marker = mirror_files.get(Path(MARKER))
+    if skill.is_file() and marker is not None:
+        expected_marker = (
+            f"source=.agents/skills/{source.name}/SKILL.md\n"
+            f"sha256={hashlib.sha256(skill.read_bytes()).hexdigest()}\n"
+        ).encode()
+        if marker.read_bytes() != expected_marker:
+            problems.append("mirror generation marker drift")
+    return problems
+
+
+def _mirror_selftest() -> list[str]:
+    problems: list[str] = []
+    with tempfile.TemporaryDirectory(prefix="ci-workflows-skill-mirror-") as raw:
+        root = Path(raw)
+        source = root / ".agents" / "skills" / "fixture"
+        mirror = root / ".claude" / "skills" / "fixture"
+        source.mkdir(parents=True)
+        mirror.mkdir(parents=True)
+        payload = b"---\nname: fixture\n---\n"
+        (source / "SKILL.md").write_bytes(payload)
+        (mirror / "SKILL.md").write_bytes(payload)
+        (mirror / MARKER).write_text(
+            "source=.agents/skills/fixture/SKILL.md\n"
+            f"sha256={hashlib.sha256(payload).hexdigest()}\n",
+            encoding="utf-8",
+        )
+        if _mirror_problems(source, mirror):
+            problems.append("check_skills self-test: canonical mirror rejected")
+        (mirror / "unexpected.txt").write_text("drift\n", encoding="utf-8")
+        if not _mirror_problems(source, mirror):
+            problems.append("check_skills self-test: unexpected generated output accepted")
+        (mirror / "unexpected.txt").unlink()
+        (mirror / "SKILL.md").write_text("stale\n", encoding="utf-8")
+        if not _mirror_problems(source, mirror):
+            problems.append("check_skills self-test: mirror byte drift accepted")
     return problems
 
 
@@ -130,6 +192,8 @@ def check() -> list[str]:
             problems.append(
                 f".claude/skills/{skill_dir.name}/{MARKER}: missing generation marker"
             )
+        for issue in _mirror_problems(skill_dir, MIRROR / skill_dir.name):
+            problems.append(f".claude/skills/{skill_dir.name}: {issue}")
 
     if len(names) != len(set(names)):
         problems.append("skills: duplicate skill names")
@@ -149,6 +213,7 @@ def check() -> list[str]:
                 "(run scripts/sync_skills.py)"
             )
     problems += _guard_selftest()
+    problems += _mirror_selftest()
     return problems
 
 

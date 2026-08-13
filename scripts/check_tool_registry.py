@@ -27,8 +27,8 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
-from _strict_yaml import strict_load
-from _workflow_yaml import REPO_ROOT, load_yaml, workflow_files
+from ci_workflows_tools._strict_yaml import strict_load
+from ci_workflows_tools._workflow_yaml import REPO_ROOT, load_yaml, workflow_files
 
 TOOLS = REPO_ROOT / "catalog" / "tools.yml"
 # Calls to this repository's own reusables are not third-party tools.

@@ -16,8 +16,8 @@ import subprocess
 import sys
 from typing import Any
 
-from _workflow_yaml import WORKFLOWS_DIR, get_on, load_yaml
-from check_python_execution_contract import clean_environment
+from ci_workflows_tools._workflow_yaml import WORKFLOWS_DIR, get_on, load_yaml
+from ci_workflows_tools.check_python_execution_contract import clean_environment
 
 ACTIONLINT = WORKFLOWS_DIR / "actionlint.yml"
 GUARD_ENV_KEYS = {"ACTIONLINT_RUNNER_OS", "ACTIONLINT_RUNNER_ARCH"}

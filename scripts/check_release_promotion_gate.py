@@ -13,8 +13,8 @@ import tempfile
 from pathlib import Path
 from typing import Any, Callable
 
-from _workflow_yaml import WORKFLOWS_DIR, load_yaml
-from check_python_execution_contract import clean_environment
+from ci_workflows_tools._workflow_yaml import WORKFLOWS_DIR, load_yaml
+from ci_workflows_tools.check_python_execution_contract import clean_environment
 
 WORKFLOW = WORKFLOWS_DIR / "release-promotion-gate.yml"
 NOW = dt.datetime(2026, 8, 5, 12, 0, tzinfo=dt.timezone.utc)

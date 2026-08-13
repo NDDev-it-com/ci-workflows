@@ -28,8 +28,8 @@ import re
 import sys
 from pathlib import Path
 
-from _strict_yaml import strict_load  # noqa: E402
-from _workflow_yaml import REPO_ROOT, get_on, workflow_files  # noqa: E402
+from ci_workflows_tools._strict_yaml import strict_load  # noqa: E402
+from ci_workflows_tools._workflow_yaml import REPO_ROOT, get_on, workflow_files  # noqa: E402
 
 CONTAINER_RUNTIME = "container-runtime"
 

@@ -19,10 +19,10 @@ from typing import Any
 
 import yaml
 
-from _strict_yaml import strict_load  # noqa: E402
-from _workflow_yaml import REPO_ROOT  # noqa: E402
-from check_scorecard_evidence_contract import verify_proof, verify_sarif_contract  # noqa: E402
-from check_python_execution_contract import clean_environment  # noqa: E402
+from ci_workflows_tools._strict_yaml import strict_load  # noqa: E402
+from ci_workflows_tools._workflow_yaml import REPO_ROOT  # noqa: E402
+from ci_workflows_tools.check_scorecard_evidence_contract import verify_proof, verify_sarif_contract  # noqa: E402
+from ci_workflows_tools.check_python_execution_contract import clean_environment  # noqa: E402
 
 
 def fail(message: str) -> None:

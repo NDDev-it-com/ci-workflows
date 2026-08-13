@@ -25,8 +25,8 @@ from __future__ import annotations
 import subprocess
 import sys
 
-from _workflow_yaml import get_on, load_yaml, workflow_files
-from check_python_execution_contract import clean_environment
+from ci_workflows_tools._workflow_yaml import get_on, load_yaml, workflow_files
+from ci_workflows_tools.check_python_execution_contract import clean_environment
 
 GUARD_STEP_NAME = "Reject caller-supplied ref on a privileged event"
 

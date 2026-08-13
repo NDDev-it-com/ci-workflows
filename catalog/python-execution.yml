@@ -2,11 +2,50 @@
   "schema_version": 1,
   "python": {
     "major_minor": "3.13",
-    "subject_count": 41,
+    "subject_count": 42,
     "launcher": "scripts/check_python_execution_contract.py",
-    "launcher_prefix": ["python3", "-I", "-B", "scripts/check_python_execution_contract.py", "--launch"],
+    "launcher_prefix": [".venv/bin/python", "-I", "-B", "scripts/check_python_execution_contract.py", "--launch"],
+    "syntax_gate_prefix": [".venv/bin/python", "-I", "-B", "scripts/check_python_syntax.py"],
     "dependency_interpreter": ".venv/bin/python",
+    "package": {
+      "name": "ci_workflows_tools",
+      "root": "scripts",
+      "init": "scripts/__init__.py",
+      "loading": "verified-file-spec",
+      "sys_path_mutation": false,
+      "editable_install": false
+    },
+    "dynamic_sibling_imports": {
+      "check_python_execution_contract.py": ["_strict_yaml"]
+    },
+    "bootstrap": {
+      "transition_receipt": "NDDEV_PYTHON_BOOTSTRAP",
+      "receipt_version": "repository-venv-v1",
+      "maximum_transitions": 1
+    },
     "argument_separator": "--",
+    "invocation_documents": {
+      ".agents/skills/ci-consumer-adoption/SKILL.md": {"role": "repository-launcher", "language": "markdown"},
+      ".agents/skills/nddev-repo-flow/SKILL.md": {"role": "repository-launcher", "language": "markdown"},
+      ".claude/skills/ci-consumer-adoption/SKILL.md": {"role": "repository-launcher", "language": "markdown"},
+      ".claude/skills/nddev-repo-flow/SKILL.md": {"role": "repository-launcher", "language": "markdown"},
+      "AGENTS.md": {"role": "repository-launcher", "language": "markdown"},
+      "CONTRIBUTING.md": {"role": "repository-launcher", "language": "markdown"},
+      "README.md": {"role": "consumer-command", "language": "markdown"},
+      "docs/02-private-free.md": {"role": "adoption-guide", "language": "markdown"},
+      "docs/05-runners.md": {"role": "adoption-guide", "language": "markdown"},
+      "docs/19-python-execution.md": {"role": "repository-launcher", "language": "markdown"},
+      "examples/evidence-orchestration.md": {"role": "adoption-guide", "language": "markdown"},
+      "examples/private-free/security-selfhosted.yml": {"role": "consumer-command", "language": "yaml"},
+      "examples/private-free/security.yml": {"role": "consumer-command", "language": "yaml"},
+      "scripts/resolve_profile.py": {"role": "repository-launcher", "language": "python"},
+      "scripts/validate_all.py": {"role": "repository-launcher", "language": "python"}
+    },
+    "source_classes": {
+      "production_workflows": ".github/workflows/*.yml",
+      "negative_corpora": "tests/fixtures/negative/**",
+      "negative_contract": "rejection-only"
+    },
     "embedded_prefix": ["python3", "-I"],
     "dependency_lock": "requirements-ci.txt",
     "venv": {
@@ -49,7 +88,7 @@
   },
   "required_resources": [
     ".github/workflows", "catalog", "docs", "examples",
-    "requirements-ci.txt", "scripts/validate_all.py"
+    "requirements-ci.txt", "scripts/__init__.py", "scripts/validate_all.py"
   ],
   "surface_environment": {
     "negative_gate_probe.py": ["GH_TOKEN", "GITHUB_TOKEN"],
@@ -57,13 +96,14 @@
     "verify_scorecard_runtime.py": ["GH_HOST", "GH_TOKEN"]
   },
   "process_profiles": {
-    "external-tool": "local read-only external command",
-    "external-tool-fixture": "bounded external command fixture",
-    "hostile-python-probe": "owned hostile ambient-input injection edge",
-    "isolated-python-fixture": "embedded Python fixture under isolated mode",
-    "launcher-clean": "registered launcher or nested child with allowlisted environment",
-    "network-gh": "GitHub CLI API edge with explicitly inherited credentials",
-    "shell-fixture": "bounded shell fixture with an allowlisted environment"
+    "exec-replace": {"api": "execve", "executable": "repository-venv", "argv": "exact", "cwd": "preserve", "environment": "replace-clean"},
+    "external-tool": {"api": "subprocess", "executable": "path-search", "argv": "sequence", "cwd": "explicit", "environment": "replace-clean"},
+    "external-tool-fixture": {"api": "subprocess", "executable": "path-search", "argv": "sequence", "cwd": "explicit-or-preserve", "environment": "replace-clean"},
+    "hostile-python-probe": {"api": "subprocess", "executable": "current-interpreter", "argv": "exact", "cwd": "explicit", "environment": "replace-owned-hostile"},
+    "isolated-python-fixture": {"api": "subprocess", "executable": "current-interpreter", "argv": "exact", "cwd": "explicit-or-preserve", "environment": "replace-clean"},
+    "launcher-clean": {"api": "subprocess", "executable": "selected-interpreter", "argv": "exact", "cwd": "explicit-or-preserve", "environment": "replace-clean"},
+    "network-gh": {"api": "subprocess", "executable": "path-search", "argv": "sequence", "cwd": "explicit", "environment": "replace-clean-inherit-named"},
+    "shell-fixture": {"api": "subprocess", "executable": "path-search", "argv": "sequence", "cwd": "explicit-or-preserve", "environment": "replace-clean"}
   },
   "surface_groups": {
     "library": ["_runners.py", "_workflow_yaml.py"],
@@ -75,6 +115,7 @@
       "check_permissions.py", "check_pinned_actions.py",
       "check_pr_hygiene_contract.py", "check_privileged_ref_guard.py",
       "check_public_docs.py", "check_release_graph.py",
+      "check_python_syntax.py",
       "check_release_promotion_gate.py", "check_release_supply_chain.py",
       "check_rulesets.py", "check_runner_routing.py",
       "check_runtime_requirements.py", "check_scorecard_evidence_contract.py",
@@ -92,6 +133,7 @@
     "fixture_harness": ["negative_gate_probe.py"]
   },
   "sibling_imports": {
+    "__init__.py": [],
     "_workflow_yaml.py": ["_strict_yaml"],
     "check_actionlint_contract.py": ["_workflow_yaml", "check_python_execution_contract"],
     "check_benchmark_contract.py": ["_workflow_yaml"],
@@ -128,6 +170,7 @@
       "check_monorepo_routing", "check_permissions", "check_pinned_actions",
       "check_pr_hygiene_contract", "check_privileged_ref_guard",
       "check_public_docs", "check_python_execution_contract",
+      "check_python_syntax",
       "check_release_graph", "check_release_promotion_gate",
       "check_release_supply_chain", "check_rulesets", "check_runner_routing",
       "check_runtime_requirements", "check_scorecard_evidence_contract",
@@ -158,6 +201,7 @@
     "check_pr_hygiene_contract.py": {"_exercise_validator": {"count": 1, "profile": "shell-fixture"}},
     "check_privileged_ref_guard.py": {"_run_guard": {"count": 1, "profile": "shell-fixture"}},
     "check_python_execution_contract.py": {
+      "_ensure_repository_interpreter": {"count": 1, "profile": "exec-replace"},
       "_launch": {"count": 1, "profile": "launcher-clean"},
       "_probe_child": {"count": 1, "profile": "launcher-clean"},
       "_probe_generations": {"count": 2, "profile": "hostile-python-probe"},

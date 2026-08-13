@@ -100,7 +100,7 @@ jobs:
       # proves it.
       setup_uv: true
       install_command: >-
-        uv venv --python 3.13 .venv &&
+        "$pythonLocation/bin/python" -I -B -m venv --copies .venv &&
         uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
       # Deliberately NOT `validate_all --tier core`. That command reads
       # runtime-coverage.yml, whose digests this very run exists to refresh, so
@@ -109,10 +109,10 @@ jobs:
       # changed. These validators are just as real and depend on the tree alone.
       command: >-
         export PATH="$PWD/.venv/bin:$PATH" &&
-        python3 -I -B scripts/check_python_execution_contract.py --launch check_workflow_contracts.py -- &&
-        python3 -I -B scripts/check_python_execution_contract.py --launch check_permissions.py -- &&
-        python3 -I -B scripts/check_python_execution_contract.py --launch check_pinned_actions.py -- &&
-        python3 -I -B scripts/check_python_execution_contract.py --launch generate_docs.py -- --check
+        .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch check_workflow_contracts.py -- &&
+        .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch check_permissions.py -- &&
+        .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch check_pinned_actions.py -- &&
+        .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch generate_docs.py -- --check
 
   # required-gate — the change router. On a branch push `github.event.before` is
   # the all-zero oid, so this exercises the conservative all-true path: the one
@@ -292,9 +292,17 @@ jobs:
           persist-credentials: false
 
       - name: Set up isolated Python contract runtime
+        id: python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: '3.13'
+          update-environment: false
+
+      - name: Provision isolated Python contract runtime
+        env:
+          PYTHON_PATH: ${{ steps.python.outputs.python-path }}
+        run: >-
+          "$PYTHON_PATH" -I -B -m venv --copies .venv
 
       - name: Render evidence for the runtime-coverage ledger
         env:
@@ -304,4 +312,4 @@ jobs:
             {"fixture-actionlint":"actionlint.yml","fixture-zizmor-no-sarif":"zizmor-no-sarif.yml","fixture-secret-scan":"secret-scan.yml","fixture-secret-scan-binary":"secret-scan.yml","fixture-private-static":"private-static.yml","fixture-monorepo-router":"monorepo-changed-paths.yml","fixture-osv-scan":"osv-scan.yml","fixture-semgrep":"semgrep-ci.yml","fixture-coverage-gate":"coverage-gate.yml","fixture-grype-scan":"grype-scan.yml","fixture-iac-scan":"iac-scan.yml","fixture-public-codeql":"public-codeql.yml","fixture-zizmor-sarif":"zizmor-sarif.yml","fixture-rust-supply-chain":"rust-supply-chain.yml","fixture-docs-ci":"docs-ci.yml","fixture-gate-report":"gate.yml"}
         run: |
           set -euo pipefail
-          python3 -I -B scripts/check_python_execution_contract.py --launch render_runtime_evidence.py --
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch render_runtime_evidence.py --

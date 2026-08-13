@@ -97,15 +97,15 @@ actionlint
 zizmor --persona pedantic --min-severity low .github/workflows
 
 # Complete repository contract, catalog, example, and generated-doc checks
-python3 -I -B scripts/check_python_execution_contract.py --launch validate_all.py --
+.venv/bin/python -I -B scripts/check_python_syntax.py
+.venv/bin/python -I -B scripts/check_python_execution_contract.py --launch validate_all.py --
 ```
 
 Install validator dependencies with the hash-locked file:
 
 ```bash
-uv venv --python 3.13 .venv
-source .venv/bin/activate
-uv pip install --require-hashes -r requirements-ci.txt
+python3.13 -I -B -m venv --copies .venv
+uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
 ```
 
 Install the tools locally with:
