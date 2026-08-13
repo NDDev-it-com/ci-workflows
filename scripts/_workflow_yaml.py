@@ -26,6 +26,7 @@ SELF_WORKFLOWS = {
     "release.yml",
     "runtime-fixtures.yml",
     "runtime-fixtures-languages.yml",
+    "runtime-fixtures-event-write.yml",
     "scorecard.yml",
 }
 

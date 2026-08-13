@@ -171,6 +171,7 @@ tools:
       - .github/workflows/release-supply-chain.yml
       - .github/workflows/release.yml
       - .github/workflows/runtime-fixtures.yml
+      - .github/workflows/runtime-fixtures-event-write.yml
       - .github/workflows/runtime-fixtures-languages.yml
       - .github/workflows/rust-ci.yml
       - .github/workflows/rust-supply-chain.yml

@@ -56,6 +56,7 @@ import check_permissions
 import check_public_docs
 import check_runtime_requirements
 import check_runner_routing
+import check_side_effect_fixture_contract
 import compile_evidence_plan
 import check_pinned_actions
 import check_privileged_ref_guard
@@ -102,6 +103,7 @@ CORE = [
     ("runner-routing", check_runner_routing.check),
     ("evidence-orchestration", compile_evidence_plan.check),
     ("runtime-evidence-summary", render_runtime_evidence.check),
+    ("side-effect-fixture", check_side_effect_fixture_contract.check),
     ("merge-group", check_merge_group.check),
     ("rulesets", check_rulesets.check),
     ("catalog", validate_catalog.check),

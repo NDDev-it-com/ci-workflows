@@ -15,3 +15,4 @@ jobs:
       tool: pytest
       bench_command: 'pytest --benchmark-only --benchmark-json=output.json'
       output_file_path: output.json
+      history_branch: gh-pages

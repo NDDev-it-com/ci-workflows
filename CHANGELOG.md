@@ -4,6 +4,13 @@
 
 ### Fixed
 
+- Add a side-effect-safe runtime fixture for benchmark and pull-request hygiene
+  workflows. Disposable branch state and pull-request labels are observed,
+  restored and guarded before evidence is eligible; skipped, failed or missing
+  cleanup can no longer produce a runtime-proof claim. Release publishers and
+  promotion remain explicitly blocked where honest proof needs external signing
+  authority, protected environments or irreversible transparency-log writes.
+
 - Make runtime-fixture evidence fail closed when a claimed caller is failed,
   cancelled, skipped or missing; add live fixtures for six high-risk gates and
   scope cargo-deny to the same Rust working directory as audit and machete.
@@ -17,6 +24,10 @@
   or runtime behaviour.
 
 ### Changed
+
+- Allow the runtime ledger to record `partial-runtime` evidence with an explicit
+  list of proven jobs while retaining typed debt for every unexecuted lane.
+  Static validation and skipped jobs remain ineligible as runtime proof.
 
 - Make billing intent an explicit operating-profile control. Derived public
   modes select unmetered standard hosted runners; derived private/internal

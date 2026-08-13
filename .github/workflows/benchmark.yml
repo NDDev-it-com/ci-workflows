@@ -60,6 +60,10 @@ on:
           you want history across runs.
         type: string
         default: ''
+      history_branch:
+        description: 'Branch used only when external_data_json_path is empty.'
+        type: string
+        default: 'gh-pages'
       timeout_minutes:
         type: number
         default: 30
@@ -132,4 +136,5 @@ jobs:
           fail-on-alert: ${{ inputs.fail_on_alert }}
           auto-push: true
           external-data-json-path: ${{ inputs.external_data_json_path }}
+          gh-pages-branch: ${{ inputs.history_branch }}
           comment-on-alert: false

@@ -15,8 +15,8 @@ operational 7d and durable 30d; this does not set GitHub artifact retention.
 | `ubuntu-runtime-smoke` | `full` | github-actions | ubuntu / x64 | `standard-hosted-vm` | `operational` | `.github/workflows/cross-platform-smoke.yml` | `runtime-proven` |
 | `macos-runtime-smoke` | `full` | github-actions | macos / arm64 | `standard-hosted-vm` | `durable` | `.github/workflows/cross-platform-smoke.yml` | `runtime-proven` |
 | `security-runtime` | `full` | github-actions | ubuntu / x64 | `standard-hosted-vm` | `durable` | `.github/workflows/secret-scan.yml` | `runtime-proven` |
-| `release-free` | `release` | github-actions | ubuntu / x64 | `standard-hosted-vm` | `durable` | `.github/workflows/release-supply-chain-free.yml` | `static-only` |
-| `release-attested` | `release` | github-actions | ubuntu / x64 | `standard-hosted-vm` | `durable` | `.github/workflows/release-supply-chain.yml` | `static-only` |
+| `release-free` | `release` | github-actions | ubuntu / x64 | `standard-hosted-vm` | `durable` | `.github/workflows/release-supply-chain-free.yml` | `blocked` |
+| `release-attested` | `release` | github-actions | ubuntu / x64 | `standard-hosted-vm` | `durable` | `.github/workflows/release-supply-chain.yml` | `blocked` |
 | `ubuntu-native-host` | `full` | openobserve-fleet | ubuntu / x64, arm64 | `native-disposable-host` | `durable` | handoff: github-actions owner must execute the compiled host contract | `downstream-unproven` |
 | `macos-native-host` | `full` | openobserve-fleet | macos / arm64 | `native-disposable-host` | `durable` | handoff: bootstrap owner must execute the compiled host contract | `downstream-unproven` |
 
