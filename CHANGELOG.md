@@ -10,9 +10,10 @@
   cleanup can no longer produce a runtime-proof claim. Release publishers and
   promotion remain explicitly blocked where honest proof needs external signing
   authority, protected environments or irreversible transparency-log writes.
-- Normalize an empty PR-hygiene commitlint configuration to the action's
-  documented default path instead of passing an empty `configFile`, which makes
-  cosmiconfig attempt to read the checkout directory and fail with `EISDIR`.
+- Omit `configFile` entirely for an empty PR-hygiene commitlint configuration,
+  preserving upstream default discovery; validate and pass a non-empty caller
+  path exactly. Passing an empty key made cosmiconfig read the checkout
+  directory and fail with `EISDIR`.
 
 - Make runtime-fixture evidence fail closed when a claimed caller is failed,
   cancelled, skipped or missing; add live fixtures for six high-risk gates and

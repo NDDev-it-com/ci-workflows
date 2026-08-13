@@ -167,6 +167,21 @@ jobs:
       labeler_config: .github/labeler-runtime-evidence.yml
       stale: false
 
+  fixture-pr-hygiene-explicit:
+    if: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      contents: read       # checkout commits and validate the explicit config file
+      issues: write        # required ceiling for the disabled stale nested job
+      pull-requests: write # required ceiling for disabled PR mutation jobs
+    uses: ./.github/workflows/pr-hygiene.yml
+    with:
+      runner: ubuntu-latest
+      commitlint: true
+      commitlint_config: .github/commitlint-runtime-evidence.mjs
+      pr_title: false
+      labeler: false
+      stale: false
+
   cleanup-pr-hygiene:
     if: ${{ always() && github.event_name == 'pull_request' }}
     needs: [prepare-pr-hygiene, fixture-pr-hygiene]
@@ -213,7 +228,7 @@ jobs:
 
   evidence-pr-hygiene:
     if: ${{ always() && github.event_name == 'pull_request' }}
-    needs: [fixture-pr-hygiene, cleanup-pr-hygiene]
+    needs: [fixture-pr-hygiene, fixture-pr-hygiene-explicit, cleanup-pr-hygiene]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -227,7 +242,7 @@ jobs:
         env:
           RESULTS: ${{ toJSON(needs) }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          PROVES: '{"fixture-pr-hygiene":"pr-hygiene.yml"}'
+          PROVES: '{"fixture-pr-hygiene":"pr-hygiene.yml","fixture-pr-hygiene-explicit":"pr-hygiene.yml"}'
           GUARDS: '{"fixture-pr-hygiene":["cleanup-pr-hygiene"]}'
         run: |
           set -euo pipefail

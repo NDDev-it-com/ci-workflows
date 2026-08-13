@@ -70,6 +70,21 @@ def validate(doc: dict[str, Any]) -> list[str]:
     if any(hygiene_with.get(key) != value for key, value in expected.items()):
         problems.append("PR-hygiene fixture must run read lanes plus labeler and exclude stale")
 
+    explicit_hygiene = _job(doc, "fixture-pr-hygiene-explicit")
+    if explicit_hygiene.get("permissions") != {
+        "contents": "read", "issues": "write", "pull-requests": "write"
+    }:
+        problems.append("explicit PR-hygiene caller has broader or insufficient permissions")
+    explicit_with = explicit_hygiene.get("with") or {}
+    if explicit_with.get("commitlint_config") != \
+            ".github/commitlint-runtime-evidence.mjs" or any(
+                explicit_with.get(key) is not value for key, value in {
+                    "commitlint": True, "pr_title": False,
+                    "labeler": False, "stale": False,
+                }.items()
+            ):
+        problems.append("explicit PR-hygiene fixture must isolate config-path evidence")
+
     pr_cleanup = _job(doc, "cleanup-pr-hygiene")
     if pr_cleanup.get("permissions") != {"pull-requests": "write"}:
         problems.append("PR cleanup must grant exactly pull-requests:write")
@@ -92,11 +107,17 @@ def validate(doc: dict[str, Any]) -> list[str]:
         ("evidence-pr-hygiene", "fixture-pr-hygiene", "cleanup-pr-hygiene"),
     ):
         evidence = _job(doc, evidence_job)
-        if set(evidence.get("needs") or []) != {caller, cleanup}:
+        expected_needs = {caller, cleanup}
+        if evidence_job == "evidence-pr-hygiene":
+            expected_needs.add("fixture-pr-hygiene-explicit")
+        if set(evidence.get("needs") or []) != expected_needs:
             problems.append(f"{evidence_job} must depend on caller and cleanup")
         env = ((evidence.get("steps") or [{}, {}])[-1].get("env") or {})
         if caller not in str(env.get("PROVES")) or cleanup not in str(env.get("GUARDS")):
             problems.append(f"{evidence_job} must bind proof to its cleanup guard")
+        if evidence_job == "evidence-pr-hygiene" and \
+                "fixture-pr-hygiene-explicit" not in str(env.get("PROVES")):
+            problems.append("PR evidence must include the explicit-config caller")
     return problems
 
 
@@ -108,6 +129,7 @@ def check() -> list[str]:
         ("stale false-green", lambda d: _job(d, "fixture-pr-hygiene")["with"].update({"stale": True})),
         ("missing cleanup guard", lambda d: (_job(d, "evidence-benchmark")["steps"][-1]["env"].pop("GUARDS"))),
         ("cleanup without caller", lambda d: _job(d, "cleanup-pr-hygiene").update({"needs": ["prepare-pr-hygiene"]})),
+        ("missing explicit config proof", lambda d: _job(d, "evidence-pr-hygiene")["steps"][-1]["env"].update({"PROVES": '{"fixture-pr-hygiene":"pr-hygiene.yml"}'})),
     ]
     for label, mutate in probes:
         candidate = copy.deepcopy(doc)
