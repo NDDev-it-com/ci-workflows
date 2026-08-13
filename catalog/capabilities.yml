@@ -97,6 +97,30 @@ capabilities:
       - "https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/using-code-scanning-with-your-existing-ci-system"
       - "https://docs.github.com/en/actions/sharing-automations/reusing-workflows"
 
+  - id: ossf-scorecard-analysis
+    name: OpenSSF Scorecard read-only SARIF analysis
+    cluster: security-scanning
+    status: ga
+    public_oss: conditional
+    private_free: unavailable
+    private_paid: unavailable
+    workflow: .github/workflows/public-scorecard-analysis.yml
+    example: examples/public-oss/scorecard-analysis.yml
+    required_permissions:
+      - "contents: read"
+      - "actions: read"
+    required_settings:
+      - "Public repository (Scorecard is public-oriented; forks unsupported)"
+    risks:
+      - "Produces SARIF in-job but intentionally grants no upload, artifact publication, or OIDC authority"
+      - "Supported triggers are push and schedule on the default branch only"
+    deprecations: null
+    last_verified: 2026-08-13
+    sources:
+      - "https://github.com/ossf/scorecard-action/blob/v2.4.4/README.md"
+      - "https://github.com/step-security/harden-runner"
+      - "https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations"
+
   - id: ossf-scorecard-json
     name: OpenSSF Scorecard JSON artifact
     cluster: security-scanning

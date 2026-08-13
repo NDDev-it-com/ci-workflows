@@ -35,6 +35,7 @@ of a value is not proof that a workflow runs on that platform.
 | `.github/workflows/private-static.yml` | `linux-shell` | linux | shell only | — |
 | `.github/workflows/public-codeql.yml` | `linux-shell` | linux | shell only | — |
 | `.github/workflows/public-dependency-review.yml` | `linux-shell` | linux | shell only | — |
+| `.github/workflows/public-scorecard-analysis.yml` | `linux-shell` | linux | shell only | — |
 | `.github/workflows/public-scorecard-json.yml` | `linux-shell` | linux | shell only | — |
 | `.github/workflows/public-scorecard.yml` | `linux-shell` | linux | shell only | — |
 | `.github/workflows/python-ci.yml` | `portable-shell` | linux, macos, windows | shell only | linux, macos, windows |

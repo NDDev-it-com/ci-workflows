@@ -1,8 +1,7 @@
-name: public-scorecard
+name: public-scorecard-analysis
 
-# Reusable OSSF Scorecard for PUBLIC repositories.
-# Publishes supply-chain posture results and uploads SARIF to code scanning.
-# Caller should trigger on push to the default branch and on a weekly schedule.
+# Read-only OSSF Scorecard analysis for PUBLIC repositories. This physical
+# entrypoint cannot publish results, upload SARIF, or request OIDC/write scopes.
 
 on:
   workflow_call:
@@ -10,10 +9,6 @@ on:
       runner:
         type: string
         default: 'ubuntu-latest'
-      publish_results:
-        description: 'Publish results to the OpenSSF Scorecard API (public repos).'
-        type: boolean
-        default: true
       filter_rule_ids:
         description: 'Comma-separated Scorecard rule IDs to DROP from results (e.g. "MaintainedID,CodeReviewID,CIIBestPracticesID"). Empty = keep all.'
         type: string
@@ -22,31 +17,19 @@ on:
         description: 'Replace "no file associated with this alert" artifact URIs with a URI-safe placeholder (avoids upload errors).'
         type: boolean
         default: false
-      upload_sarif_on_forks:
-        description: 'Upload SARIF to code scanning even on fork PRs. Default false (skip forks).'
-        type: boolean
-        default: false
       sarif_category:
         description: 'Deterministic Code Scanning analysis category.'
         type: string
         default: 'ossf-scorecard'
-    outputs:
-      sarif_id:
-        description: 'Code Scanning SARIF upload identifier returned by upload-sarif.'
-        value: ${{ jobs.scorecard.outputs.sarif_id }}
 
 permissions: {}
 
 jobs:
   scorecard:
-    name: OSSF Scorecard (publish)
-    outputs:
-      sarif_id: ${{ steps.upload-sarif.outputs.sarif-id }}
+    name: OSSF Scorecard (analysis only)
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 15
     permissions:
-      security-events: write  # publish the Scorecard SARIF to code scanning
-      id-token: write         # OIDC token for the Scorecard publish step
       contents: read          # read the repository Scorecard evaluates
       actions: read           # Scorecard inspects workflow definitions
     steps:
@@ -54,17 +37,6 @@ jobs:
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920  # v2.20.0
         with:
           egress-policy: audit
-
-      - name: Validate publish entrypoint
-        shell: bash
-        env:
-          SCORECARD_PUBLISH_RESULTS: ${{ inputs.publish_results }}
-        run: |
-          set -euo pipefail
-          if [[ "$SCORECARD_PUBLISH_RESULTS" != "true" ]]; then
-            echo "public-scorecard.yml is the publish entrypoint; use public-scorecard-analysis.yml for read-only analysis"
-            exit 1
-          fi
 
       - name: Validate public default-branch contract
         shell: bash
@@ -118,7 +90,7 @@ jobs:
         with:
           results_file: results.sarif
           results_format: sarif
-          publish_results: ${{ inputs.publish_results }}
+          publish_results: false
 
       - name: Normalize placeholder URIs
         if: ${{ inputs.normalize_placeholder_uris }}
@@ -154,18 +126,3 @@ jobs:
             .runs[].tool.driver.rules |= map(. | select(.id as $id | $cond))
           ' results.sarif > results.filtered.sarif
           mv results.filtered.sarif results.sarif
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: scorecard-results
-          path: results.sarif
-          retention-days: 5
-
-      - name: Upload SARIF to code scanning
-        id: upload-sarif
-        if: ${{ github.event_name != 'pull_request' || inputs.upload_sarif_on_forks || github.event.pull_request.head.repo.full_name == github.repository }}
-        uses: github/codeql-action/upload-sarif@d1ba80a13dd99fba24a470575428917156a28b43  # v4.37.5
-        with:
-          sarif_file: results.sarif
-          category: ${{ inputs.sarif_category }}

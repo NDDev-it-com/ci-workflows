@@ -1,0 +1,18 @@
+# Read-only Scorecard analysis: no OIDC, artifact publication, or SARIF upload.
+# Trigger only on the public repository's actual default branch or schedule.
+# Replace @<sha> with a pinned full commit SHA of ci-workflows.
+name: scorecard-analysis
+on:
+  push: { branches: [main] }
+  schedule:
+    - cron: "17 2 * * 1"
+permissions: {}
+jobs:
+  scorecard:
+    permissions:
+      contents: read
+      actions: read
+    uses: NDDev-it-com/ci-workflows/.github/workflows/public-scorecard-analysis.yml@<sha>
+    with:
+      runner: ubuntu-latest
+      sarif_category: ossf-scorecard

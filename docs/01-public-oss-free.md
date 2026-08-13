@@ -19,7 +19,7 @@ delivers its full value.
 | CodeQL code scanning | ✅ | [`public-codeql.yml`](#codeql) |
 | Native secret scanning + push protection | ✅ | repository setting (not a workflow) |
 | Dependency review (PR diff gate) | ✅ | [`public-dependency-review.yml`](#dependency-review) |
-| OSSF Scorecard + publish to API | ✅ | [`public-scorecard.yml`](#scorecard) / `public-scorecard-json.yml` |
+| OSSF Scorecard publish / read-only / JSON | ✅ | [`public-scorecard.yml`](#scorecard) / `public-scorecard-analysis.yml` / `public-scorecard-json.yml` |
 | Artifact attestations / SBOM / provenance | ✅ | [`release-supply-chain.yml`](#attestations) |
 | GHCR (public packages) | ✅ | [09 Releases & packages](09-releases-packages.md) |
 | GitHub Pages | ✅ | [10 Deployments & environments](10-deployments-environments.md) |
@@ -63,7 +63,7 @@ Inputs: `languages` (JSON array), `queries` (suite, default
 Copilot Autofix.
 
 <a id="scorecard"></a>
-## OSSF Scorecard — `public-scorecard.yml` / `public-scorecard-json.yml`
+## OSSF Scorecard — publish, read-only, and JSON entrypoints
 
 Scorecard scores your repository against supply-chain best practices (pinned
 actions, branch protection, token permissions, etc.). Use `public-scorecard.yml`
@@ -99,10 +99,12 @@ jobs:
       sarif_category: ossf-scorecard
 ```
 
-Grant `id-token: write` and `security-events: write` only to the
-`publish_results: true` path. With `false`, the reusable runs the same pinned
-analysis but neither publishes nor uploads SARIF and requires only
-`contents: read` plus `actions: read`.
+Grant `id-token: write` and `security-events: write` only to
+`public-scorecard.yml`, the publication entrypoint. Read-only consumers call
+`public-scorecard-analysis.yml`; its physical workflow graph contains neither
+OIDC nor artifact/SARIF upload authority and requires only `contents: read` plus
+`actions: read`. The two entrypoints' common analysis steps are machine-checked
+for semantic parity.
 
 <a id="dependency-review"></a>
 ## Dependency review — `public-dependency-review.yml`

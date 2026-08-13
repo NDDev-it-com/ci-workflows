@@ -18,10 +18,9 @@ jobs:
     permissions:
       contents: read # read the public repository Scorecard evaluates
       actions: read # inspect workflow definitions for the scoring checks
-    uses: ./.github/workflows/public-scorecard.yml
+    uses: ./.github/workflows/public-scorecard-analysis.yml
     with:
       runner: ubuntu-latest
-      publish_results: false
       sarif_category: ossf-scorecard
 
   scorecard:

@@ -72,7 +72,8 @@ mirror them in the caller job. Common mappings:
 | --- | --- |
 | `public-codeql.yml` | `actions: read`, `contents: read`, `security-events: write` |
 | `zizmor-sarif.yml` | `contents: read`, `security-events: write` |
-| `public-scorecard.yml` | analysis-only: `contents: read`, `actions: read`; publish: add `security-events: write`, `id-token: write` |
+| `public-scorecard-analysis.yml` | `contents: read`, `actions: read` |
+| `public-scorecard.yml` | `contents: read`, `actions: read`, `security-events: write`, `id-token: write` |
 | `public-scorecard-json.yml` | `id-token: write`, `contents: read`, `actions: read` |
 | `public-dependency-review.yml` | `contents: read`, `pull-requests: write` |
 | `release-supply-chain.yml` | `contents: write`, `id-token: write`, `attestations: write`, `artifact-metadata: write` |

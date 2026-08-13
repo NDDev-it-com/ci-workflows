@@ -62,6 +62,9 @@ def main() -> int:
     expected_reusable = (
         f"{args.repo}/{consumer['reusable_workflow']}@{run.get('head_sha')}"
     )
+    expected_analysis_reusable = (
+        f"{args.repo}/{consumer['analysis_reusable_workflow']}@{run.get('head_sha')}"
+    )
     run_expected = {
         "event": "push",
         "head_branch": consumer["default_branch"],
@@ -77,6 +80,11 @@ def main() -> int:
     exact_refs = [item for item in referenced if item.get("path") == expected_reusable]
     if len(exact_refs) != 1 or exact_refs[0].get("sha") != run.get("head_sha"):
         fail("run did not load the local SARIF reusable from its exact caller SHA")
+    exact_analysis_refs = [
+        item for item in referenced if item.get("path") == expected_analysis_reusable
+    ]
+    if len(exact_analysis_refs) != 1 or exact_analysis_refs[0].get("sha") != run.get("head_sha"):
+        fail("run did not load the physical analysis reusable from its exact caller SHA")
 
     jobs = api(f"repos/{args.repo}/actions/runs/{args.run_id}/jobs").get("jobs") or []
     matching_jobs = [job for job in jobs if job.get("name") == "scorecard / OSSF Scorecard (publish)"]
@@ -129,7 +137,9 @@ def main() -> int:
         fail(f"expected one accepted exact Scorecard analysis, found {len(candidates)}")
     analysis = candidates[0]
     reusable_path = REPO_ROOT / consumer["reusable_workflow"]
+    analysis_reusable_path = REPO_ROOT / consumer["analysis_reusable_workflow"]
     digest = hashlib.sha256(reusable_path.read_bytes()).hexdigest()
+    analysis_digest = hashlib.sha256(analysis_reusable_path.read_bytes()).hexdigest()
     proof = {
         "repository": args.repo,
         "caller_sha": run["head_sha"],
@@ -148,6 +158,9 @@ def main() -> int:
         "reusable_sha": exact_refs[0]["sha"],
         "reusable_digest": digest,
         "reusable_workflow": consumer["reusable_workflow"],
+        "analysis_reusable_sha": exact_analysis_refs[0]["sha"],
+        "analysis_reusable_digest": analysis_digest,
+        "analysis_reusable_workflow": consumer["analysis_reusable_workflow"],
         "analysis_id": analysis["id"],
         "analysis_url": analysis["url"],
         "analysis_key": analysis["analysis_key"],

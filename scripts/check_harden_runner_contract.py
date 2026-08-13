@@ -25,6 +25,7 @@ HARDENED_WORKFLOWS = {
     "public-codeql.yml",
     "public-dependency-review.yml",
     "public-scorecard-json.yml",
+    "public-scorecard-analysis.yml",
     "public-scorecard.yml",
     "release.yml",
     "zizmor-sarif.yml",

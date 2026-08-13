@@ -36,6 +36,7 @@
 | `.github/workflows/private-static.yml` | `private-static-validation` | ga |
 | `.github/workflows/public-codeql.yml` | `codeql-code-scanning` | ga |
 | `.github/workflows/public-dependency-review.yml` | `dependency-review` | ga |
+| `.github/workflows/public-scorecard-analysis.yml` | `ossf-scorecard-analysis` | ga |
 | `.github/workflows/public-scorecard-json.yml` | `ossf-scorecard-json` | ga |
 | `.github/workflows/public-scorecard.yml` | `ossf-scorecard` | ga |
 | `.github/workflows/python-ci.yml` | `python-ci` | ga |

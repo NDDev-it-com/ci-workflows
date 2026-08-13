@@ -53,6 +53,7 @@ Attestations are gated on Enterprise Cloud and this estate has it.
 | --- | --- | :---: | :---: | :---: |
 | CodeQL code scanning | `public-codeql.yml` | ✅ | ❌ paid | ✅ |
 | OSSF Scorecard (SARIF) | `public-scorecard.yml` | ✅ | ❌ | ✅ |
+| OSSF Scorecard (read-only SARIF analysis) | `public-scorecard-analysis.yml` | ✅ | ❌ | ✅ |
 | OSSF Scorecard (JSON artifact) | `public-scorecard-json.yml` | ✅ | ❌ | ✅ |
 | Dependency Review | `public-dependency-review.yml` | ✅ | ❌ paid | ✅ |
 | Gitleaks secret scan | `secret-scan.yml` | ✅ | ✅ | ✅ |
@@ -143,9 +144,9 @@ jobs:
 OSSF Scorecard runs **on push-to-default + schedule only** (`pull_request` is
 experimental and unsupported by the action), so keep it in its own file. The
 SARIF workflow below uploads persistent Code Scanning results; use
-`public-scorecard-json.yml` instead for an artifact-only signal. Reusable callers
-default to no OpenSSF API publishing because they do not satisfy its workflow
-shape verifier:
+`public-scorecard-json.yml` instead for an artifact-only signal. The publishing
+entrypoint defaults to publishing and requires its write permissions at graph
+construction:
 
 ```yaml
 # .github/workflows/scorecard.yml
@@ -162,6 +163,13 @@ jobs:
       publish_results: true
       sarif_category: ossf-scorecard
 ```
+
+For a physically read-only graph, call `public-scorecard-analysis.yml` with
+only `contents: read` and `actions: read`. It contains no OIDC, artifact upload,
+or Code Scanning upload job; `public-scorecard.yml` remains the compatible
+publication entrypoint. A former caller that explicitly passed
+`publish_results: false` must move to the analysis entrypoint; permission
+preflight makes that physical split necessary.
 
 ### Private repository (no paid add-ons)
 
