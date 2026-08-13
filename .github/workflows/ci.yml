@@ -272,7 +272,7 @@ jobs:
             --bad . --good . \
             --context-env github.token=GITHUB_TOKEN \
             --bad-input target=tests/fixtures/negative/zizmor/injection.yml \
-            --good-input target=tests/fixtures/zizmor-clean/clean.yml
+            --good-input target=tests/fixtures/zizmor-clean/.github/workflows/clean.yml
 
   dockerfile-gate:
     name: hadolint refuses an unpinned image
