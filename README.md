@@ -91,7 +91,12 @@ and copy-paste callers under [`examples/`](examples/).
 
 ## Usage
 
-Always pin by **full commit SHA** (tags are mutable). Dependabot bumps the SHA.
+Always pin by **full commit SHA**, and pin to a commit a release tag points at
+rather than to whatever `main` happens to be — an estate pinned to arbitrary
+commits cannot answer "what version are we on". Release tags here are protected
+against deletion, updates and non-fast-forward moves, so the tag names a stable
+commit; the SHA is what the workflow reference should carry, with a trailing
+comment naming the release. Dependabot bumps the SHA.
 A caller job **must grant every permission the reusable job declares**, or the
 run fails at startup — see [`docs/04-actions-core.md`](docs/04-actions-core.md).
 

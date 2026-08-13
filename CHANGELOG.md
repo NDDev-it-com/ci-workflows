@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+- Stop restating volatile inventory counts in durable prose. `AGENTS.md` claimed
+  46 reusables and nine self workflows against a tree holding 47 and 10, said the
+  fixture estate calls twenty-seven reusables when it calls 35 across three files
+  rather than two, named nine cross-platform-proven reusables when the ledger
+  records ten, bounded the docs at `docs/18` after `docs/19` landed, and carried
+  one sentence twice. The counts are removed rather than corrected: they were
+  copies of facts the tree already answers, so each copy was a fresh chance to
+  drift. Prose now points at `docs/generated/workflow-inventory.md`,
+  `SELF_WORKFLOWS` and `proven_os`. `check_runtime_requirements.py` and
+  `docs/05` drop the same "of 46 reusables, 44" phrasing while keeping the
+  durable fact, which is *which two* need a container runtime.
+
+- Correct the README's pinning guidance, which contradicted the adoption skill.
+  It said "tags are mutable" while `tag-semver.json` blocks deletion, updates and
+  non-fast-forward moves on every SemVer tag, and it omitted the part that
+  matters — pin to a commit a release tag points at, not to whatever `main`
+  happens to be.
+
 - Reconcile `CHANGELOG.md` against the tags it claims. `release.yml` checked only
   the forward direction — the tag being published equals `VERSION` and has one
   matching heading — so nothing noticed `## [0.11.0] - 2026-07-20` describing a

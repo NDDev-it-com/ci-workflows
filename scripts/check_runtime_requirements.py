@@ -9,8 +9,8 @@ Docker daemon, one without — had to read the workflow and guess, and guessing
 wrong fails at runtime with a message about a missing socket rather than about a
 missing class.
 
-The surface turns out to be small and worth stating precisely: of 46 reusables,
-44 need nothing but a shell. Two need a container runtime — `secret-scan`, whose
+The surface turns out to be small and worth stating precisely: almost every
+reusable needs nothing but a shell. Two need a container runtime — `secret-scan`, whose
 gitleaks is a digest-pinned image, and `container-ci`, whose Trivy action shells
 out to Docker. That is the whole distinction, and it is why this is a declared
 fact rather than a `runner_class` input: an input would have to name somebody's
