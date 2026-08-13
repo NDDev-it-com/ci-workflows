@@ -7,7 +7,20 @@
     "launcher_prefix": ["python3", "-I", "-B", "scripts/check_python_execution_contract.py", "--launch"],
     "argument_separator": "--",
     "embedded_prefix": ["python3", "-I"],
-    "pinned_external_dependencies": {"yaml": "PyYAML==6.0.3"}
+    "dependency_lock": "requirements-ci.txt",
+    "venv": {
+      "path": ".venv",
+      "implementation": "CPython",
+      "include_system_site_packages": false,
+      "home_interpreter_names": ["python3.13", "python3", "python", "python3.13.exe", "python.exe"]
+    },
+    "external_dependencies": {
+      "yaml": {
+        "distribution": "PyYAML",
+        "version": "6.0.3",
+        "module_path": "yaml/__init__.py"
+      }
+    }
   },
   "environment": {
     "base_allowlist": [

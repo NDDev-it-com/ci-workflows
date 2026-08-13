@@ -60,8 +60,10 @@ jobs:
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
         with:
           version: 0.11.30
+          python-version: '3.13'
+          activate-environment: true
       - name: Install validator dependencies
-        run: uv pip install --system --require-hashes -r requirements-ci.txt
+        run: uv pip install --require-hashes -r requirements-ci.txt
       - name: Run static validators
         run: python3 -I -B scripts/check_python_execution_contract.py --launch validate_all.py -- --tier core
 
@@ -102,8 +104,10 @@ jobs:
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
         with:
           version: 0.11.30
+          python-version: '3.13'
+          activate-environment: true
       - name: Install validator dependencies
-        run: uv pip install --system --require-hashes -r requirements-ci.txt
+        run: uv pip install --require-hashes -r requirements-ci.txt
       - name: Resolve the change base
         id: base
         env:

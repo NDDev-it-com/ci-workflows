@@ -72,6 +72,8 @@ jobs:
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
         with:
           version: 0.11.30
+          python-version: '3.13'
+          activate-environment: true
           # setup-uv caches by default. On a publishing workflow that turns the
           # Actions cache into an input to a release build, and a cache entry
           # written from a lower-trust ref would be restored here
@@ -80,7 +82,7 @@ jobs:
           enable-cache: false
 
       - name: Install validator dependencies
-        run: uv pip install --system --require-hashes -r requirements-ci.txt
+        run: uv pip install --require-hashes -r requirements-ci.txt
 
       # A release is the one place where the full sweep is the right gate: an
       # immutable artifact must not ship carrying an expired external fact or a

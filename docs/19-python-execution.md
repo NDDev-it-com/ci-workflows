@@ -12,6 +12,20 @@ required repository resources, subprocess edges, and child-environment policy.
 The launcher rejects unknown or traversing tool names, reconstructs `sys.path`
 from the repository `scripts/` directory, the standard library, and the exact
 hash-pinned PyYAML installation when the registered import graph needs it.
+PyYAML is trusted only from the active Python 3.13 virtual environment: the
+interpreter, prefix, base interpreter, `pyvenv.cfg`, non-system site-packages,
+distribution metadata and import origin must form one coherent non-escaping
+identity. `VIRTUAL_ENV` text is neither read nor trusted.
+The venv is identified by Python's own runtime facts: `sys.prefix` and
+`sys.exec_prefix` resolve to the repository-owned `.venv`, while
+`sys.base_prefix`, `sys.base_exec_prefix`, and the optional
+`sys._base_executable` anchor the base installation. The `pyvenv.cfg` `home`
+directory must contain an interpreter resolving to that same base executable;
+it is deliberately not required to equal the executable's parent because
+framework and package-manager layouts need not have that shape. Exact patch
+version, disabled system/user sites, trusted `purelib`/`platlib`, distribution
+metadata, and module origin are checked independently. Harmless parent-path
+aliases are resolved; a symlink that escapes a trusted root is rejected.
 
 Every child process receives an allowlisted environment rather than an ambient
 copy. Interpreter-control variables (`PYTHON*`, case-insensitively) are removed
@@ -36,4 +50,6 @@ to bypass the surface inventory.
 Primary contracts: [Python 3.13 command-line and environment
 semantics](https://docs.python.org/3.13/using/cmdline.html), [Python 3.13
 subprocess environment replacement](https://docs.python.org/3.13/library/subprocess.html),
-and [Python 3.13 `runpy`](https://docs.python.org/3.13/library/runpy.html).
+[Python 3.13 virtual environments](https://docs.python.org/3.13/library/venv.html),
+[Python 3.13 `sys` prefixes](https://docs.python.org/3.13/library/sys.html), and
+[Python 3.13 `runpy`](https://docs.python.org/3.13/library/runpy.html).

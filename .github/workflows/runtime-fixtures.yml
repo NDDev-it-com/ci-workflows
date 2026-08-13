@@ -99,13 +99,16 @@ jobs:
       # scope. That gap is now closed by setup_uv, and this fixture is what
       # proves it.
       setup_uv: true
-      install_command: "uv pip install --system --require-hashes -r requirements-ci.txt"
+      install_command: >-
+        uv venv --python 3.13 .venv &&
+        uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
       # Deliberately NOT `validate_all --tier core`. That command reads
       # runtime-coverage.yml, whose digests this very run exists to refresh, so
       # the fixture could only pass once it had already succeeded — a circular
       # dependency that made the lane look broken every time a proven workflow
       # changed. These validators are just as real and depend on the tree alone.
       command: >-
+        export PATH="$PWD/.venv/bin:$PATH" &&
         python3 -I -B scripts/check_python_execution_contract.py --launch check_workflow_contracts.py -- &&
         python3 -I -B scripts/check_python_execution_contract.py --launch check_permissions.py -- &&
         python3 -I -B scripts/check_python_execution_contract.py --launch check_pinned_actions.py -- &&

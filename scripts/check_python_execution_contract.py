@@ -12,6 +12,7 @@ import os
 import py_compile
 import re
 import runpy
+import site
 import subprocess
 import sys
 import sysconfig
@@ -213,21 +214,260 @@ def _needs_yaml(tool: str, policy: Mapping[str, Any]) -> bool:
 
 
 def _dependency_root() -> tuple[Path | None, list[str]]:
+    policy = load_policy()
+    dependency = policy["python"]["external_dependencies"]["yaml"]
     problems: list[str] = []
+    lock_path = (REPO_ROOT / policy["python"]["dependency_lock"]).absolute()
+    if lock_path != lock_path.resolve() or not _inside(lock_path.resolve(), REPO_ROOT) \
+            or not lock_path.is_file():
+        return None, [f"dependency lock is not a regular repository file: {lock_path}"]
     try:
-        distribution = importlib.metadata.distribution("PyYAML")
+        lock_text = lock_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        return None, [f"cannot read hash-pinned dependency lock: {exc}"]
+    problems += _locked_dependency_problems(lock_text, dependency)
+    try:
+        distribution = importlib.metadata.distribution(dependency["distribution"])
         spec = importlib.util.find_spec("yaml")
     except importlib.metadata.PackageNotFoundError:
         return None, ["pinned PyYAML distribution is unavailable"]
-    if distribution.version != "6.0.3":
-        problems.append(f"PyYAML version must be 6.0.3, got {distribution.version}")
+    if _normalized_distribution(distribution.metadata.get("Name", "")) != \
+            _normalized_distribution(dependency["distribution"]):
+        problems.append("installed distribution name differs from dependency policy")
+    if distribution.version != dependency["version"]:
+        problems.append(
+            f"{dependency['distribution']} version must be {dependency['version']}, "
+            f"got {distribution.version}"
+        )
     if spec is None or spec.origin is None:
         return None, problems + ["yaml module origin is unavailable"]
-    origin = Path(spec.origin).resolve()
-    root = origin.parent.parent
-    if root == REPO_ROOT or REPO_ROOT in root.parents or origin != root / "yaml/__init__.py":
-        problems.append(f"PyYAML origin is untrusted: {origin}")
+    identity, identity_problems = _active_venv_identity()
+    problems += identity_problems
+    if identity is None:
+        return None, problems
+    roots = {Path(identity[name]).resolve() for name in ("purelib", "platlib")}
+    distribution_root = Path(distribution.locate_file("")).absolute()
+    metadata_entries = [
+        entry for entry in (distribution.files or [])
+        if entry.name == "METADATA" and entry.parent.name.endswith(".dist-info")
+    ]
+    if len(metadata_entries) != 1:
+        problems.append("installed distribution has no unique dist-info/METADATA record")
+        distribution_path = distribution_root / "<missing-dist-info>"
+    else:
+        distribution_path = Path(
+            distribution.locate_file(metadata_entries[0])
+        ).absolute().parent
+    origin_raw = Path(spec.origin).absolute()
+    root = distribution_root.resolve()
+    problems += _dependency_path_problems(
+        roots, distribution_root, distribution_path, origin_raw,
+        dependency["module_path"],
+    )
     return root, problems
+
+
+def _normalized_distribution(value: str) -> str:
+    return re.sub(r"[-_.]+", "-", value).lower()
+
+
+def _locked_dependency_problems(
+    text: str, dependency: Mapping[str, str],
+) -> list[str]:
+    problems: list[str] = []
+    normalized = _normalized_distribution(dependency["distribution"])
+    requirement = re.compile(
+        rf"(?im)^{re.escape(normalized)}=={re.escape(dependency['version'])}\s*\\$"
+    )
+    if len(requirement.findall(text)) != 1:
+        problems.append("dependency lock lacks one exact pinned distribution/version record")
+    hashes = re.findall(r"(?m)^\s+--hash=sha256:([0-9a-f]{64})(?:\s*\\)?$", text)
+    if not hashes or len(hashes) != len(set(hashes)):
+        problems.append("dependency lock hashes are missing, malformed, or duplicated")
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or stripped.startswith("--hash=") \
+                or requirement.fullmatch(stripped):
+            continue
+        problems.append(f"dependency lock contains an unexpected record: {stripped!r}")
+    return problems
+
+
+def _inside(path: Path, root: Path) -> bool:
+    return path == root or root in path.parents
+
+
+def _dependency_path_problems(
+    site_roots: set[Path], distribution_root: Path, distribution_path: Path,
+    origin: Path, module_path: str,
+) -> list[str]:
+    problems: list[str] = []
+    real_root = distribution_root.resolve()
+    real_distribution = distribution_path.resolve()
+    real_origin = origin.resolve()
+    if real_root not in site_roots:
+        problems.append(f"distribution root is outside the active venv: {distribution_root}")
+    if not _inside(real_distribution, real_root):
+        problems.append(f"distribution metadata escapes the active venv: {distribution_path}")
+    if not _inside(real_origin, real_root) \
+            or real_origin != real_root / module_path:
+        problems.append(f"dependency import origin is untrusted: {origin}")
+    return problems
+
+
+def _read_pyvenv(path: Path) -> tuple[dict[str, str], list[str]]:
+    problems: list[str] = []
+    if not path.is_file() or path.is_symlink():
+        return {}, [f"active venv has no regular non-symlink pyvenv.cfg: {path}"]
+    values: dict[str, str] = {}
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError) as exc:
+        return {}, [f"cannot read active pyvenv.cfg: {exc}"]
+    for number, line in enumerate(lines, start=1):
+        if not line.strip():
+            continue
+        if "=" not in line:
+            problems.append(f"pyvenv.cfg:{number}: malformed record")
+            continue
+        key, value = (part.strip() for part in line.split("=", 1))
+        if not key or key in values:
+            problems.append(f"pyvenv.cfg:{number}: empty or duplicate key")
+            continue
+        values[key] = value
+    return values, problems
+
+
+def _venv_identity_problems(
+    identity: Mapping[str, Any], config: Mapping[str, str], *,
+    expected_prefix: Path | None = None,
+) -> list[str]:
+    problems: list[str] = []
+    venv_policy = load_policy()["python"]["venv"]
+    prefix = Path(identity["prefix"]).absolute()
+    base_prefix = Path(identity["base_prefix"]).absolute()
+    exec_prefix = Path(identity["exec_prefix"]).absolute()
+    base_exec_prefix = Path(identity["base_exec_prefix"]).absolute()
+    executable = Path(identity["executable"]).absolute()
+    real_prefix = prefix.resolve()
+    real_base_prefix = base_prefix.resolve()
+    if real_prefix == real_base_prefix:
+        problems.append("interpreter is not inside a virtual environment")
+    if expected_prefix is not None and (
+        not expected_prefix.is_dir() or expected_prefix.is_symlink()
+        or real_prefix != expected_prefix.resolve()
+        or not _inside(real_prefix, REPO_ROOT.resolve())
+    ):
+        problems.append("active virtual environment is not the repository-owned .venv")
+    if exec_prefix != prefix or base_exec_prefix.resolve() != base_prefix.resolve():
+        problems.append("interpreter prefix and exec-prefix identities are incoherent")
+    home = config.get("home")
+    home_path = Path(home).absolute() if home else None
+    home_candidates = [] if home_path is None or not home_path.is_dir() else [
+        home_path / name for name in venv_policy["home_interpreter_names"]
+        if (home_path / name).is_file()
+    ]
+    configured_executable = config.get("executable")
+    declared_paths = [
+        Path(value).absolute() for value in (
+            identity.get("base_executable", ""), configured_executable or "",
+        ) if value
+    ]
+    if any(not path.is_file() for path in declared_paths):
+        problems.append("declared base executable is missing or non-regular")
+    declared_targets = {path.resolve() for path in declared_paths if path.is_file()}
+    home_targets = {candidate.resolve() for candidate in home_candidates}
+    common_targets = declared_targets & home_targets if declared_targets else home_targets
+    if len(common_targets) != 1:
+        problems.append("pyvenv home does not identify one coherent base executable")
+        real_base_executable = None
+    else:
+        real_base_executable = next(iter(common_targets))
+        if not _inside(real_base_executable, real_base_prefix):
+            problems.append("declared base executable is outside the base installation")
+    if len({path.resolve() for path in declared_paths}) > 1:
+        problems.append("runtime and pyvenv base executable identities differ")
+    executable_parents = {prefix / "bin", prefix / "Scripts"}
+    if executable.parent not in executable_parents or not executable.is_file():
+        problems.append("venv interpreter is not a regular executable in the venv")
+    elif real_base_executable is not None and executable.resolve() not in {
+        real_base_executable, executable,
+    }:
+        problems.append("venv interpreter does not bind the declared base executable")
+    expected_system_site = str(venv_policy["include_system_site_packages"]).lower()
+    if config.get("include-system-site-packages", "").lower() != expected_system_site:
+        problems.append("pyvenv must disable system site-packages")
+    configured_version = config.get("version_info", config.get("version", ""))
+    if configured_version != identity["version"]:
+        problems.append("pyvenv version differs from the running interpreter")
+    if config.get("implementation", venv_policy["implementation"]) != \
+            venv_policy["implementation"]:
+        problems.append("pyvenv implementation must be CPython")
+    if identity["enable_user_site"] is not False:
+        problems.append("active interpreter must disable user site-packages")
+    for key in ("purelib", "platlib"):
+        path = Path(identity[key]).absolute()
+        if not _inside(path.resolve(), real_prefix) \
+                or path.name != "site-packages":
+            problems.append(f"{key} escapes the active-venv site-packages root")
+    return problems
+
+
+def _active_venv_identity() -> tuple[dict[str, Any] | None, list[str]]:
+    prefix = Path(sys.prefix).absolute()
+    config, problems = _read_pyvenv(prefix / "pyvenv.cfg")
+    identity = {
+        "prefix": str(prefix),
+        "base_prefix": sys.base_prefix,
+        "exec_prefix": sys.exec_prefix,
+        "base_exec_prefix": sys.base_exec_prefix,
+        "executable": sys.executable,
+        "base_executable": getattr(sys, "_base_executable", ""),
+        "version": ".".join(str(part) for part in sys.version_info[:3]),
+        "purelib": sysconfig.get_path("purelib"),
+        "platlib": sysconfig.get_path("platlib"),
+        "enable_user_site": site.ENABLE_USER_SITE,
+    }
+    problems += _venv_identity_problems(
+        identity, config,
+        expected_prefix=REPO_ROOT / load_policy()["python"]["venv"]["path"],
+    )
+    return identity, problems
+
+
+def _venv_receipt() -> dict[str, str]:
+    """Return non-secret runtime identity evidence from the validated process."""
+    identity, problems = _active_venv_identity()
+    if problems or identity is None:
+        raise RuntimeError("cannot emit an unvalidated venv identity receipt")
+    dependency = load_policy()["python"]["external_dependencies"]["yaml"]
+    distribution = importlib.metadata.distribution(dependency["distribution"])
+    spec = importlib.util.find_spec("yaml")
+    if spec is None or spec.origin is None:
+        raise RuntimeError("cannot emit a receipt without the yaml import origin")
+    config, config_problems = _read_pyvenv(Path(identity["prefix"]) / "pyvenv.cfg")
+    if config_problems:
+        raise RuntimeError("cannot emit a receipt without pyvenv identity")
+    base_executable = identity.get("base_executable") or config.get("executable")
+    if not base_executable:
+        home = Path(config["home"])
+        names = load_policy()["python"]["venv"]["home_interpreter_names"]
+        candidates = [home / name for name in names if (home / name).is_file()]
+        if len({candidate.resolve() for candidate in candidates}) != 1:
+            raise RuntimeError("cannot emit a receipt without one base executable")
+        base_executable = str(candidates[0])
+    return {
+        "base_executable": str(Path(base_executable).resolve()),
+        "base_prefix": str(Path(identity["base_prefix"]).resolve()),
+        "dependency": dependency["distribution"],
+        "dependency_origin": str(Path(spec.origin).resolve()),
+        "dependency_version": distribution.version,
+        "executable": str(Path(identity["executable"]).resolve()),
+        "platlib": str(Path(identity["platlib"]).resolve()),
+        "prefix": str(Path(identity["prefix"]).resolve()),
+        "purelib": str(Path(identity["purelib"]).resolve()),
+        "python_version": identity["version"],
+    }
 
 
 def _trusted_paths(dependency_root: Path | None) -> list[Path]:
@@ -596,6 +836,18 @@ def _inheritance_call_problems(
 
 def _static_problems(policy: Mapping[str, Any], files: Mapping[str, Path]) -> list[str]:
     problems: list[str] = []
+    venv_policy = policy["python"].get("venv", {})
+    expected_home_names = [
+        f"python{policy['python']['major_minor']}", "python3", "python",
+        f"python{policy['python']['major_minor']}.exe", "python.exe",
+    ]
+    if venv_policy != {
+        "path": ".venv",
+        "implementation": "CPython",
+        "include_system_site_packages": False,
+        "home_interpreter_names": expected_home_names,
+    }:
+        problems.append("Python active-venv identity policy is non-canonical")
     surfaces = _policy_surfaces(policy)
     expected_files = surfaces | {META_GATE}
     if len(surfaces) != policy["python"]["subject_count"] or set(files) != expected_files:
@@ -668,6 +920,12 @@ def _static_problems(policy: Mapping[str, Any], files: Mapping[str, Path]) -> li
     }
     if external_graph != expected_external:
         problems.append(f"Python external dependency graph drifted: {external_graph}")
+    declared_dependencies = set(policy["python"].get("external_dependencies", {}))
+    observed_dependencies = {
+        dependency for values in external_graph.values() for dependency in values
+    }
+    if declared_dependencies != observed_dependencies:
+        problems.append("Python dependency policy differs from external import graph")
     if actual_edges != policy["process_edges"]:
         problems.append(f"Python process-edge registry drifted: actual={actual_edges}")
     referenced_profiles = {
@@ -722,6 +980,114 @@ def _run_import(tool: str, cwd: Path, dependency_root: Path | None) -> str | Non
     if completed.returncode != 0 or "Traceback (most recent call last):" in completed.stdout:
         return f"{tool}: cold import failed: {completed.stdout[-1600:].strip()}"
     return None
+
+
+def _venv_selftest(root: Path, policy: Mapping[str, Any]) -> list[str]:
+    problems: list[str] = []
+    dependency = policy["python"]["external_dependencies"]["yaml"]
+    active_identity, active_problems = _active_venv_identity()
+    if active_problems or active_identity is None:
+        return ["cannot derive venv selftests from the active runtime identity"]
+    active_config, config_problems = _read_pyvenv(
+        Path(active_identity["prefix"]) / "pyvenv.cfg"
+    )
+    if config_problems:
+        return ["cannot derive venv selftests from the active pyvenv.cfg"]
+    base_executable = Path(active_identity["base_executable"])
+    valid_identities: dict[str, dict[str, Any]] = {}
+    for label, prefix in {
+        "local-captured-shape": root / "local-venv",
+        "setup-uv-hosted-shape": root / "workspace" / ".venv",
+    }.items():
+        executable = prefix / "bin" / "python3"
+        executable.parent.mkdir(parents=True)
+        executable.symlink_to(base_executable)
+        site_root = prefix / "lib" / "python3.13" / "site-packages"
+        site_root.mkdir(parents=True)
+        identity = dict(active_identity)
+        identity.update({
+            "prefix": str(prefix), "exec_prefix": str(prefix),
+            "executable": str(executable), "purelib": str(site_root),
+            "platlib": str(site_root),
+        })
+        config = dict(active_config)
+        if _venv_identity_problems(identity, config):
+            problems.append(f"{label} active-venv parity selftest failed")
+        valid_identities[label] = identity
+
+    valid = valid_identities["setup-uv-hosted-shape"]
+    config = dict(active_config)
+    optional_base = dict(valid, base_executable="")
+    if _venv_identity_problems(optional_base, config):
+        problems.append("optional _base_executable selftest rejected pyvenv home identity")
+    outside_site = root / "outside" / "site-packages"
+    outside_site.mkdir(parents=True)
+    wrong_prefix = dict(valid, purelib=str(outside_site), platlib=str(outside_site))
+    wrong_version = dict(config, version_info="3.12.0")
+    wrong_config_executable = dict(config, executable=str(root / "other-python"))
+    user_site = dict(valid, enable_user_site=True)
+    wrong_base_prefix = dict(valid, base_prefix=str(root / "other-base"))
+    wrong_base_executable = dict(valid, base_executable=str(root / "other-python"))
+    symlink_site = root / "symlink" / "site-packages"
+    symlink_site.parent.mkdir()
+    symlink_site.symlink_to(outside_site, target_is_directory=True)
+    symlink_identity = dict(valid, purelib=str(symlink_site), platlib=str(symlink_site))
+    for label, identity, candidate_config in (
+        ("wrong-prefix", wrong_prefix, config),
+        ("wrong-version", valid, wrong_version),
+        ("wrong-config-executable", valid, wrong_config_executable),
+        ("user-site", user_site, config),
+        ("wrong-base-prefix", wrong_base_prefix, config),
+        ("wrong-base-executable", wrong_base_executable, config),
+        ("symlink-site", symlink_identity, config),
+    ):
+        if not _venv_identity_problems(identity, candidate_config):
+            problems.append(f"active-venv negative selftest passed: {label}")
+    linked_prefix = root / "linked-venv"
+    linked_prefix.symlink_to(Path(valid["prefix"]), target_is_directory=True)
+    if not _venv_identity_problems(valid, config, expected_prefix=linked_prefix):
+        problems.append("symlinked venv-root negative selftest passed")
+
+    valid_lock = (
+        f"{dependency['distribution'].lower()}=={dependency['version']} \\\n"
+        f"    --hash=sha256:{'a' * 64}\n"
+    )
+    if _locked_dependency_problems(valid_lock, dependency):
+        problems.append("hash-pinned dependency selftest rejected canonical input")
+    for label, text in (
+        ("unpinned", f"{dependency['distribution'].lower()}=={dependency['version']}\n"),
+        ("wrong-version", f"{dependency['distribution'].lower()}==0.0.0 \\\n"
+         f"    --hash=sha256:{'a' * 64}\n"),
+    ):
+        if not _locked_dependency_problems(text, dependency):
+            problems.append(f"dependency-lock negative selftest passed: {label}")
+
+    site_root = Path(valid["purelib"])
+    dist_info = site_root / "pyyaml-6.0.3.dist-info"
+    dist_info.mkdir()
+    module = site_root / "yaml"
+    module.mkdir()
+    origin = module / "__init__.py"
+    origin.write_text("fixture\n", encoding="utf-8")
+    if _dependency_path_problems(
+        {site_root.resolve()}, site_root, dist_info, origin, dependency["module_path"],
+    ):
+        problems.append("dependency-origin selftest rejected canonical venv paths")
+    escaped = root / "escaped-yaml.py"
+    escaped.write_text("fixture\n", encoding="utf-8")
+    origin.unlink()
+    origin.symlink_to(escaped)
+    if not _dependency_path_problems(
+        {site_root.resolve()}, site_root, dist_info, origin, dependency["module_path"],
+    ):
+        problems.append("dependency-origin symlink escape selftest passed")
+    config_file = root / "pyvenv.cfg"
+    config_file.write_text("home = /fixture\n", encoding="utf-8")
+    config_link = root / "linked-pyvenv.cfg"
+    config_link.symlink_to(config_file)
+    if not _read_pyvenv(config_link)[1]:
+        problems.append("pyvenv.cfg symlink negative selftest passed")
+    return problems
 
 
 def _selftest(policy: Mapping[str, Any]) -> list[str]:
@@ -815,8 +1181,10 @@ def _selftest(policy: Mapping[str, Any]) -> list[str]:
         if failed != should_fail:
             problems.append(f"workflow invocation selftest failed: {label}")
     with tempfile.TemporaryDirectory() as raw:
-        if not _resource_problems(Path(raw), policy):
+        root = Path(raw)
+        if not _resource_problems(root, policy):
             problems.append("missing-resource selftest failed")
+        problems += _venv_selftest(root, policy)
     return problems
 
 
@@ -870,6 +1238,10 @@ def main() -> int:
             print(f"  - {problem}", file=sys.stderr)
         return 1
     print("check_python_execution_contract: OK")
+    print(
+        "python-execution-receipt: "
+        + json.dumps(_venv_receipt(), sort_keys=True, separators=(",", ":"))
+    )
     return 0
 
 
