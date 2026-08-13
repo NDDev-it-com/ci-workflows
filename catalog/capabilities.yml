@@ -80,21 +80,21 @@ capabilities:
     example: examples/public-oss/scorecard-sarif.yml
     required_permissions:
       - "security-events: write"
-      - "id-token: write"
       - "contents: read"
       - "actions: read"
     required_settings:
       - "Public repository (Scorecard is public-oriented; forks unsupported)"
       - "Code scanning enabled to render SARIF results"
-      - "OpenSSF Scorecard API publish opt-in for the score badge"
+      - "id-token: write only when publish_results is explicitly enabled"
     risks:
       - "Supported triggers are push and schedule on the default branch only; pull_request and workflow_dispatch are experimental"
       - "Do not place under pull_request in caller workflows"
     deprecations: null
-    last_verified: 2026-08-01
+    last_verified: 2026-08-13
     sources:
-      - "https://github.com/ossf/scorecard"
-      - "https://github.com/ossf/scorecard-action"
+      - "https://github.com/ossf/scorecard-action/blob/v2.4.4/README.md"
+      - "https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/using-code-scanning-with-your-existing-ci-system"
+      - "https://docs.github.com/en/actions/sharing-automations/reusing-workflows"
 
   - id: ossf-scorecard-json
     name: OpenSSF Scorecard JSON artifact

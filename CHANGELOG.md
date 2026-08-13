@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- Make `public-scorecard.yml` fail closed outside a public default-branch
+  push/schedule, assign a deterministic SARIF category, and expose the upload
+  identifier. The repository's persistent Scorecard caller now exercises the
+  SARIF path with least privilege, while a machine-readable ledger rejects
+  JSON-only, skipped, wrong-ref, wrong-tool and wrong-analysis evidence (#128).
+
 - Add an explicit, fail-closed non-Docker Gitleaks mode for Linux X64. The
   existing digest-pinned container remains the default; binary execution binds
   version, platform, architecture, official asset size, and SHA-256, rejects

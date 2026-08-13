@@ -141,11 +141,11 @@ jobs:
 ```
 
 OSSF Scorecard runs **on push-to-default + schedule only** (`pull_request` is
-experimental and unsupported by the action), so keep it in its own file. Use
-`public-scorecard-json.yml` when Scorecard should be a check/artifact signal
-instead of a persistent code-scanning alert source. The JSON workflow defaults
-`publish_results: false` because reusable workflow calls do not satisfy the
-OpenSSF Scorecard webapp verification shape for publishing:
+experimental and unsupported by the action), so keep it in its own file. The
+SARIF workflow below uploads persistent Code Scanning results; use
+`public-scorecard-json.yml` instead for an artifact-only signal. Reusable callers
+default to no OpenSSF API publishing because they do not satisfy its workflow
+shape verifier:
 
 ```yaml
 # .github/workflows/scorecard.yml
@@ -156,8 +156,11 @@ on:
 permissions: {}
 jobs:
   scorecard:
-    permissions: { id-token: write, contents: read, actions: read }
-    uses: NDDev-it-com/ci-workflows/.github/workflows/public-scorecard-json.yml@<sha>
+    permissions: { security-events: write, contents: read, actions: read }
+    uses: NDDev-it-com/ci-workflows/.github/workflows/public-scorecard.yml@<sha>
+    with:
+      publish_results: false
+      sarif_category: ossf-scorecard
 ```
 
 ### Private repository (no paid add-ons)

@@ -26,9 +26,10 @@ jobs:
   scorecard:
     permissions:
       security-events: write # Upload the Scorecard SARIF to code scanning.
-      id-token: write # Keyless signing for the publish step.
       contents: read
       actions: read
     uses: NDDev-it-com/ci-workflows/.github/workflows/public-scorecard.yml@<sha>
     with:
       runner: ubuntu-latest
+      publish_results: false # Reusable callers do not satisfy Scorecard's publish verifier.
+      sarif_category: ossf-scorecard

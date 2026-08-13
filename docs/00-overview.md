@@ -142,7 +142,8 @@ For end-to-end caller examples per tier, see the tier docs and the repository
 - Horizon: [Watchlist 2026](watchlist-2026.md)
 - Security deep-dive: [pull_request_target / pwn requests](security/pull-request-target.md)
 - Generated from catalog: [capability matrix](generated/capability-matrix.md) ·
-  [workflow inventory](generated/workflow-inventory.md)
+  [workflow inventory](generated/workflow-inventory.md) ·
+  [Scorecard SARIF evidence](generated/scorecard-evidence.md)
 
 ---
 Last verified: 2026-07-08

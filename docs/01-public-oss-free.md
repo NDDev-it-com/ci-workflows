@@ -67,7 +67,8 @@ Copilot Autofix.
 
 Scorecard scores your repository against supply-chain best practices (pinned
 actions, branch protection, token permissions, etc.). Use `public-scorecard.yml`
-for SARIF/code-scanning upload, or `public-scorecard-json.yml` when Scorecard
+for SARIF/code-scanning upload with a deterministic `sarif_category`, or
+`public-scorecard-json.yml` when Scorecard
 should remain a JSON artifact/check signal instead of a persistent
 code-scanning alert source. `public-scorecard-json.yml` defaults
 `publish_results: false` because reusable workflow calls do not satisfy the
@@ -88,11 +89,18 @@ permissions: {}
 jobs:
   scorecard:
     permissions:
-      id-token: write
+      security-events: write
       contents: read
       actions: read
-    uses: NDDev-it-com/ci-workflows/.github/workflows/public-scorecard-json.yml@<full-sha>
+    uses: NDDev-it-com/ci-workflows/.github/workflows/public-scorecard.yml@<full-sha>
+    with:
+      publish_results: false
+      sarif_category: ossf-scorecard
 ```
+
+Grant `id-token: write` only when intentionally enabling `publish_results`.
+That upstream publishing path has additional workflow-shape verification and is
+separate from accepting SARIF in GitHub Code Scanning.
 
 <a id="dependency-review"></a>
 ## Dependency review — `public-dependency-review.yml`
