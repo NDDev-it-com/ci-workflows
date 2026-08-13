@@ -10,6 +10,10 @@
   cleanup can no longer produce a runtime-proof claim. Release publishers and
   promotion remain explicitly blocked where honest proof needs external signing
   authority, protected environments or irreversible transparency-log writes.
+- Make side-effect observers fail closed: label evidence now requires the `ci`
+  label to be absent before the caller, and benchmark ref probes accept only an
+  explicit HTTP 404 as absence rather than treating API/auth/network errors as
+  missing state.
 - Omit `configFile` entirely for an empty PR-hygiene commitlint configuration,
   preserving upstream default discovery; validate and pass a non-empty caller
   path exactly. Passing an empty key made cosmiconfig read the checkout
