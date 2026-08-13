@@ -273,7 +273,7 @@ jobs:
             --workflow .github/workflows/python-ci.yml --job python \
             --step 'Run tests' \
             --bad tests/fixtures/negative/python --good tests/fixtures/python \
-            --input test_command='python -m pytest -q'
+            --python-input test_command='-m pytest -q'
 
       - name: docs-ci must reject a broken relative link
         run: |

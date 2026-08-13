@@ -171,6 +171,38 @@ def _render_invocation(invocation: Invocation) -> str:
     ])
 
 
+def _dependency_python_argv(
+    executable: Path, expected: Path, prefix: Path, module_origin: Path,
+    arguments: str,
+) -> list[str]:
+    """Validate one captured interpreter/dependency shape and return exact argv."""
+    if executable.is_symlink() or executable.resolve() != expected.resolve():
+        raise ValueError("dependency command is not running on the repository interpreter")
+    try:
+        tokens = shlex.split(arguments, posix=True)
+    except ValueError as exc:
+        raise ValueError(f"dependency command arguments are malformed: {exc}") from exc
+    if not tokens or any(token in {"&&", "||", ";", "|", "<", ">"} for token in tokens):
+        raise ValueError("dependency command arguments must be a non-empty argv sequence")
+    if module_origin.is_symlink() or not _inside(module_origin.resolve(), prefix.resolve()):
+        raise ValueError("required dependency is missing or outside the repository venv")
+    return [str(executable), *tokens]
+
+
+def dependency_python_command(arguments: str, required_module: str) -> str:
+    """Bind fixture arguments to the already-verified repository interpreter."""
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.]*", required_module):
+        raise ValueError("dependency module name is invalid")
+    spec = importlib.util.find_spec(required_module)
+    if spec is None or spec.origin is None:
+        raise ValueError(f"required module {required_module!r} is unavailable")
+    argv = _dependency_python_argv(
+        Path(sys.executable), _repository_interpreter(load_policy()),
+        Path(sys.prefix), Path(spec.origin), arguments,
+    )
+    return shlex.join(argv)
+
+
 def _logical_shell_commands(text: str) -> list[tuple[int, str]]:
     """Join only POSIX backslash continuations while retaining start lines."""
     commands: list[tuple[int, str]] = []
@@ -1882,6 +1914,50 @@ def _selftest(policy: Mapping[str, Any]) -> list[str]:
     for source in ("import helper\n", "from helper import VALUE\n"):
         if not _unqualified_sibling_imports(ast.parse(source), sibling_names):
             problems.append("unqualified sibling-import negative selftest failed")
+    canonical_dependency = shlex.join([sys.executable, "-m", "yaml"])
+    try:
+        observed_dependency = dependency_python_command("-m yaml", "yaml")
+    except ValueError as exc:
+        problems.append(f"dependency Python binding selftest rejected canonical input: {exc}")
+    else:
+        if observed_dependency != canonical_dependency:
+            problems.append("dependency Python binding selftest rendered the wrong command")
+    for arguments, module in (
+        ("", "yaml"), ("-m yaml && echo bypass", "yaml"),
+        ("-m missing", "module-that-cannot-exist"),
+    ):
+        try:
+            dependency_python_command(arguments, module)
+        except ValueError:
+            pass
+        else:
+            problems.append("dependency Python binding negative selftest passed")
+    with tempfile.TemporaryDirectory(prefix="ci-workflows-python-binding-") as raw:
+        root = Path(raw)
+        expected = root / ".venv" / "bin" / "python"
+        origin = root / ".venv" / "lib" / "python3.13" / "site-packages" / "pytest" / "__init__.py"
+        expected.parent.mkdir(parents=True)
+        origin.parent.mkdir(parents=True)
+        expected.write_text("fixture\n", encoding="utf-8")
+        origin.write_text("fixture\n", encoding="utf-8")
+        if _dependency_python_argv(expected, expected, root / ".venv", origin, "-m pytest") != [
+            str(expected), "-m", "pytest",
+        ]:
+            problems.append("captured dependency Python binding selftest drifted")
+        outside = root / "outside" / "pytest.py"
+        outside.parent.mkdir()
+        outside.write_text("fixture\n", encoding="utf-8")
+        for executable, module_origin in (
+            (root / "foreign" / "python", origin), (expected, outside),
+        ):
+            try:
+                _dependency_python_argv(
+                    executable, expected, root / ".venv", module_origin, "-m pytest",
+                )
+            except ValueError:
+                pass
+            else:
+                problems.append("foreign dependency Python binding negative selftest passed")
     if not _import_side_effects(ast.parse("import pathlib\npathlib.Path('x').write_text('x')\n")):
         problems.append("import-write selftest failed")
     safe_surfaces = {"registered.py"}

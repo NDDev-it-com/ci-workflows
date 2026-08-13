@@ -15,7 +15,9 @@
   exact repository-interpreter provisioning and one-way `execve` receipts. A
   verified `importlib` package boundary now owns every sibling helper without
   cwd, `PYTHONPATH`, editable-install, or `sys.path` dependence
-  (#129).
+  (#129). Dependency-bearing negative probes bind commands to that exact
+  interpreter and refuse setup/import errors as evidence, so a failing control
+  can never masquerade as proof that bad input was rejected.
 
 - Make `public-scorecard.yml` fail closed outside a public default-branch
   push/schedule, assign a deterministic SARIF category, and expose the upload

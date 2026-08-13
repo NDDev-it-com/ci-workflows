@@ -88,6 +88,13 @@ API, executable origin, argv form, cwd behavior, and environment replacement.
 `os.execve` is the one replacement edge: its third positional mapping is the
 complete child environment, and the registry rejects a missing, duplicated, or
 untyped edge.
+Dependency-bearing negative probes bind their workflow input to the exact
+validated repository interpreter with `--python-input NAME=ARGS`. The harness
+requires pytest to resolve inside that same venv before either fixture runs;
+missing/import/setup failures are reported as `NOT_PROVEN`, while evidence
+requires the bad fixture to fail for its assertion and the clean control to
+complete successfully. Ambient `python`, PATH lookup, and caller-supplied
+interpreter text cannot satisfy this contract.
 GitHub API verifier edges use the `network-gh` profile with an explicit
 repository cwd and only the named `GH_HOST`/`GH_TOKEN` inheritance; this matches
 both byte and JSON API calls rather than treating their explicit cwd as ambient

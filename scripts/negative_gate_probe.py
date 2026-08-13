@@ -45,13 +45,16 @@ from __future__ import annotations
 import argparse
 import os
 import re
+import shlex
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
 from ci_workflows_tools._strict_yaml import strict_load  # noqa: E402
-from ci_workflows_tools.check_python_execution_contract import clean_environment
+from ci_workflows_tools.check_python_execution_contract import (
+    clean_environment, dependency_python_command,
+)
 
 INPUT_EXPR = re.compile(r"\$\{\{\s*inputs\.([A-Za-z_][A-Za-z0-9_]*)\s*\}\}")
 CONTEXT_EXPR = re.compile(r"\$\{\{\s*([A-Za-z_][A-Za-z0-9_.]*)\s*\}\}")
@@ -182,12 +185,39 @@ def main() -> int:
         "--input", action="append", default=[], metavar="NAME=VALUE",
         help="Value for a `${{ inputs.NAME }}` reference in the step's env.",
     )
+    parser.add_argument(
+        "--python-input", action="append", default=[], metavar="NAME=ARGS",
+        help="Bind an input command to the exact repository interpreter. ARGS "
+             "is parsed as argv; the interpreter is never accepted from PATH "
+             "or caller text. The required pytest module must resolve inside "
+             "the same repository venv before either fixture runs.",
+    )
     args = parser.parse_args()
 
     inputs = declared_defaults(Path(args.workflow))
     for item in args.input:
         name, _, value = item.partition("=")
+        if not name or "=" not in item:
+            raise SystemExit("negative_gate_probe: --input requires NAME=VALUE")
         inputs[name] = value
+    ordinary_names = {item.partition("=")[0] for item in args.input}
+    python_names: set[str] = set()
+    for item in args.python_input:
+        name, separator, value = item.partition("=")
+        if not separator or not name or name in ordinary_names or name in python_names:
+            raise SystemExit(
+                "negative_gate_probe: --python-input requires one unique NAME=ARGS "
+                "binding that is not also supplied by --input"
+            )
+        try:
+            inputs[name] = dependency_python_command(value, "pytest")
+        except ValueError as exc:
+            raise SystemExit(f"negative_gate_probe: Python fixture setup is NOT_PROVEN: {exc}")
+        python_names.add(name)
+        print(
+            f"python-fixture-binding: input={name} "
+            f"interpreter={shlex.split(inputs[name], posix=True)[0]} dependency=pytest"
+        )
     contexts = {}
     for item in args.context:
         name, _, value = item.partition("=")
