@@ -60,6 +60,7 @@ from ci_workflows_tools import (
     check_python_execution_contract,
     check_python_syntax,
     check_release_graph,
+    check_release_ledger,
     check_release_promotion_gate,
     check_release_supply_chain,
     check_rulesets,
@@ -102,6 +103,7 @@ CORE = [
     ("release-supply-chain", check_release_supply_chain.check),
     ("release-promotion-gate", check_release_promotion_gate.check),
     ("release-graph", check_release_graph.check),
+    ("release-ledger", check_release_ledger.check),
     ("gate-contract", check_gate_contract.check),
     ("monorepo-routing", check_monorepo_routing.check),
     ("benchmark-contract", check_benchmark_contract.check),
@@ -139,6 +141,7 @@ TOUCHED = [
 SCHEDULED = [
     ("product-facts-calendar", validate_product_facts.check),
     ("runtime-coverage-calendar", validate_runtime_coverage.check),
+    ("release-ledger-tags", check_release_ledger.check_tags),
     ("docs-links", check_docs_links.check),
 ]
 

@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+- Reconcile `CHANGELOG.md` against the tags it claims. `release.yml` checked only
+  the forward direction — the tag being published equals `VERSION` and has one
+  matching heading — so nothing noticed `## [0.11.0] - 2026-07-20` describing a
+  release that was never tagged, sitting between `0.10.0` and `0.11.1` which both
+  were. `check_release_ledger.py` now asserts heading grammar, uniqueness,
+  strictly descending versions, non-increasing dates and agreement with `VERSION`
+  in the blocking tier, and reconciles headings against real tags in the advisory
+  sweep, since whether a tag exists is a property of the refs rather than of the
+  change. `0.8.1` and `0.6.0` carried dates a day before their own tags — one of
+  them placing a patch before the minor it patches — and are corrected to what
+  the tags actually say. `0.11.0` is recorded as known debt with the two ways to
+  resolve it, because creating a tag needs authority a validator should not have.
+
 - Hold `secret-scan.yml`'s container lane to the standard its binary lane already
   met. The binary path is exhaustively allowlisted — version, OS, architecture,
   SHA-256, asset size, exact tar member set, no links or traversal, verified
@@ -1762,7 +1775,7 @@ No functional change from 0.11.0.
   documented semgrep CLI version v1.168.0→v1.169.0. All remain full-SHA pinned
   with `# vX.Y.Z` comments; no workflow behavior change.
 
-## [0.8.1] - 2026-07-11
+## [0.8.1] - 2026-07-12
 
 ### Fixed
 
@@ -1869,7 +1882,7 @@ No functional change from 0.11.0.
   gains negative fixtures proving both the payload-base and explicit-base
   forms fail closed. (RVR-P2-005)
 
-## [0.6.0] - 2026-07-11
+## [0.6.0] - 2026-07-12
 
 ### Added
 

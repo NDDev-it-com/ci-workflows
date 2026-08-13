@@ -2,7 +2,7 @@
   "schema_version": 1,
   "python": {
     "major_minor": "3.13",
-    "subject_count": 44,
+    "subject_count": 45,
     "launcher": "scripts/check_python_execution_contract.py",
     "launcher_prefix": [".venv/bin/python", "-I", "-B", "scripts/check_python_execution_contract.py", "--launch"],
     "syntax_gate_prefix": [".venv/bin/python", "-I", "-B", "scripts/check_python_syntax.py"],
@@ -121,6 +121,7 @@
       "check_permissions.py", "check_pinned_actions.py",
       "check_pr_hygiene_contract.py", "check_privileged_ref_guard.py",
       "check_public_docs.py", "check_release_graph.py",
+      "check_release_ledger.py",
       "check_python_syntax.py",
       "check_release_promotion_gate.py", "check_release_supply_chain.py",
       "check_rulesets.py", "check_runner_routing.py",
@@ -156,6 +157,7 @@
     "check_privileged_ref_guard.py": ["_workflow_yaml", "check_python_execution_contract"],
     "check_public_docs.py": ["_workflow_yaml"],
     "check_release_graph.py": ["_strict_yaml", "_workflow_yaml"],
+    "check_release_ledger.py": ["check_python_execution_contract"],
     "check_release_promotion_gate.py": ["_workflow_yaml", "check_python_execution_contract"],
     "check_release_supply_chain.py": ["_workflow_yaml", "check_python_execution_contract"],
     "check_runner_routing.py": ["_strict_yaml", "_workflow_yaml", "check_runtime_requirements"],
@@ -180,7 +182,8 @@
       "check_pr_hygiene_contract", "check_privileged_ref_guard",
       "check_public_docs", "check_python_execution_contract",
       "check_python_syntax",
-      "check_release_graph", "check_release_promotion_gate",
+      "check_release_graph", "check_release_ledger",
+      "check_release_promotion_gate",
       "check_release_supply_chain", "check_rulesets", "check_runner_routing",
       "check_runtime_requirements", "check_scorecard_evidence_contract",
       "check_secret_scan_contract",
@@ -217,6 +220,7 @@
       "_probe_sanitize": {"count": 1, "profile": "launcher-clean"},
       "_run_import": {"count": 1, "profile": "launcher-clean"}
     },
+    "check_release_ledger.py": {"check_tags": {"count": 2, "profile": "external-tool"}},
     "check_release_promotion_gate.py": {"_run": {"count": 1, "profile": "isolated-python-fixture"}},
     "check_release_supply_chain.py": {
       "_check_gnu_tar_archive": {"count": 3, "profile": "external-tool-fixture"},
