@@ -58,6 +58,7 @@ groups:
       - .github/workflows/public-codeql.yml
       - .github/workflows/public-dependency-review.yml
       - .github/workflows/public-scorecard-json.yml
+      - .github/workflows/public-scorecard-analysis.yml
       - .github/workflows/public-scorecard.yml
       - .github/workflows/qt-ci.yml
       - .github/workflows/r-ci.yml

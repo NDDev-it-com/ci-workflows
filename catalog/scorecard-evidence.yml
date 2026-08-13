@@ -1,4 +1,57 @@
 schema: nddev-ci-scorecard-evidence/v1
+entrypoint_matrix:
+  - identity: analysis-only
+    workflow: .github/workflows/public-scorecard-analysis.yml
+    public_execution_tier: conditional-public-oss
+    private_execution_tier: unsupported
+    runner_class: github-hosted-standard
+    capability: sarif-analysis-no-publication
+    permissions:
+      actions: read
+      contents: read
+    harden_runner:
+      required: true
+      pin: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920
+      egress_policy: audit
+      position: first
+    allowed_callers:
+      visibility: public
+      repository_kind: non-fork
+      events: [push, schedule]
+      ref: actual-default-branch
+      runner: ubuntu-latest
+    evidence_obligations:
+      - job-and-analysis-step-success
+      - no-oidc-or-write-permission
+      - no-artifact-or-sarif-upload-step
+      - exact-caller-and-reusable-sha
+  - identity: publish
+    workflow: .github/workflows/public-scorecard.yml
+    public_execution_tier: public-oss
+    private_execution_tier: unsupported
+    runner_class: github-hosted-standard
+    capability: scorecard-publication-and-sarif-upload
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+      security-events: write
+    harden_runner:
+      required: true
+      pin: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920
+      egress_policy: audit
+      position: first
+    allowed_callers:
+      visibility: public
+      repository_kind: non-fork
+      events: [push, schedule]
+      ref: actual-default-branch
+      runner: ubuntu-latest
+    evidence_obligations:
+      - analysis-and-upload-steps-success
+      - exact-caller-and-reusable-sha
+      - accepted-code-scanning-analysis
+      - exact-ref-sha-tool-and-category
 attempts:
   - attempt: 1
     classification: product-failure
@@ -7,12 +60,27 @@ attempts:
     run_url: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31662081168
     conclusion: startup_failure
     reason: "Nested scorecard job requested id-token: write while its publish_results:false caller allowed id-token: none."
+  - attempt: 2
+    classification: product-failure
+    caller_sha: d1d5376da29bb2c494498630e04c5454287575a4
+    run_id: 31662731064
+    run_url: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31662731064
+    conclusion: startup_failure
+    reason: "GitHub preflight validated the skipped publish job before if and rejected its write permissions for the read-only caller."
+  - attempt: 3
+    classification: contract-test-failure
+    base_sha: d1d5376da29bb2c494498630e04c5454287575a4
+    issue_receipt: https://github.com/NDDev-it-com/ci-workflows/issues/128#issuecomment-5275483568
+    command: python3 scripts/validate_all.py --tier core
+    failed_contract: harden-runner-contract
+    reason: "The physical public analysis entrypoint was absent from the exact Harden-Runner public/GHAS allowlist."
 designated_consumer:
   repository: NDDev-it-com/ci-workflows
   visibility: public
   default_branch: main
   caller_workflow: .github/workflows/scorecard.yml
   reusable_workflow: .github/workflows/public-scorecard.yml
+  analysis_reusable_workflow: .github/workflows/public-scorecard-analysis.yml
   supported_events: [push, schedule]
   runner: ubuntu-latest
   publish_results: true

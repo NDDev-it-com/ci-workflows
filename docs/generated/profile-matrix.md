@@ -10,10 +10,10 @@ catalogs, so prose cannot drift away from it.
 
 | Profile | Visibility | Base plan | C/S/Q | Compute billing | Licence billing | CodeQL | Runner | Provenance | Enforcement | Fixed cost | Programme |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `public-free-standalone` | public | free, pro, team, enterprise-cloud | `000` | public-standard-unmetered | no-paid-addons | default | github-hosted-standard | attestations | active | free | 64 run / 6 conditional / 4 unavailable |
-| `private-free-max` | private | free, pro, team | `000` | private-self-hosted | no-paid-addons | none | self-hosted-ephemeral | checksums | active | free | 28 run / 29 conditional / 17 unavailable |
-| `public-enterprise-max` | public | enterprise-cloud | `111` | public-standard-unmetered | selected-addons | default | github-hosted-standard | attestations | active | free | 65 run / 6 conditional / 3 unavailable |
-| `enterprise-full-private-fixed80` | private, internal | enterprise-cloud | `111` | private-self-hosted | fixed-license-envelope | default | self-hosted-ephemeral | attestations | active | $80/month | 36 run / 35 conditional / 3 unavailable |
+| `public-free-standalone` | public | free, pro, team, enterprise-cloud | `000` | public-standard-unmetered | no-paid-addons | default | github-hosted-standard | attestations | active | free | 64 run / 7 conditional / 4 unavailable |
+| `private-free-max` | private | free, pro, team | `000` | private-self-hosted | no-paid-addons | none | self-hosted-ephemeral | checksums | active | free | 28 run / 29 conditional / 18 unavailable |
+| `public-enterprise-max` | public | enterprise-cloud | `111` | public-standard-unmetered | selected-addons | default | github-hosted-standard | attestations | active | free | 65 run / 7 conditional / 3 unavailable |
+| `enterprise-full-private-fixed80` | private, internal | enterprise-cloud | `111` | private-self-hosted | fixed-license-envelope | default | self-hosted-ephemeral | attestations | active | $80/month | 36 run / 35 conditional / 4 unavailable |
 
 ## Entitlement combinations
 

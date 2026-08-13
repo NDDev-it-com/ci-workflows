@@ -230,6 +230,17 @@ entries:
     last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621986194
     proven_digest: 5dbe99d99e4aedcc7893a794e829fe78060ea01479fa27e1db27c812ea9cc735
     waiver: null
+  - workflow: .github/workflows/public-scorecard-analysis.yml
+    criticality: supporting
+    status: unverified
+    evidence: "Physical read-only entrypoint staged for a fresh owned public default-branch run; static parity is not runtime proof."
+    last_run: null
+    runtime_debt:
+      risk: medium
+      barrier: event-context
+      required_capability: Default-branch Scorecard analysis with jobs nonempty and no publication authority.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/128
+    waiver: null
   - workflow: .github/workflows/public-scorecard.yml
     criticality: supporting
     status: unverified

@@ -248,18 +248,52 @@ def scorecard_evidence_ledger() -> str:
         f"| Default ref | `refs/heads/{consumer['default_branch']}` |",
         f"| Caller | `{consumer['caller_workflow']}` |",
         f"| Reusable | `{consumer['reusable_workflow']}` |",
+        f"| Analysis reusable | `{consumer['analysis_reusable_workflow']}` |",
         f"| Events | {', '.join(consumer['supported_events'])} |",
         f"| Runner | `{consumer['runner']}` |",
         f"| SARIF category / tool | `{consumer['sarif_category']}` / `{consumer['sarif_tool']}` |",
         f"| Scorecard API publish | `{'enabled' if consumer['publish_results'] else 'disabled'}` |",
     ]
+    lines.extend([
+        "", "## Entrypoint tier and authority matrix", "",
+        "| Entrypoint | Public / private tier | Runner | Capability | Permissions | Harden-Runner | Allowed callers | Evidence |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- |",
+    ])
+    for row in contract["entrypoint_matrix"]:
+        permissions = ", ".join(
+            f"{name}:{level}" for name, level in row["permissions"].items()
+        )
+        harden = row["harden_runner"]
+        callers = row["allowed_callers"]
+        caller_text = (
+            f"{callers['visibility']} {callers['repository_kind']}; "
+            f"{','.join(callers['events'])}; {callers['ref']}; {callers['runner']}"
+        )
+        evidence = ", ".join(row["evidence_obligations"])
+        lines.append(
+            f"| `{row['workflow']}` | `{row['public_execution_tier']}` / "
+            f"`{row['private_execution_tier']}` | `{row['runner_class']}` | "
+            f"`{row['capability']}` | `{permissions}` | "
+            f"`{harden['pin']}`; `{harden['position']}`; `{harden['egress_policy']}` | "
+            f"{caller_text} | {evidence} |"
+        )
     attempts = contract.get("attempts") or []
     if attempts:
         attempt = attempts[-1]
-        lines.extend([
-            f"| Preserved failed attempt | `{attempt['attempt']}` / `{attempt['classification']}` |",
-            f"| Failed run | [run]({attempt['run_url']}) (`{attempt['caller_sha']}`) |",
-        ])
+        lines.append(
+            f"| Preserved failed attempt | `{attempt['attempt']}` / "
+            f"`{attempt['classification']}` |"
+        )
+        if attempt.get("run_url"):
+            lines.append(
+                f"| Failed run | [run]({attempt['run_url']}) "
+                f"(`{attempt['caller_sha']}`) |"
+            )
+        else:
+            lines.append(
+                f"| Failure receipt | [issue receipt]({attempt['issue_receipt']}) "
+                f"(base `{attempt['base_sha']}`) |"
+            )
     if proof:
         lines.extend([
             f"| Runtime status | `accepted` |",

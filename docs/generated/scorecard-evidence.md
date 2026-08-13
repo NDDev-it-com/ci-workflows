@@ -11,12 +11,20 @@ private, fork, skipped-step, wrong-tool, and wrong-category runs are rejected.
 | Default ref | `refs/heads/main` |
 | Caller | `.github/workflows/scorecard.yml` |
 | Reusable | `.github/workflows/public-scorecard.yml` |
+| Analysis reusable | `.github/workflows/public-scorecard-analysis.yml` |
 | Events | push, schedule |
 | Runner | `ubuntu-latest` |
 | SARIF category / tool | `ossf-scorecard` / `Scorecard` |
 | Scorecard API publish | `enabled` |
-| Preserved failed attempt | `1` / `product-failure` |
-| Failed run | [run](https://github.com/NDDev-it-com/ci-workflows/actions/runs/31662081168) (`1c5545457b36d6875a43695902fca66a02136a18`) |
+
+## Entrypoint tier and authority matrix
+
+| Entrypoint | Public / private tier | Runner | Capability | Permissions | Harden-Runner | Allowed callers | Evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `.github/workflows/public-scorecard-analysis.yml` | `conditional-public-oss` / `unsupported` | `github-hosted-standard` | `sarif-analysis-no-publication` | `actions:read, contents:read` | `step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920`; `first`; `audit` | public non-fork; push,schedule; actual-default-branch; ubuntu-latest | job-and-analysis-step-success, no-oidc-or-write-permission, no-artifact-or-sarif-upload-step, exact-caller-and-reusable-sha |
+| `.github/workflows/public-scorecard.yml` | `public-oss` / `unsupported` | `github-hosted-standard` | `scorecard-publication-and-sarif-upload` | `actions:read, contents:read, id-token:write, security-events:write` | `step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920`; `first`; `audit` | public non-fork; push,schedule; actual-default-branch; ubuntu-latest | analysis-and-upload-steps-success, exact-caller-and-reusable-sha, accepted-code-scanning-analysis, exact-ref-sha-tool-and-category |
+| Preserved failed attempt | `3` / `contract-test-failure` |
+| Failure receipt | [issue receipt](https://github.com/NDDev-it-com/ci-workflows/issues/128#issuecomment-5275483568) (base `d1d5376da29bb2c494498630e04c5454287575a4`) |
 | Runtime status | `pending post-merge default-branch proof` |
 
 ---

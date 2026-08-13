@@ -69,6 +69,7 @@ tools:
       - .github/workflows/public-codeql.yml
       - .github/workflows/public-dependency-review.yml
       - .github/workflows/public-scorecard-json.yml
+      - .github/workflows/public-scorecard-analysis.yml
       - .github/workflows/public-scorecard.yml
       - .github/workflows/release.yml
       - .github/workflows/zizmor-sarif.yml
@@ -103,6 +104,7 @@ tools:
     current_version: "v2.4.4"
     pin: "ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc"
     used_by:
+      - .github/workflows/public-scorecard-analysis.yml
       - .github/workflows/public-scorecard.yml
       - .github/workflows/public-scorecard-json.yml
     last_verified: "2026-07-04"
@@ -164,6 +166,7 @@ tools:
       - .github/workflows/public-codeql.yml
       - .github/workflows/public-dependency-review.yml
       - .github/workflows/public-scorecard-json.yml
+      - .github/workflows/public-scorecard-analysis.yml
       - .github/workflows/public-scorecard.yml
       - .github/workflows/python-ci.yml
       - .github/workflows/qt-ci.yml

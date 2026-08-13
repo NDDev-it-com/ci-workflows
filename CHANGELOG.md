@@ -10,6 +10,10 @@
 - Split Scorecard analysis-only and publication into exact mutually exclusive
   jobs. The analysis-only path cannot request OIDC or Code Scanning writes;
   publication retains only the permissions needed for provenance and SARIF.
+- Physically separate the read-only Scorecard graph into
+  `public-scorecard-analysis.yml`. GitHub validates every nested job's maximum
+  permissions before evaluating job conditions, so separate reusable files are
+  required to prevent a skipped publish job from invalidating a read-only call.
 
 - Add an explicit, fail-closed non-Docker Gitleaks mode for Linux X64. The
   existing digest-pinned container remains the default; binary execution binds
