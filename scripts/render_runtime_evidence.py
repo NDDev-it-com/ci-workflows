@@ -25,8 +25,8 @@ def render(results: dict[str, Any], proves: dict[str, str], run_url: str,
         "Only a top-level reusable caller result of `success` is eligible evidence.",
         "Failed, cancelled, skipped, or missing rows prove nothing and fail this summary.",
         "A successful row still proves only the deliberately enabled fixture path.", "",
-        "| Workflow | Caller job | Result | Eligible | proven_digest |",
-        "| --- | --- | --- | --- | --- |",
+        "| Workflow | Caller job | Result | Eligible | Repair context | proven_digest |",
+        "| --- | --- | --- | --- | --- | --- |",
     ]
     for job, workflow in sorted(proves.items(), key=lambda item: (item[1], item[0])):
         result = str((results.get(job) or {}).get("result", "missing"))
@@ -36,11 +36,16 @@ def render(results: dict[str, Any], proves: dict[str, str], run_url: str,
             digest = "FILE MISSING"
             result = "missing"
         eligible = result == "success"
+        repair = (
+            "none"
+            if eligible
+            else "preserve first failure; inspect caller logs; fix cause; prove on a new run"
+        )
         if not eligible:
             failures.append(f"{job} ({workflow}) result={result}")
         lines.append(
             f"| `{workflow}` | `{job}` | `{result}` | "
-            f"{'yes' if eligible else 'NO'} | `{digest}` |"
+            f"{'yes' if eligible else 'NO'} | {repair} | `{digest}` |"
         )
     if failures:
         lines.extend(["", "Evidence rejected:", *[f"- {item}" for item in failures]])
@@ -90,6 +95,15 @@ def main() -> int:
         return 2
     summary, failures = render(results, proves, run_url)
     print(summary, end="")
+    telemetry = {
+        job: {
+            "workflow": workflow,
+            "result": str((results.get(job) or {}).get("result", "missing")),
+            "eligible": str((results.get(job) or {}).get("result", "missing")) == "success",
+        }
+        for job, workflow in sorted(proves.items())
+    }
+    print("RUNTIME_EVIDENCE_JSON=" + json.dumps(telemetry, sort_keys=True, separators=(",", ":")))
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
         with open(summary_path, "a", encoding="utf-8") as handle:
