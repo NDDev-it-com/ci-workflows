@@ -179,9 +179,9 @@ Choosing a runner is choosing a machine, and permissions do not tell you what
 that machine must provide. `catalog/capabilities.yml` now states it:
 `runtime_requirements` names host capabilities a workflow actually uses.
 
-The surface is small, and knowing that is the useful part. **Of 46 reusables, 44
-need nothing but a shell by default.** Exactly two default modes need a
-container runtime:
+The surface is small, and knowing that is the useful part. **Almost every
+reusable needs nothing but a shell by default.** Exactly two default modes need
+a container runtime:
 
 | Workflow | Why |
 | --- | --- |

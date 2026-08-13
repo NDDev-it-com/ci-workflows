@@ -284,7 +284,7 @@ tools:
     pin: "swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9"
     used_by:
       - .github/workflows/swift-ci.yml
-    last_verified: 2026-07-25
+    last_verified: "2026-07-25"
 
   - id: setup-r
     name: r-lib/actions/setup-r
@@ -434,7 +434,7 @@ tools:
     pin: "bridgecrewio/checkov-action@9b70310bcd306d11740313070b940167d6b23085"
     used_by:
       - .github/workflows/iac-scan.yml
-    last_verified: 2026-07-25
+    last_verified: "2026-07-25"
 
   - id: github-action-benchmark
     name: benchmark-action/github-action-benchmark
@@ -457,7 +457,7 @@ tools:
       - .github/workflows/benchmark.yml
       - .github/workflows/benchmark-compare.yml
       - .github/workflows/mutation-testing.yml
-    last_verified: 2026-07-25
+    last_verified: "2026-07-25"
 
   - id: setup-uv
     name: astral-sh/setup-uv
@@ -535,7 +535,7 @@ tools:
     used_by:
       - .github/workflows/java-ci.yml
       - .github/workflows/kotlin-android-ci.yml
-    last_verified: 2026-07-25
+    last_verified: "2026-07-25"
 
   - id: setup-terraform
     name: hashicorp/setup-terraform

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "python": {
     "major_minor": "3.13",
-    "subject_count": 42,
+    "subject_count": 45,
     "launcher": "scripts/check_python_execution_contract.py",
     "launcher_prefix": [".venv/bin/python", "-I", "-B", "scripts/check_python_execution_contract.py", "--launch"],
     "syntax_gate_prefix": [".venv/bin/python", "-I", "-B", "scripts/check_python_syntax.py"],
@@ -27,6 +27,7 @@
     "invocation_documents": {
       ".agents/skills/ci-consumer-adoption/SKILL.md": {"role": "repository-launcher", "language": "markdown"},
       ".agents/skills/nddev-repo-flow/SKILL.md": {"role": "repository-launcher", "language": "markdown"},
+      ".claude/CLAUDE.md": {"role": "repository-launcher", "language": "markdown"},
       ".claude/skills/ci-consumer-adoption/SKILL.md": {"role": "repository-launcher", "language": "markdown"},
       ".claude/skills/nddev-repo-flow/SKILL.md": {"role": "repository-launcher", "language": "markdown"},
       "AGENTS.md": {"role": "repository-launcher", "language": "markdown"},
@@ -40,6 +41,10 @@
       "examples/private-free/security.yml": {"role": "consumer-command", "language": "yaml"},
       "scripts/resolve_profile.py": {"role": "repository-launcher", "language": "python"},
       "scripts/validate_all.py": {"role": "repository-launcher", "language": "python"}
+    },
+    "invocation_document_exemptions": {
+      ".gds/repository.yaml": "Generated estate projection owned by the control plane; its verification command is stale after the launcher split and is tracked in NDDev-it-com/github-device-sync#176. A hand edit here is reverted by the next gds run.",
+      "catalog/scorecard-evidence.yml": "Historical evidence record of a command as it was actually run. Rewriting it to the current launcher form would falsify the receipt."
     },
     "source_classes": {
       "production_workflows": ".github/workflows/*.yml",
@@ -106,15 +111,17 @@
     "shell-fixture": {"api": "subprocess", "executable": "path-search", "argv": "sequence", "cwd": "explicit-or-preserve", "environment": "replace-clean"}
   },
   "surface_groups": {
-    "library": ["_runners.py", "_workflow_yaml.py"],
+    "library": ["_json_schema.py", "_runners.py", "_workflow_yaml.py"],
     "read_only_validator": [
       "_strict_yaml.py", "check_actionlint_contract.py",
-      "check_benchmark_contract.py", "check_docs_links.py", "check_examples.py",
+      "check_benchmark_contract.py", "check_docs_links.py", "check_documented_commands.py",
+      "check_examples.py",
       "check_gate_contract.py", "check_harden_runner_contract.py",
       "check_merge_group.py", "check_monorepo_routing.py",
       "check_permissions.py", "check_pinned_actions.py",
       "check_pr_hygiene_contract.py", "check_privileged_ref_guard.py",
       "check_public_docs.py", "check_release_graph.py",
+      "check_release_ledger.py",
       "check_python_syntax.py",
       "check_release_promotion_gate.py", "check_release_supply_chain.py",
       "check_rulesets.py", "check_runner_routing.py",
@@ -134,9 +141,11 @@
   },
   "sibling_imports": {
     "__init__.py": [],
+    "_json_schema.py": [],
     "_workflow_yaml.py": ["_strict_yaml"],
     "check_actionlint_contract.py": ["_workflow_yaml", "check_python_execution_contract"],
     "check_benchmark_contract.py": ["_workflow_yaml"],
+    "check_documented_commands.py": ["_workflow_yaml"],
     "check_examples.py": ["_runners", "_workflow_yaml"],
     "check_gate_contract.py": ["_strict_yaml", "_workflow_yaml", "check_python_execution_contract"],
     "check_harden_runner_contract.py": ["_workflow_yaml"],
@@ -148,6 +157,7 @@
     "check_privileged_ref_guard.py": ["_workflow_yaml", "check_python_execution_contract"],
     "check_public_docs.py": ["_workflow_yaml"],
     "check_release_graph.py": ["_strict_yaml", "_workflow_yaml"],
+    "check_release_ledger.py": ["check_python_execution_contract"],
     "check_release_promotion_gate.py": ["_workflow_yaml", "check_python_execution_contract"],
     "check_release_supply_chain.py": ["_workflow_yaml", "check_python_execution_contract"],
     "check_runner_routing.py": ["_strict_yaml", "_workflow_yaml", "check_runtime_requirements"],
@@ -165,13 +175,15 @@
     "resolve_profile.py": ["_strict_yaml"],
     "validate_all.py": [
       "_strict_yaml", "check_actionlint_contract", "check_benchmark_contract",
-      "check_docs_links", "check_examples", "check_gate_contract",
+      "check_docs_links", "check_documented_commands", "check_examples",
+      "check_gate_contract",
       "check_harden_runner_contract", "check_merge_group",
       "check_monorepo_routing", "check_permissions", "check_pinned_actions",
       "check_pr_hygiene_contract", "check_privileged_ref_guard",
       "check_public_docs", "check_python_execution_contract",
       "check_python_syntax",
-      "check_release_graph", "check_release_promotion_gate",
+      "check_release_graph", "check_release_ledger",
+      "check_release_promotion_gate",
       "check_release_supply_chain", "check_rulesets", "check_runner_routing",
       "check_runtime_requirements", "check_scorecard_evidence_contract",
       "check_secret_scan_contract",
@@ -181,7 +193,7 @@
       "validate_catalog", "validate_product_facts", "validate_profiles",
       "validate_runtime_coverage"
     ],
-    "validate_catalog.py": ["_strict_yaml", "_workflow_yaml"],
+    "validate_catalog.py": ["_json_schema", "_strict_yaml", "_workflow_yaml"],
     "validate_product_facts.py": ["_strict_yaml"],
     "validate_profiles.py": ["_strict_yaml"],
     "validate_runtime_coverage.py": ["_strict_yaml", "_workflow_yaml"],
@@ -208,6 +220,7 @@
       "_probe_sanitize": {"count": 1, "profile": "launcher-clean"},
       "_run_import": {"count": 1, "profile": "launcher-clean"}
     },
+    "check_release_ledger.py": {"check_tags": {"count": 2, "profile": "external-tool"}},
     "check_release_promotion_gate.py": {"_run": {"count": 1, "profile": "isolated-python-fixture"}},
     "check_release_supply_chain.py": {
       "_check_gnu_tar_archive": {"count": 3, "profile": "external-tool-fixture"},

@@ -44,6 +44,26 @@ PROCESS_CALLS = {"run", "Popen", "check_call", "check_output"}
 OS_PROCESS_PREFIXES = ("exec", "spawn")
 OS_PROCESS_NAMES = {"system", "popen"}
 
+# Documents are discovered, never merely read from the registry. See
+# `_discovered_tool_documents` for why a closed allowlist was fail-open.
+DISCOVERY_SUFFIXES = (".md", ".yml", ".yaml")
+DISCOVERY_SKIP_PREFIXES = (
+    ".git/", ".venv/", ".ruff_cache/",
+    # Globbed directly and checked with the full workflow grammar.
+    ".github/workflows/",
+    # Declared rejection-only by `source_classes`; these exist to be refused.
+    "tests/fixtures/negative/",
+)
+DISCOVERY_SKIP_PARTS = ("__pycache__",)
+# A Python interpreter launching a path under `scripts/`. Deliberately matches
+# both the bare `python3 scripts/x.py` shape and the launcher prefix, because
+# the point is to find every document that *claims* to run a repository tool,
+# including the ones that claim it wrongly.
+REPOSITORY_TOOL_INVOCATION = re.compile(
+    r"""(?:^|[\s"'`(])(?:[\w./-]*python[\w.]*)\s+(?:-\S+\s+)*scripts/"""
+    r"""([A-Za-z_][A-Za-z0-9_]*\.py)"""
+)
+
 
 @dataclass(frozen=True)
 class Invocation:
@@ -1466,6 +1486,17 @@ def _static_problems(policy: Mapping[str, Any], files: Mapping[str, Path]) -> li
         for item, registration in documents.items()
     ):
         problems.append("Python invocation-document inventory contains an unsafe path")
+    exemptions = policy["python"].get("invocation_document_exemptions")
+    if not isinstance(exemptions, dict) or list(exemptions) != sorted(exemptions):
+        problems.append("Python invocation-document exemptions are not canonical")
+    elif any(
+        not isinstance(item, str) or Path(item).is_absolute() or ".." in Path(item).parts
+        or not isinstance(reason, str) or not reason.strip()
+        for item, reason in exemptions.items()
+    ):
+        problems.append(
+            "Python invocation-document exemptions need a safe path and a reason"
+        )
     expected_source_classes = {
         "production_workflows": ".github/workflows/*.yml",
         "negative_corpora": "tests/fixtures/negative/**",
@@ -2282,6 +2313,107 @@ def _selftest(policy: Mapping[str, Any]) -> list[str]:
     return problems
 
 
+def _discovered_tool_documents(
+    root: Path, subjects: frozenset[str],
+) -> dict[str, set[str]]:
+    """Every document under `root` that launches a repository Python tool.
+
+    Discovery, not a registry read. `invocation_documents` is a closed
+    allowlist, so a document nobody remembered to list was never opened at all:
+    `.claude/CLAUDE.md` — the only file Claude Code auto-loads here — carried
+    `python3 scripts/validate_all.py` for the whole life of the launcher, which
+    aborts with ModuleNotFoundError, while this gate stayed green. A contract
+    that can only see what it was told about is fail-open by construction.
+
+    Only tools that are real subjects in this repository's `scripts/` count.
+    `docs/09` documents `python3 scripts/promotion_record.py`, which lives in
+    the control plane and is none of this contract's business.
+    """
+    found: dict[str, set[str]] = {}
+    for path in sorted(root.rglob("*")):
+        relative = path.relative_to(root).as_posix()
+        if relative.startswith(DISCOVERY_SKIP_PREFIXES):
+            continue
+        if any(part in DISCOVERY_SKIP_PARTS for part in path.parts):
+            continue
+        if path.suffix not in DISCOVERY_SUFFIXES or path.is_symlink() or not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError):
+            continue
+        tools = {
+            tool for tool in REPOSITORY_TOOL_INVOCATION.findall(text) if tool in subjects
+        }
+        if tools:
+            found[relative] = tools
+    return found
+
+
+def _discovery_problems(policy: Mapping[str, Any]) -> list[str]:
+    """Every discovered document is either registered or explicitly exempt."""
+    problems: list[str] = []
+    subjects = frozenset(_policy_surfaces(policy) | {META_GATE})
+    registered = set(policy["python"].get("invocation_documents", {}) or {})
+    exemptions = policy["python"].get("invocation_document_exemptions", {}) or {}
+    discovered = _discovered_tool_documents(REPO_ROOT, subjects)
+    for relative, tools in discovered.items():
+        if relative in registered or relative in exemptions:
+            continue
+        problems.append(
+            f"unregistered Python invocation document {relative!r} launches "
+            f"{sorted(tools)}; register it under invocation_documents or record "
+            "an exemption and its reason in catalog/python-execution.yml"
+        )
+    # An exemption that no longer describes anything is a stale waiver, and a
+    # stale waiver is how a closed allowlist rots back into fail-open.
+    for relative in sorted(exemptions):
+        if relative in registered:
+            problems.append(
+                f"invocation document {relative!r} is both registered and exempt"
+            )
+        elif relative not in discovered:
+            problems.append(
+                f"stale invocation-document exemption {relative!r}: it no longer "
+                "launches a repository Python tool"
+            )
+    return problems
+
+
+def _discovery_selftests() -> list[str]:
+    """Prove discovery fires, scopes to real subjects, and honours the skips."""
+    problems: list[str] = []
+    subjects = frozenset({"validate_all.py", "generate_docs.py"})
+    with tempfile.TemporaryDirectory(prefix="ci-workflows-discovery-") as raw:
+        root = Path(raw)
+        (root / "docs").mkdir()
+        (root / ".github" / "workflows").mkdir(parents=True)
+        (root / "tests" / "fixtures" / "negative").mkdir(parents=True)
+        cases = {
+            "AGENTS.md": "run `python3 scripts/validate_all.py --tier core`\n",
+            "docs/launcher.md": (
+                ".venv/bin/python -I -B scripts/check_python_execution_contract.py "
+                "--launch generate_all.py\n"
+                ".venv/bin/python -I -B scripts/generate_docs.py\n"
+            ),
+            "docs/foreign.md": "python3 scripts/promotion_record.py verify\n",
+            "docs/prose.md": "scripts/validate_all.py is the aggregate validator\n",
+            ".github/workflows/ci.yml": "run: python3 scripts/validate_all.py\n",
+            "tests/fixtures/negative/bad.md": "python3 scripts/validate_all.py\n",
+        }
+        for relative, text in cases.items():
+            (root / relative).write_text(text, encoding="utf-8")
+        found = _discovered_tool_documents(root, subjects)
+        expected = {"AGENTS.md", "docs/launcher.md"}
+        if set(found) != expected:
+            problems.append(
+                f"discovery selftest: expected {sorted(expected)}, got {sorted(found)}"
+            )
+        if found.get("AGENTS.md") != {"validate_all.py"}:
+            problems.append("discovery selftest: wrong tool set for a launcher document")
+    return problems
+
+
 def _registered_invocation_problems(policy: Mapping[str, Any]) -> list[str]:
     problems: list[str] = []
     for workflow in sorted((REPO_ROOT / ".github" / "workflows").glob("*.yml")):
@@ -2346,7 +2478,9 @@ def check() -> list[str]:
         # Semantic assertions run only after every registered surface has
         # passed syntax, dependency-graph, origin and cold-import proof.
         problems += _selftest(policy)
+        problems += _discovery_selftests()
         problems += _registered_invocation_problems(policy)
+        problems += _discovery_problems(policy)
         problems += _probe_generations(hostile_cwd)
     return problems
 

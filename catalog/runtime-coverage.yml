@@ -323,9 +323,9 @@ entries:
     proven_os: [linux]
     criticality: security-blocking
     status: runtime-proven
-    evidence: 'Fresh fixture run executed two independent Linux X64 workflow_call jobs: job 94323980245 ran the unchanged digest-pinned container path, and job 94323980234 downloaded the allowlisted release asset, verified size/SHA-256/version, scanned full history without invoking the container step, cleanup-proved its temporary state, and emitted its summary. The aggregate evidence job succeeded; skipped mutually-exclusive steps are expected mode separation, not claimed evidence. Executable negative probes additionally reject unknown mode/version/OS/arch, missing/malformed/mismatched digest, and corrupt/traversal/duplicate/link/special archives.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31660449006
-    proven_digest: 97d45022fbddb41249cb804b09a40312adeddc8b56079f2099d1ada9f2e47b01
+    evidence: 'Fresh fixture run executed two independent Linux X64 workflow_call jobs after the container lane gained a digest guard and the scan gained an explicit scope. The container job ran the digest-pinned image path and the binary job downloaded the allowlisted release asset, verified size/SHA-256/version, scanned history without invoking the container step, cleanup-proved its temporary state, and emitted its summary. The previous attempt on this same branch is the reason the scope input exists: both lanes failed on a finding in a commit that is an ancestor of neither the branch nor main, because gitleaks walks every ref a fetch-depth-0 checkout brings in. Executable probes additionally reject unknown mode/scope/version/OS/arch, a tag-only or non-digest container image, missing/malformed/mismatched binary digest, and corrupt/traversal/duplicate/link/special archives.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31750480571
+    proven_digest: aa65f5d9c27fb12b3db484fba7cbebeb1eacc56ca01b38f38eeeb5e6c925a254
     waiver: null
   - workflow: .github/workflows/semgrep-ci.yml
     criticality: security-blocking

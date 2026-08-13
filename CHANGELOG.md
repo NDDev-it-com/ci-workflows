@@ -2,6 +2,118 @@
 
 ## [Unreleased]
 
+- Stop restating volatile inventory counts in durable prose. `AGENTS.md` claimed
+  46 reusables and nine self workflows against a tree holding 47 and 10, said the
+  fixture estate calls twenty-seven reusables when it calls 35 across three files
+  rather than two, named nine cross-platform-proven reusables when the ledger
+  records ten, bounded the docs at `docs/18` after `docs/19` landed, and carried
+  one sentence twice. The counts are removed rather than corrected: they were
+  copies of facts the tree already answers, so each copy was a fresh chance to
+  drift. Prose now points at `docs/generated/workflow-inventory.md`,
+  `SELF_WORKFLOWS` and `proven_os`. `check_runtime_requirements.py` and
+  `docs/05` drop the same "of 46 reusables, 44" phrasing while keeping the
+  durable fact, which is *which two* need a container runtime.
+
+- Correct the README's pinning guidance, which contradicted the adoption skill.
+  It said "tags are mutable" while `tag-semver.json` blocks deletion, updates and
+  non-fast-forward moves on every SemVer tag, and it omitted the part that
+  matters — pin to a commit a release tag points at, not to whatever `main`
+  happens to be.
+
+- Reconcile `CHANGELOG.md` against the tags it claims. `release.yml` checked only
+  the forward direction — the tag being published equals `VERSION` and has one
+  matching heading — so nothing noticed `## [0.11.0] - 2026-07-20` describing a
+  release that was never tagged, sitting between `0.10.0` and `0.11.1` which both
+  were. `check_release_ledger.py` now asserts heading grammar, uniqueness,
+  strictly descending versions, non-increasing dates and agreement with `VERSION`
+  in the blocking tier, and reconciles headings against real tags in the advisory
+  sweep, since whether a tag exists is a property of the refs rather than of the
+  change. `0.8.1` and `0.6.0` carried dates a day before their own tags — one of
+  them placing a patch before the minor it patches — and are corrected to what
+  the tags actually say. `0.11.0` is recorded as known debt with the two ways to
+  resolve it, because creating a tag needs authority a validator should not have.
+
+- Scope `secret-scan.yml` to the checked-out ref by default. `gitleaks detect`
+  walks **every ref in the clone**, and `actions/checkout` with `fetch-depth: 0`
+  fetches every branch, so a finding on somebody's unmerged branch failed this
+  scan on every other branch — a required check whose result depended on refs the
+  change does not touch. This was found by running it: the evidence estate went
+  red on a branch cut from a clean `main`, and the finding traced to a commit
+  that is an ancestor of neither. Scanning only `HEAD` history is both what
+  "history-aware" was meant to say and the only scope a caller can be held
+  responsible for. `all-refs` stays reachable through the new `scan_scope` input
+  but has to be asked for, and an unknown value fails closed. **Behaviour
+  change for consumers**: a caller relying on the implicit all-branch sweep must
+  now pass `scan_scope: all-refs`.
+
+- Hold `secret-scan.yml`'s container lane to the standard its binary lane already
+  met. The binary path is exhaustively allowlisted — version, OS, architecture,
+  SHA-256, asset size, exact tar member set, no links or traversal, verified
+  executable version, proven cleanup — while the container path, which is the
+  **default**, validated nothing: the guard returned before it looked, and
+  `gitleaks_image` was not even in the step's environment, so any caller string
+  reached `docker run` in a workflow whose job is reading every secret in the
+  tree. The step summary printed "digest-pinned caller contract" unconditionally,
+  a claim nothing checked. The guard now requires an `@sha256:` digest and
+  rejects a tag-only, `latest`, empty, short or uppercase-digest image; six new
+  executable cases prove it. The lone unclosed file handle in the repository,
+  which wrote that step's mode, is closed.
+
+- Bind documented tool commands to the ones `ci-gate` actually runs. Four places
+  told a contributor how to run zizmor and three were wrong, each differently:
+  `AGENTS.md` and the `nddev-repo-flow` skill named `--persona regular` while
+  `ci.yml` passes `pedantic`, so following the brief gave a clean local run and a
+  red required check; `CONTRIBUTING.md` carried a comment reading "regular
+  persona, matches CI" above a pedantic command, ran an unpinned `zizmor` off
+  `PATH` against this repository's own "never a mutable version" rule, and
+  omitted `GH_TOKEN` from both invocations — the exact omission documented as how
+  three `ref-version-mismatch` findings reached the default branch. All five
+  invocations are now identical, and `check_documented_commands.py` derives the
+  version, severity and persona from the workflow inputs and from what `ci.yml`
+  really passes, so prose can no longer drift from the gate. It also pins the
+  documented actionlint version and checksum to the workflow defaults.
+
+- Make the ruleset gate assert force, not only shape. `enforcement` was checked
+  against an enum that accepts `disabled`, so the default-branch ruleset could
+  have been switched off entirely while this gate stayed green and the required
+  `ci-gate` context protected nothing. Branch and tag rulesets must now be
+  `active`; a ruleset that deliberately runs below that has to record a reason in
+  the validator. Tag validation was a single "a tag ruleset exists" boolean even
+  though the consumer-adoption skill promises immutable tags, so the exact rule
+  set behind that promise — `deletion`, `non_fast_forward`, `update`,
+  `required_signatures` — is now required. Bypass actors are pinned to an
+  expected set, so adding one is a reviewed validator change rather than a silent
+  JSON edit. Proven to reject all four weakenings.
+
+- Execute `catalog/schema/capability.schema.yaml` instead of merely shipping it.
+  The schema was documented as the enforced shape of `capabilities.yml`, but the
+  only thing any validator did with it was assert the file existed, so it drifted
+  from the tree in both directions at once: it declared
+  `additionalProperties: false` while omitting `runtime_requirements`, which two
+  capabilities use — applying it would have failed the catalog — and it declared
+  `last_verified` a pattern-checked string while seven entries were written
+  unquoted and parsed as `datetime.date`. The schema now covers both runtime
+  fields, the seven dates are quoted, and `scripts/_json_schema.py` runs the
+  schema against the catalog with no new dependency. The duplicated Python
+  copies of the same enums and key lists are gone, so shape has one source.
+  Proven to reject an unquoted date, an unexpected property, an invalid enum and
+  an empty `sources` list. `catalog/README.md` now documents `product-facts.yml`,
+  `profiles.yml` and `scorecard-evidence.yml`, which the Files table omitted.
+
+- Discover Python invocation documents instead of reading a closed allowlist.
+  `invocation_documents` could only ever check files someone remembered to
+  register, so a document nobody listed was never opened: `.claude/CLAUDE.md`,
+  the only file Claude Code auto-loads in this repository, still told every
+  agent to invoke the aggregate validator directly, which aborts with
+  `ModuleNotFoundError` under the launcher — and the gate stayed green. It also
+  caught the first bare invocation written into this entry. The contract scans the
+  tree for documents that launch a real subject in `scripts/`, requires each to
+  be registered or carry a written exemption, and rejects an exemption that no
+  longer describes anything. Tools that are not subjects here (the control
+  plane's `promotion_record.py`) are correctly out of scope. `.claude/CLAUDE.md`
+  is corrected and registered; `.gds/repository.yaml` and
+  `catalog/scorecard-evidence.yml` carry reasoned exemptions.
+
 - Add one hermetic Python execution boundary for every repository validator and
   generator. A machine-readable policy now pins the interpreter and PyYAML,
   inventories imports/resources/subprocess edges, strips ambient `PYTHON*`
@@ -1694,7 +1806,7 @@ No functional change from 0.11.0.
   documented semgrep CLI version v1.168.0→v1.169.0. All remain full-SHA pinned
   with `# vX.Y.Z` comments; no workflow behavior change.
 
-## [0.8.1] - 2026-07-11
+## [0.8.1] - 2026-07-12
 
 ### Fixed
 
@@ -1801,7 +1913,7 @@ No functional change from 0.11.0.
   gains negative fixtures proving both the payload-base and explicit-base
   forms fail closed. (RVR-P2-005)
 
-## [0.6.0] - 2026-07-11
+## [0.6.0] - 2026-07-12
 
 ### Added
 
