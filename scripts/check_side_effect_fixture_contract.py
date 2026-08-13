@@ -222,14 +222,10 @@ def check() -> list[str]:
         (((labeler.get("ci") or [{}])[0].get("changed-files") or [{}])[0]
          .get("any-glob-to-any-file") or [])
     ) if isinstance(labeler, dict) else set()
-    expected_label_paths = {
-        "catalog/runtime-coverage.yml",
-        ".github/workflows/runtime-fixtures-event-write.yml",
-        "scripts/check_side_effect_fixture_contract.py",
-    }
+    expected_label_paths = {"**/*"}
     if label_paths != expected_label_paths:
         problems.append(
-            "runtime labeler must cover exactly the ledger, harness and its validator"
+            "runtime labeler must match every PR; no-match is a negative probe, not a path skip"
         )
     probes: list[tuple[str, Callable[[dict[str, Any]], object]]] = [
         ("broad benchmark permission", lambda d: _job(d, "fixture-benchmark")["permissions"].update({"issues": "write"})),

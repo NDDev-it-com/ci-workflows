@@ -13,7 +13,8 @@
 - Make side-effect observers fail closed: label evidence now requires the `ci`
   label to be absent before the caller, and benchmark ref probes accept only an
   explicit HTTP 404 as absence rather than treating API/auth/network errors as
-  missing state.
+  missing state. The fixture-only label rule covers every PR so unrelated paths
+  cannot turn a required evidence run into an expected no-match failure.
 - Omit `configFile` entirely for an empty PR-hygiene commitlint configuration,
   preserving upstream default discovery; validate and pass a non-empty caller
   path exactly. Passing an empty key made cosmiconfig read the checkout
