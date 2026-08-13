@@ -1,0 +1,249 @@
+name: runtime-fixtures-event-write
+
+# Side-effect-sensitive evidence estate. Ordinary fixtures never receive write
+# permissions. This workflow gives a write token only to the exact caller and
+# cleanup jobs that need it, uses namespaced disposable state, and refuses proof
+# unless the caller and cleanup observer both succeed.
+
+on:
+  push:
+    branches: ['fixtures/**']
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: runtime-fixtures-event-write-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare-benchmark:
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      branch: ${{ steps.scope.outputs.branch }}
+    steps:
+      - name: Establish disposable benchmark scope
+        id: scope
+        env:
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          branch="runtime-evidence/benchmark-${RUN_ID}-${RUN_ATTEMPT}"
+          if ! [[ "$branch" =~ ^runtime-evidence/benchmark-[0-9]+-[0-9]+$ ]]; then
+            echo "benchmark fixture: invalid disposable branch" >&2
+            exit 1
+          fi
+          if git ls-remote --exit-code "https://github.com/${REPOSITORY}.git" "refs/heads/${branch}" >/dev/null 2>&1; then
+            echo "benchmark fixture: disposable branch already exists" >&2
+            exit 1
+          fi
+          printf 'branch=%s\n' "$branch" >>"$GITHUB_OUTPUT"
+          echo "benchmark fixture: disposable branch absent before caller"
+
+  fixture-benchmark:
+    if: ${{ github.event_name != 'pull_request' }}
+    needs: prepare-benchmark
+    permissions:
+      contents: write # pinned publish action receives only repository contents write
+    uses: ./.github/workflows/benchmark.yml
+    with:
+      runner: ubuntu-latest
+      language: go
+      working_directory: tests/fixtures/go
+      bench_command: 'go test -run=^$ -bench=. -benchmem > benchmark.txt'
+      tool: go
+      output_file_path: tests/fixtures/go/benchmark.txt
+      external_data_json_path: tests/fixtures/go/benchmark-history.json
+      history_branch: ${{ needs.prepare-benchmark.outputs.branch }}
+      fail_on_alert: true
+
+  cleanup-benchmark:
+    if: ${{ always() && github.event_name != 'pull_request' }}
+    needs: [prepare-benchmark, fixture-benchmark]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write # delete only the run-scoped branch if the action wrote unexpectedly
+    steps:
+      - name: Reconcile disposable benchmark branch
+        env:
+          BRANCH: ${{ needs.prepare-benchmark.outputs.branch }}
+          CALLER_RESULT: ${{ needs.fixture-benchmark.result }}
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$BRANCH" =~ ^runtime-evidence/benchmark-[0-9]+-[0-9]+$ ]]; then
+            echo "benchmark cleanup: refusing an out-of-scope branch" >&2
+            exit 1
+          fi
+          encoded_branch="${BRANCH//\//%2F}"
+          if gh api "repos/${REPOSITORY}/git/ref/heads/${encoded_branch}" >/dev/null 2>&1; then
+            gh api --method DELETE "repos/${REPOSITORY}/git/refs/heads/${encoded_branch}"
+            echo "benchmark cleanup: removed unexpected disposable branch"
+          else
+            echo "benchmark cleanup: no repository ref was created"
+          fi
+          if gh api "repos/${REPOSITORY}/git/ref/heads/${encoded_branch}" >/dev/null 2>&1; then
+            echo "benchmark cleanup: disposable branch remains" >&2
+            exit 1
+          fi
+          if [ "$CALLER_RESULT" != success ]; then
+            echo "benchmark cleanup: caller result was $CALLER_RESULT" >&2
+            exit 1
+          fi
+
+  evidence-benchmark:
+    if: ${{ always() && github.event_name != 'pull_request' }}
+    needs: [fixture-benchmark, cleanup-benchmark]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Render benchmark evidence
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PROVES: '{"fixture-benchmark":"benchmark.yml"}'
+          GUARDS: '{"fixture-benchmark":["cleanup-benchmark"]}'
+        run: |
+          set -euo pipefail
+          python3 -I scripts/render_runtime_evidence.py
+
+  prepare-pr-hygiene:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read # snapshot only this PR's pre-run ci label state
+    outputs:
+      had_label: ${{ steps.snapshot.outputs.had_label }}
+    steps:
+      - name: Snapshot PR label state
+        id: snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo "PR fixture: invalid pull request number" >&2
+            exit 1
+          fi
+          labels="$(gh api "repos/${REPOSITORY}/issues/${PR_NUMBER}/labels" --jq '.[].name')"
+          if grep -Fxq ci <<<"$labels"; then
+            echo 'had_label=true' >>"$GITHUB_OUTPUT"
+          else
+            echo 'had_label=false' >>"$GITHUB_OUTPUT"
+          fi
+
+  fixture-pr-hygiene:
+    if: ${{ github.event_name == 'pull_request' }}
+    needs: prepare-pr-hygiene
+    permissions:
+      contents: read       # checkout commits and the labeler configuration
+      issues: write        # required ceiling for the disabled stale nested job
+      pull-requests: write # validate the PR and apply the existing ci label
+    uses: ./.github/workflows/pr-hygiene.yml
+    with:
+      runner: ubuntu-latest
+      commitlint: true
+      pr_title: true
+      labeler: true
+      labeler_config: .github/labeler-runtime-evidence.yml
+      stale: false
+
+  fixture-pr-hygiene-explicit:
+    if: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      contents: read       # checkout commits and validate the explicit config file
+      issues: write        # required ceiling for the disabled stale nested job
+      pull-requests: write # required ceiling for disabled PR mutation jobs
+    uses: ./.github/workflows/pr-hygiene.yml
+    with:
+      runner: ubuntu-latest
+      commitlint: true
+      commitlint_config: .github/commitlint-runtime-evidence.mjs
+      pr_title: false
+      labeler: false
+      stale: false
+
+  cleanup-pr-hygiene:
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    needs: [prepare-pr-hygiene, fixture-pr-hygiene]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write # observe and restore only this PR's pre-run ci label state
+    steps:
+      - name: Verify label write and restore prior state
+        env:
+          CALLER_RESULT: ${{ needs.fixture-pr-hygiene.result }}
+          GH_TOKEN: ${{ github.token }}
+          HAD_LABEL: ${{ needs.prepare-pr-hygiene.outputs.had_label }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]] || [[ "$HAD_LABEL" != true && "$HAD_LABEL" != false ]]; then
+            echo "PR cleanup: invalid disposable scope" >&2
+            exit 1
+          fi
+          labels="$(gh api "repos/${REPOSITORY}/issues/${PR_NUMBER}/labels" --jq '.[].name')"
+          if ! grep -Fxq ci <<<"$labels"; then
+            echo "PR cleanup: labeler did not apply the expected ci label" >&2
+            exit 1
+          fi
+          if [ "$HAD_LABEL" = false ]; then
+            gh api --method DELETE "repos/${REPOSITORY}/issues/${PR_NUMBER}/labels/ci"
+            echo "PR cleanup: removed fixture-applied ci label"
+          else
+            echo "PR cleanup: preserved pre-existing ci label"
+          fi
+          labels_after="$(gh api "repos/${REPOSITORY}/issues/${PR_NUMBER}/labels" --jq '.[].name')"
+          has_after=false
+          if grep -Fxq ci <<<"$labels_after"; then has_after=true; fi
+          if [ "$has_after" != "$HAD_LABEL" ]; then
+            echo "PR cleanup: prior label state was not restored" >&2
+            exit 1
+          fi
+          if [ "$CALLER_RESULT" != success ]; then
+            echo "PR cleanup: caller result was $CALLER_RESULT" >&2
+            exit 1
+          fi
+
+  evidence-pr-hygiene:
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    needs: [fixture-pr-hygiene, fixture-pr-hygiene-explicit, cleanup-pr-hygiene]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Render PR-hygiene evidence
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PROVES: '{"fixture-pr-hygiene":"pr-hygiene.yml","fixture-pr-hygiene-explicit":"pr-hygiene.yml"}'
+          GUARDS: '{"fixture-pr-hygiene":["cleanup-pr-hygiene"]}'
+        run: |
+          set -euo pipefail
+          python3 -I scripts/render_runtime_evidence.py

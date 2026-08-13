@@ -84,10 +84,44 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: commitlint
+      - name: Validate explicit commitlint configuration
+        if: ${{ inputs.commitlint_config != '' }}
+        id: commitlint_config
+        shell: bash
+        env:
+          COMMITLINT_CONFIG: ${{ inputs.commitlint_config }}
+          WORKSPACE: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          python3 -I <<'PY'
+          import os
+          from pathlib import Path
+
+          raw = os.environ['COMMITLINT_CONFIG']
+          workspace = Path(os.environ['WORKSPACE']).resolve()
+          if not raw or '\n' in raw or '\r' in raw:
+              raise SystemExit('commitlint config: path must be one non-empty line')
+          supplied = Path(raw)
+          if supplied.is_absolute():
+              raise SystemExit('commitlint config: absolute paths are refused')
+          resolved = (workspace / supplied).resolve()
+          try:
+              resolved.relative_to(workspace)
+          except ValueError:
+              raise SystemExit('commitlint config: path escapes the checkout')
+          if not resolved.is_file():
+              raise SystemExit(f'commitlint config: not a regular file: {raw}')
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              print(f'config_file={raw}', file=output)
+          PY
+      - name: commitlint (default configuration)
+        if: ${{ inputs.commitlint_config == '' }}
+        uses: wagoid/commitlint-github-action@b948419dd99f3fd78a6548d48f94e3df7f6bf3ed  # v6.2.1
+      - name: commitlint (explicit configuration)
+        if: ${{ inputs.commitlint_config != '' }}
         uses: wagoid/commitlint-github-action@b948419dd99f3fd78a6548d48f94e3df7f6bf3ed  # v6.2.1
         with:
-          configFile: ${{ inputs.commitlint_config }}
+          configFile: ${{ steps.commitlint_config.outputs.config_file }}
 
   pr-title:
     if: ${{ inputs.pr_title }}
@@ -133,6 +167,10 @@ jobs:
       contents: read          # read the labeler configuration from the tree
       pull-requests: write    # apply labels to the pull request
     steps:
+      - name: Checkout labeler configuration
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - name: Label pull request
         uses: actions/labeler@bf12e9b00b37c5c0ca2b87b79b2daf7891dbda13  # v7.0.0
         with:

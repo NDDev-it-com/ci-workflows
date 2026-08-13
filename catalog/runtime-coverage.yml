@@ -2,14 +2,15 @@
 #
 # Honest ledger, not an aspiration: a workflow is only 'runtime-proven'
 # when a real observed workflow_call run exists (last_run set). Workflows
-# with executable embedded-program/contract validators but no live
-# workflow_call run are 'static-only'. Everything else is 'unverified'
-# until a safe consumer fixture runs it. Every non-proven row carries typed
+# with only some jobs executed are 'partial-runtime' and name those jobs;
+# executable embedded-program/contract validators without a live workflow_call
+# run are 'static-only'. Everything else is 'unverified' until a safe consumer
+# fixture runs it. Every non-proven row carries typed
 # risk, barrier, required capability and issue handoff. Waivers are restricted
 # to objective external secrets, licensing or real-host barriers and add owner
 # plus expiry. scripts/validate_runtime_coverage.py enforces completeness and
 # evidence/debt discipline, and reports the honest status counts.
-schema: nddev-ci-runtime-contract-coverage/v3
+schema: nddev-ci-runtime-contract-coverage/v4
 repository: NDDev-it-com/ci-workflows
 baseline_ref: a02b0c9d459fd7fda9f4f153d1772ab24c987a94
 entries:
@@ -23,22 +24,16 @@ entries:
   - workflow: .github/workflows/benchmark-compare.yml
     criticality: supporting
     status: runtime-proven
-    validator: scripts/check_benchmark_contract.py
-    evidence: "Fixture caller ran the Go bench command and the comparison step against tests/fixtures/go. Provable only since external_data_json_path was exposed: with it set the action stores history in a file and no longer uses a Git branch, so the lane no longer fails fetching a gh-pages branch this repository has never had."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621986194
-    proven_digest: 18e36f6ef1b1ec4cc6d104026744f17f4fdbc8da511e7f5f850c4a0274f4cbd5
+    evidence: 'The language fixture ran the current-digest read-only comparison lane against the Go benchmark project with auto-push disabled.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31656810653
+    proven_digest: 96300e25a2a7aaae947e90c97b8439244d87bcf4c2d0fe2b126f7c120c8d9364
     waiver: null
   - workflow: .github/workflows/benchmark.yml
     criticality: supporting
-    status: unverified
-    validator: scripts/check_benchmark_contract.py
-    evidence: "Still not fixtured, and the earlier reason recorded here was wrong. It is not auto-push: external_data_json_path now stops the action touching a Git branch at all. The actual obstacle is permissions — benchmark.yml's job declares contents: write, a reusable cannot request more than its caller grants, and a caller job granting write would hand the fixture estate the power to change the repository it runs in. That is a deliberate refusal, not an impossibility. Calling it with contents: read is what produced a startup_failure with no annotation."
-    last_run: null
-    runtime_debt:
-      risk: high
-      barrier: permission-side-effect
-      required_capability: Disposable repository where contents write cannot mutate protected project state.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/127
+    status: runtime-proven
+    evidence: 'The side-effect fixture ran the current-digest Go publish lane in file-backed mode. Its run-scoped branch was proven absent before and after the caller; cleanup and the evidence guard both succeeded. The first graph attempt failed before runners on the nested permission ceiling, and the retry exposed the invalid auto-push/file-backed combination; neither failure was hidden.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31656810730
+    proven_digest: 9cdadfbcc0fcb34d8ee5f4fd309d913d08b3504e1ade53e4fdeb775d33761cae
     waiver: null
   - workflow: .github/workflows/container-ci.yml
     criticality: supporting
@@ -192,14 +187,20 @@ entries:
     waiver: null
   - workflow: .github/workflows/pr-hygiene.yml
     criticality: required-gate
-    status: blocked
-    evidence: 'No observed consumer run; static checks (actionlint/zizmor/pins/permissions) pass but do not prove workflow_call startup, tier, event, or runner lanes.'
-    last_run: null
+    status: partial-runtime
+    evidence: 'Recovery-cycle Attempt 1 ran two current-digest pull_request callers: omitted commitlint_config succeeded through upstream default discovery, and an exact validated explicit config path succeeded. PR-title and labeler also succeeded; cleanup first observed the ci label write and then restored its prior absent state, and the evidence guard succeeded. Stale was deliberately not claimed: its broad issue/PR population still needs an isolated event estate. Earlier attempts remain visible in #127, including the permission-ceiling startup failure and the pre-ACK EISDIR/default-path draft.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31657431178
+    proven_digest: 6954d674ea6ffb6c3078d0eb549c4635e5e801115874efc59cad9198b40f5242
+    proven_jobs:
+      - commitlint-default-discovery
+      - commitlint-explicit-config
+      - pr-title
+      - labeler
     runtime_debt:
       risk: high
       barrier: event-context
-      required_capability: Disposable pull request and issue state for all four mutating jobs.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/127
+      required_capability: Isolated stale issue/PR population where every mutation and restoration can be scoped and observed.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/133
     waiver: null
   - workflow: .github/workflows/private-static.yml
     criticality: required-gate
@@ -268,7 +269,7 @@ entries:
     waiver: null
   - workflow: .github/workflows/release-promotion-gate.yml
     criticality: release
-    status: static-only
+    status: blocked
     validator: scripts/check_release_promotion_gate.py
     evidence: 'Executable fixtures run the exact embedded verifier against valid,
       unsigned, wrong-identity, stale, incomplete, failed, and substitution records;
@@ -276,25 +277,25 @@ entries:
     last_run: null
     runtime_debt:
       risk: critical
-      barrier: destructive-release
-      required_capability: Disposable signed evidence set and protected promotion environment.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/127
+      barrier: external-authority
+      required_capability: GitHub-verified maintainer signing identity, private control-plane read authority, exact promotion record, numeric tag and protected release environment.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/134
     waiver: null
   - workflow: .github/workflows/release-supply-chain-free.yml
     criticality: release
-    status: static-only
+    status: blocked
     validator: scripts/check_release_supply_chain.py
     evidence: 'Executable contract validator exercises the embedded program(s); no live workflow_call run.'
     last_run: null
     runtime_debt:
       risk: critical
       barrier: destructive-release
-      required_capability: Disposable tag release with source archive and publication boundary.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/127
+      required_capability: Dedicated disposable repository where publishing and deleting a unique release/tag cannot affect consumers or protected project history.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/135
     waiver: null
   - workflow: .github/workflows/release-supply-chain.yml
     criticality: release
-    status: static-only
+    status: blocked
     validator: scripts/check_release_supply_chain.py
     evidence: 'Executable contract validator exercises the embedded program(s). The
       runtime proof lapsed when actions/attest and actions/checkout were bumped: this
@@ -304,8 +305,8 @@ entries:
     runtime_debt:
       risk: critical
       barrier: destructive-release
-      required_capability: Disposable public release with artifact attestation and protected environment.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/127
+      required_capability: Dedicated disposable public repository authorized for release publication and irreversible Sigstore transparency-log attestations.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/135
     waiver: null
   - workflow: .github/workflows/rust-ci.yml
     proven_os: [linux, macos, windows]

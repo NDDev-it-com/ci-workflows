@@ -28,10 +28,10 @@ from _workflow_yaml import SELF_WORKFLOWS, WORKFLOWS_DIR
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 COVERAGE = REPO_ROOT / "catalog" / "runtime-coverage.yml"
-SCHEMA = "nddev-ci-runtime-contract-coverage/v3"
+SCHEMA = "nddev-ci-runtime-contract-coverage/v4"
 VALID_STATUS = {
-    "runtime-proven", "static-only", "unverified", "waived", "unsupported",
-    "blocked",
+    "runtime-proven", "partial-runtime", "static-only", "unverified", "waived",
+    "unsupported", "blocked",
 }
 # What the workflow is load-bearing for. This is the half the ledger was
 # missing: without it every record carried the same (absent) evidence
@@ -42,7 +42,7 @@ VALID_DEBT_RISK = {"low", "medium", "high", "critical"}
 VALID_DEBT_BARRIER = {
     "event-context", "permission-side-effect", "heavy-toolchain",
     "specialized-harness", "destructive-release", "external-secret",
-    "licensing", "real-host",
+    "licensing", "real-host", "external-authority",
 }
 OBJECTIVE_WAIVER_TYPES = {"external-secret", "licensing", "real-host"}
 # For these tiers, absence of evidence is itself a failure. `unverified` — the
@@ -150,6 +150,7 @@ def validate_coverage(data: object, reusables: set[str], as_of: dt.date,
         if status not in VALID_STATUS:
             problems.append(f"{where}: invalid status {status!r}")
         debt = entry.get("runtime_debt")
+        observed = status in {"runtime-proven", "partial-runtime"}
         if status == "runtime-proven":
             if debt is not None:
                 problems.append(f"{where}: runtime-proven may not carry runtime_debt")
@@ -205,7 +206,7 @@ def validate_coverage(data: object, reusables: set[str], as_of: dt.date,
                 "'static-only' naming the executable contract validator, or "
                 "add a waiver with an owner and an expiry"
             )
-        if status == "runtime-proven":
+        if observed:
             run = entry.get("last_run")
             if not isinstance(run, str) or not REPO_RUN_RE.match(run):
                 problems.append(
@@ -232,6 +233,16 @@ def validate_coverage(data: object, reusables: set[str], as_of: dt.date,
                         f"{actual[:12]}…) — re-run the reusable and update "
                         "proven_digest, or downgrade to static-only"
                     )
+        proven_jobs = entry.get("proven_jobs")
+        if status == "partial-runtime":
+            if not isinstance(proven_jobs, list) or not proven_jobs \
+                    or len(proven_jobs) != len(set(proven_jobs)) \
+                    or any(not isinstance(job, str) or not job for job in proven_jobs):
+                problems.append(
+                    f"{where}: partial-runtime requires unique non-empty proven_jobs"
+                )
+        elif proven_jobs is not None:
+            problems.append(f"{where}: proven_jobs requires status partial-runtime")
         if status == "static-only":
             validator = entry.get("validator")
             if not validator or not (REPO_ROOT / str(validator)).is_file():
@@ -324,6 +335,16 @@ def _fixture_tests() -> list[str]:
 
     if run(cov(proven, unverified_b)):
         problems.append("runtime-coverage fixture valid should pass")
+    partial_b = {
+        **unverified_b, "status": "partial-runtime", "last_run": good_url,
+        "proven_digest": digest_b, "proven_jobs": ["read", "write"],
+    }
+    if run(cov(proven, partial_b)):
+        problems.append("runtime-coverage fixture partial-runtime should pass")
+    if not run(cov(proven, {**partial_b, "proven_jobs": []})):
+        problems.append("runtime-coverage fixture partial-without-jobs should fail")
+    if not run(cov(proven, {**partial_b, "last_run": None})):
+        problems.append("runtime-coverage fixture partial-without-run should fail")
     no_debt = {key: value for key, value in unverified_b.items()
                if key != "runtime_debt"}
     if not run(cov(proven, no_debt)):

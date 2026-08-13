@@ -1,0 +1,4 @@
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - catalog/runtime-coverage.yml

@@ -1339,8 +1339,10 @@ capabilities:
       - "Callers must grant the union of the enabled jobs' permissions"
       - "A caller cannot grant a reusable more than the reusable declares, so a missing scope here needs a library fix, not a caller change"
       - "pr_title_types is comma-separated at the input boundary but converted to the newline-delimited `types:` the action expects; leaving it empty keeps the Conventional Commits defaults"
+      - "An empty commitlint_config omits configFile so the action owns default discovery; a non-empty relative path must resolve to a regular file inside the checkout and is passed byte-for-byte"
+      - "The labeler checks out the caller ref with credentials disabled so a branch-local configuration is the exact policy executed"
     deprecations: null
-    last_verified: "2026-08-04"
+    last_verified: "2026-08-13"
     sources:
       - "https://github.com/wagoid/commitlint-github-action"
       - "https://github.com/actions/labeler"
@@ -1499,13 +1501,13 @@ capabilities:
     workflow: .github/workflows/benchmark.yml
     example: examples/testing/benchmark.yml
     required_permissions:
-      - "contents: write (always pushes gh-pages benchmark history)"
+      - "contents: write (publish contract; file-backed history performs no repository write)"
     required_settings: []
     risks:
-      - "Publish lane always pushes history to gh-pages; read-only regression checks belong in benchmark-compare.yml, which never receives a write-capable token"
+      - "Publish lane pushes the selected history branch unless external_data_json_path is set; file-backed history performs no Git branch operation"
       - "Benchmark noise on shared runners can cause false regressions; tune alert_threshold"
     deprecations: null
-    last_verified: "2026-07-11"
+    last_verified: "2026-08-13"
     sources:
       - "https://github.com/benchmark-action/github-action-benchmark"
       - "https://bencher.dev/"
@@ -1526,7 +1528,7 @@ capabilities:
       - "Read-only lane: the job-scoped GITHUB_TOKEN cannot write, and auto-push is hard-wired off; record history on the default branch with benchmark.yml"
       - "Benchmark noise on shared runners can cause false regressions; tune alert_threshold"
     deprecations: null
-    last_verified: "2026-07-11"
+    last_verified: "2026-08-13"
     sources:
       - "https://github.com/benchmark-action/github-action-benchmark"
       - "https://bencher.dev/"

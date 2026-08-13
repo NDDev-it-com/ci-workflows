@@ -2,9 +2,10 @@ name: benchmark
 
 # Reusable performance benchmark PUBLISH lane for BOTH tiers. Sets up the
 # toolchain, runs a caller bench command that writes an output file, then
-# github-action-benchmark compares against gh-pages history, fails on
-# regression, and PUSHES the updated history (auto-push: true) — which is why
-# this lane, and only this lane, requests `contents: write`.
+# github-action-benchmark compares against history, fails on regression, and
+# PUSHES branch-backed history. File-backed history disables auto-push because
+# the action rejects those two modes together. This lane, and only this lane,
+# requests `contents: write` for the branch-backed path.
 # For pull requests and any read-only regression check use
 # benchmark-compare.yml: identical toolchain and comparison with a read-only
 # job token and no push.
@@ -60,6 +61,10 @@ on:
           you want history across runs.
         type: string
         default: ''
+      history_branch:
+        description: 'Branch used only when external_data_json_path is empty.'
+        type: string
+        default: 'gh-pages'
       timeout_minutes:
         type: number
         default: 30
@@ -130,6 +135,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           alert-threshold: ${{ inputs.alert_threshold }}
           fail-on-alert: ${{ inputs.fail_on_alert }}
-          auto-push: true
+          auto-push: ${{ inputs.external_data_json_path == '' }}
           external-data-json-path: ${{ inputs.external_data_json_path }}
+          gh-pages-branch: ${{ inputs.history_branch }}
           comment-on-alert: false
