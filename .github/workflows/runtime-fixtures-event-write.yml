@@ -147,6 +147,10 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
+      - name: Set up isolated Python contract runtime
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.13'
       - name: Render benchmark evidence
         env:
           RESULTS: ${{ toJSON(needs) }}
@@ -155,7 +159,7 @@ jobs:
           GUARDS: '{"fixture-benchmark":["cleanup-benchmark"]}'
         run: |
           set -euo pipefail
-          python3 -I scripts/render_runtime_evidence.py
+          python3 scripts/check_python_execution_contract.py --launch render_runtime_evidence.py --
 
   prepare-pr-hygiene:
     if: ${{ github.event_name == 'pull_request' }}
@@ -283,6 +287,10 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
+      - name: Set up isolated Python contract runtime
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.13'
       - name: Render PR-hygiene evidence
         env:
           RESULTS: ${{ toJSON(needs) }}
@@ -291,4 +299,4 @@ jobs:
           GUARDS: '{"fixture-pr-hygiene":["cleanup-pr-hygiene"]}'
         run: |
           set -euo pipefail
-          python3 -I scripts/render_runtime_evidence.py
+          python3 scripts/check_python_execution_contract.py --launch render_runtime_evidence.py --

@@ -26,6 +26,7 @@ import subprocess
 import sys
 
 from _workflow_yaml import get_on, load_yaml, workflow_files
+from check_python_execution_contract import clean_environment
 
 GUARD_STEP_NAME = "Reject caller-supplied ref on a privileged event"
 
@@ -65,7 +66,9 @@ def _run_guard(body: str, event: str, ref: str) -> int:
     """Execute the extracted guard body the way the runner would."""
     completed = subprocess.run(
         ["bash", "-c", body],
-        env={"PATH": "/usr/bin:/bin", "CALLER_EVENT": event, "CHECKOUT_REF": ref},
+        env=clean_environment({
+            "PATH": "/usr/bin:/bin", "CALLER_EVENT": event, "CHECKOUT_REF": ref,
+        }),
         capture_output=True,
         text=True,
         timeout=30,

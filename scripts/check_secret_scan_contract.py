@@ -14,6 +14,7 @@ from typing import Any
 
 from _strict_yaml import strict_load
 from _workflow_yaml import REPO_ROOT, WORKFLOWS_DIR, get_on, load_yaml
+from check_python_execution_contract import clean_environment
 
 WORKFLOW = WORKFLOWS_DIR / "secret-scan.yml"
 EXPECTED_VERSION = "8.30.1"
@@ -39,7 +40,7 @@ def _python(step: dict[str, Any], marker: str = "python3 -I <<'PY'") -> str:
 def _run(program: str, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, "-I", "-"], input=program, text=True,
-        capture_output=True, check=False, env={**os.environ, **env},
+        capture_output=True, check=False, env=clean_environment(env),
     )
 
 

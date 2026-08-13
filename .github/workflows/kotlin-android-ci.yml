@@ -6,6 +6,10 @@ name: kotlin-android-ci
 
 on:
   workflow_call:
+    outputs:
+      evidence:
+        description: 'Redacted JSON receipt for the JDK/Gradle/Android toolchain and successful build/test lane.'
+        value: ${{ jobs.kotlin-android.outputs.evidence }}
     inputs:
       runner:
         type: string
@@ -52,6 +56,8 @@ jobs:
     timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       contents: read
+    outputs:
+      evidence: ${{ steps.evidence.outputs.evidence }}
     defaults:
       run:
         # Explicit, and not redundant with the workflow-level default above:
@@ -68,6 +74,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up JDK
+        id: java
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961  # v5.7.0
         with:
           java-version: ${{ inputs.java_version }}
@@ -75,6 +82,10 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb  # v6.3.0
+        with:
+          # MIT-licensed GitHub Actions cache implementation. The enhanced
+          # provider is a distinct commercial service and is not tier-neutral.
+          cache-provider: basic
 
       - name: Set up Android SDK
         if: ${{ inputs.setup_android }}
@@ -92,6 +103,123 @@ jobs:
         env:
           BUILD_COMMAND: ${{ inputs.build_command }}
           JAVA_VER: ${{ inputs.java_version }}
+          BUILD_LOG: ${{ runner.temp }}/kotlin-android-ci-build.log
         run: |
-          bash -euo pipefail -c "$BUILD_COMMAND"
+          set -euo pipefail
+          bash -euo pipefail -c "$BUILD_COMMAND" 2>&1 | tee "$BUILD_LOG"
           echo "Kotlin/Android (JDK ${JAVA_VER}) build passed." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Emit runtime evidence
+        id: evidence
+        env:
+          BUILD_COMMAND: ${{ inputs.build_command }}
+          BUILD_LOG: ${{ runner.temp }}/kotlin-android-ci-build.log
+          JAVA_VERSION_INPUT: ${{ inputs.java_version }}
+          SETUP_ANDROID: ${{ inputs.setup_android }}
+        run: |
+          python3 -I <<'PY'
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import re
+          import subprocess
+          import xml.etree.ElementTree as ET
+
+          def sha(path):
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+
+          def optional_sha(path):
+              return sha(path) if path.is_file() else ""
+
+          def java_identity(executable):
+              output = subprocess.check_output(
+                  [str(executable), "-XshowSettings:properties", "-version"],
+                  stderr=subprocess.STDOUT, text=True,
+              )
+              properties = dict(re.findall(
+                  r"^\s+(java\.(?:home|runtime\.version|vendor|version|vm\.name)) = (.+)$",
+                  output, re.MULTILINE,
+              ))
+              required = {"java.home", "java.runtime.version", "java.vendor", "java.version", "java.vm.name"}
+              if set(properties) != required:
+                  raise SystemExit(f"incomplete Java identity: {sorted(properties)}")
+              return properties
+
+          gradle = subprocess.check_output(["./gradlew", "--version", "--console", "plain"], text=True)
+          gradle_match = re.search(r"^Gradle (\S+)$", gradle, re.MULTILINE)
+          launcher_match = re.search(r"^Launcher JVM:\s+(.+)$", gradle, re.MULTILINE)
+          daemon_match = re.search(r"^Daemon JVM:\s+(.+)$", gradle, re.MULTILINE)
+          if not gradle_match or not launcher_match or not daemon_match:
+              raise SystemExit("Gradle omitted version/launcher/daemon JVM identity")
+          java = java_identity("java")
+          launcher_raw = launcher_match.group(1).strip()
+          daemon_raw = daemon_match.group(1).strip()
+          daemon_home = pathlib.Path(daemon_raw.split(" (", 1)[0])
+          daemon = java_identity(daemon_home / "bin/java")
+          launcher_identity = re.fullmatch(r"(\S+) \((.+)\)", launcher_raw)
+          if not launcher_identity:
+              raise SystemExit("Gradle launcher JVM identity is unparseable")
+          launcher_version, launcher_details = launcher_identity.groups()
+          requested_major = os.environ["JAVA_VERSION_INPUT"]
+          if (
+              (requested_major.isdigit()
+               and java["java.version"].split(".", 1)[0] != requested_major)
+              or launcher_version != java["java.version"]
+              or launcher_details != f'{java["java.vendor"]} {java["java.runtime.version"]}'
+              or pathlib.Path(daemon["java.home"]).resolve() != pathlib.Path(java["java.home"]).resolve()
+              or any(daemon[key] != java[key] for key in (
+                  "java.version", "java.runtime.version", "java.vendor", "java.vm.name"
+              ))
+          ):
+              raise SystemExit("requested, resolved, Gradle launcher, and daemon JVM identities diverged")
+          sdk_root = pathlib.Path(os.environ.get("ANDROID_SDK_ROOT") or os.environ.get("ANDROID_HOME", ""))
+          platforms = sorted(path.name.removeprefix("android-") for path in (sdk_root / "platforms").glob("android-*") if path.is_dir())
+          build_tools = sorted(path.name for path in (sdk_root / "build-tools").glob("*") if path.is_dir())
+          reports = sorted(pathlib.Path(".").glob("**/test-results/*/TEST-*.xml"))
+          tests = sum(int(ET.parse(path).getroot().attrib.get("tests", "0")) for path in reports)
+          apks = sorted(pathlib.Path(".").glob("**/build/outputs/apk/**/*.apk"))
+          wrapper = pathlib.Path("gradle/wrapper/gradle-wrapper.jar")
+          properties = pathlib.Path("gradle/wrapper/gradle-wrapper.properties")
+          locks = sorted(pathlib.Path(".").glob("**/*.lockfile"))
+          receipt = {
+              "apk_count": len(apks),
+              "apk_sha256": [sha(path) for path in apks],
+              "build_command": os.environ["BUILD_COMMAND"],
+              "build_log_sha256": sha(pathlib.Path(os.environ["BUILD_LOG"])),
+              "cache_provider": "basic",
+              "gradle_version": gradle_match.group(1) if gradle_match else "",
+              "gradle_daemon_jvm_resolved": daemon_raw,
+              "gradle_daemon_jvm_runtime_version_resolved": daemon["java.runtime.version"],
+              "gradle_daemon_jvm_vendor_resolved": daemon["java.vendor"],
+              "gradle_daemon_jvm_version_resolved": daemon["java.version"],
+              "gradle_daemon_jvm_vm_name_resolved": daemon["java.vm.name"],
+              "gradle_launcher_jvm_resolved": launcher_raw,
+              "gradle_launcher_jvm_runtime_version_resolved": java["java.runtime.version"],
+              "gradle_launcher_jvm_vendor_resolved": launcher_details.removesuffix(
+                  " " + java["java.runtime.version"]
+              ),
+              "gradle_launcher_jvm_version_resolved": launcher_version,
+              "gradle_launcher_jvm_vm_name_resolved": java["java.vm.name"],
+              "java_runtime_version_resolved": java["java.runtime.version"],
+              "java_vendor_resolved": java["java.vendor"],
+              "java_version_input": os.environ["JAVA_VERSION_INPUT"],
+              "java_version_resolved": java["java.version"],
+              "java_vm_name_resolved": java["java.vm.name"],
+              "lock_sha256": {str(path): sha(path) for path in locks},
+              "os": os.environ["RUNNER_OS"],
+              "runner_arch": os.environ["RUNNER_ARCH"],
+              "setup_android": os.environ["SETUP_ANDROID"],
+              "sdk_build_tools": build_tools,
+              "sdk_platforms": platforms,
+              "test_count": tests,
+              "verification_metadata_sha256": optional_sha(pathlib.Path("gradle/verification-metadata.xml")),
+              "wrapper_jar_sha256": optional_sha(wrapper),
+              "wrapper_properties_sha256": optional_sha(properties),
+          }
+          encoded = json.dumps(receipt, sort_keys=True, separators=(",", ":"))
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"evidence={encoded}\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
+              handle.write(f"\nRuntime evidence: `{encoded}`\n")
+          PY

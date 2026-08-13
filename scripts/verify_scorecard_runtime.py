@@ -19,10 +19,10 @@ from typing import Any
 
 import yaml
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _strict_yaml import strict_load  # noqa: E402
 from _workflow_yaml import REPO_ROOT  # noqa: E402
 from check_scorecard_evidence_contract import verify_proof, verify_sarif_contract  # noqa: E402
+from check_python_execution_contract import clean_environment  # noqa: E402
 
 
 def fail(message: str) -> None:
@@ -32,7 +32,8 @@ def fail(message: str) -> None:
 
 def api(endpoint: str) -> Any:
     result = subprocess.run(
-        ["gh", "api", endpoint], cwd=REPO_ROOT, text=True,
+        ["gh", "api", endpoint], cwd=REPO_ROOT,
+        env=clean_environment(inherit=("GH_HOST", "GH_TOKEN")), text=True,
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
     )
     if result.returncode != 0:
@@ -46,6 +47,7 @@ def api(endpoint: str) -> Any:
 def api_bytes(endpoint: str) -> bytes:
     result = subprocess.run(
         ["gh", "api", endpoint], cwd=REPO_ROOT,
+        env=clean_environment(inherit=("GH_HOST", "GH_TOKEN")),
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
     )
     if result.returncode != 0:

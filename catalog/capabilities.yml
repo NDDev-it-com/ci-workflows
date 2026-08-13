@@ -1154,11 +1154,12 @@ capabilities:
     risks:
       - "Private-repo runner minutes are metered beyond the included free allotment"
       - "iOS/macOS builds require macOS runners billed at a 10x minute multiplier"
+      - "Use an exact flutter_version and commit pubspec.lock for reproducible SDK and dependency cache identity"
     deprecations: null
-    last_verified: "2026-07-08"
+    last_verified: "2026-08-13"
     sources:
-      - "https://docs.flutter.dev/deployment/cd"
-      - "https://github.com/subosito/flutter-action"
+      - "https://docs.flutter.dev/install/archive"
+      - "https://github.com/subosito/flutter-action/blob/v2.23.0/action.yaml"
 
   - id: web-ci
     name: HTML/CSS/web CI
@@ -1239,10 +1240,10 @@ capabilities:
       - "aqtinstall downloads Qt at runtime; pin qt_version for reproducible builds"
       - "Private-repo runner minutes are metered beyond the included free allotment"
     deprecations: null
-    last_verified: "2026-07-08"
+    last_verified: "2026-08-13"
     sources:
-      - "https://github.com/jurplel/install-qt-action"
-      - "https://doc.qt.io/qt-6/cmake-manual.html"
+      - "https://github.com/jurplel/install-qt-action/blob/v4.3.1/action.yml"
+      - "https://doc.qt.io/qt-6/cmake-get-started.html"
 
   - id: kotlin-android-ci
     name: Kotlin/Android CI
@@ -1259,10 +1260,13 @@ capabilities:
     risks:
       - "ktlint/detekt run as project-defined Gradle tasks supplied via lint_command"
       - "Private-repo runner minutes are metered beyond the included free allotment"
+      - "Commit Gradle wrapper checksums, dependency locks and verification metadata for fail-closed provenance"
     deprecations: null
-    last_verified: "2026-07-08"
+    last_verified: "2026-08-13"
     sources:
-      - "https://github.com/gradle/actions"
+      - "https://developer.android.com/build/releases/gradle-plugin"
+      - "https://docs.gradle.org/9.5.0/userguide/gradle_wrapper.html"
+      - "https://github.com/gradle/actions/blob/v6.3.0/docs/setup-gradle.md"
       - "https://developer.android.com/build"
 
   - id: swift-ci

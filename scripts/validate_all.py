@@ -41,8 +41,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
 import _strict_yaml
 import check_actionlint_contract
 import check_benchmark_contract
@@ -53,10 +51,12 @@ import check_harden_runner_contract
 import check_merge_group
 import check_monorepo_routing
 import check_permissions
+import check_python_execution_contract
 import check_public_docs
 import check_runtime_requirements
 import check_runner_routing
 import check_secret_scan_contract
+import check_sdk_runtime_fixtures
 import check_scorecard_evidence_contract
 import check_side_effect_fixture_contract
 import compile_evidence_plan
@@ -90,6 +90,7 @@ CORE = [
     ("tool-pinning", check_tool_pinning.check),
     ("tool-registry", check_tool_registry.check),
     ("permissions", check_permissions.check),
+    ("python-execution-contract", check_python_execution_contract.check),
     ("workflow-contracts", check_workflow_contracts.check),
     ("harden-runner-contract", check_harden_runner_contract.check),
     ("privileged-ref-guard", check_privileged_ref_guard.check),
@@ -106,6 +107,7 @@ CORE = [
     ("runtime-requirements", check_runtime_requirements.check),
     ("runner-routing", check_runner_routing.check),
     ("secret-scan-contract", check_secret_scan_contract.check),
+    ("sdk-runtime-fixtures", check_sdk_runtime_fixtures.check),
     ("scorecard-evidence-contract", check_scorecard_evidence_contract.check),
     ("evidence-orchestration", compile_evidence_plan.check),
     ("runtime-evidence-summary", render_runtime_evidence.check),
@@ -143,14 +145,15 @@ def changed_paths(base: str | None, explicit: list[str]) -> set[str]:
         return set(explicit)
     if not base:
         return set()
+    process_env = check_python_execution_contract.clean_environment()
     merge_base = subprocess.run(
         ["git", "merge-base", "HEAD", base],
-        cwd=REPO_ROOT, capture_output=True, text=True, check=False,
+        cwd=REPO_ROOT, env=process_env, capture_output=True, text=True, check=False,
     )
     ref = merge_base.stdout.strip() if merge_base.returncode == 0 else base
     diff = subprocess.run(
         ["git", "diff", "--name-only", f"{ref}...HEAD"],
-        cwd=REPO_ROOT, capture_output=True, text=True, check=False,
+        cwd=REPO_ROOT, env=process_env, capture_output=True, text=True, check=False,
     )
     if diff.returncode != 0:
         # Fail closed. An unresolvable base means the change cannot be scoped,

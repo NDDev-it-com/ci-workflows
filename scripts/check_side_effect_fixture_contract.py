@@ -12,6 +12,7 @@ from typing import Any, Callable
 
 from _strict_yaml import strict_load
 from _workflow_yaml import get_on
+from check_python_execution_contract import clean_environment
 
 ROOT = Path(__file__).resolve().parent.parent
 WORKFLOW = ROOT / ".github/workflows/runtime-fixtures-event-write.yml"
@@ -50,8 +51,7 @@ if [ "$FAKE_GH_MODE" = label-api-error ]; then printf 'permission denied\n' >&2;
 """, encoding="utf-8")
         fake_gh.chmod(0o755)
         output = root / "output"
-        env = {
-            **os.environ,
+        env = clean_environment({
             "FAKE_COUNTER": str(root / "counter"),
             "FAKE_GH_MODE": mode,
             "FAKE_LABEL_STATE": str(root / "label-state"),
@@ -60,7 +60,7 @@ if [ "$FAKE_GH_MODE" = label-api-error ]; then printf 'permission denied\n' >&2;
             "PATH": f"{fake_bin}{os.pathsep}{os.environ['PATH']}",
             "RUNNER_TEMP": str(root),
             **extra_env,
-        }
+        })
         if mode == "label-lifecycle":
             Path(env["FAKE_LABEL_STATE"]).write_text("present\n", encoding="utf-8")
         result = subprocess.run(

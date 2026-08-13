@@ -204,6 +204,9 @@ tools:
       - .github/workflows/mutation-testing.yml
       - .github/workflows/private-static.yml
       - .github/workflows/release.yml
+      - .github/workflows/runtime-fixtures-event-write.yml
+      - .github/workflows/runtime-fixtures-languages.yml
+      - .github/workflows/runtime-fixtures.yml
     last_verified: "2026-07-04"
 
   - id: upload-artifact
@@ -468,6 +471,7 @@ tools:
       - .github/workflows/private-static.yml
       - .github/workflows/python-ci.yml
       - .github/workflows/release.yml
+      - .github/workflows/runtime-fixtures-languages.yml
       - .github/workflows/semgrep-ci.yml
       - .github/workflows/sql-ci.yml
       - .github/workflows/zizmor-no-sarif.yml

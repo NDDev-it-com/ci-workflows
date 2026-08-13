@@ -223,28 +223,28 @@ jobs:
 
       - name: terraform-ci must reject unformatted HCL
         run: |
-          python3 -I scripts/negative_gate_probe.py \
+          python3 scripts/check_python_execution_contract.py --launch negative_gate_probe.py -- \
             --workflow .github/workflows/terraform-ci.yml --job terraform \
             --step 'Format check' \
             --bad tests/fixtures/negative/terraform --good tests/fixtures/terraform
 
       - name: go-ci must report a failing test
         run: |
-          python3 -I scripts/negative_gate_probe.py \
+          python3 scripts/check_python_execution_contract.py --launch negative_gate_probe.py -- \
             --workflow .github/workflows/go-ci.yml --job go \
             --step 'Run tests' \
             --bad tests/fixtures/negative/go --good tests/fixtures/go
 
       - name: sql-ci must reject SQL the dialect refuses
         run: |
-          python3 -I scripts/negative_gate_probe.py \
+          python3 scripts/check_python_execution_contract.py --launch negative_gate_probe.py -- \
             --workflow .github/workflows/sql-ci.yml --job sql \
             --step 'Lint' \
             --bad tests/fixtures/negative/sql --good tests/fixtures/sql
 
       - name: python-ci must report a failing test
         run: |
-          python3 -I scripts/negative_gate_probe.py \
+          python3 scripts/check_python_execution_contract.py --launch negative_gate_probe.py -- \
             --workflow .github/workflows/python-ci.yml --job python \
             --step 'Run tests' \
             --bad tests/fixtures/negative/python --good tests/fixtures/python \
@@ -252,7 +252,7 @@ jobs:
 
       - name: docs-ci must reject a broken relative link
         run: |
-          python3 -I scripts/negative_gate_probe.py \
+          python3 scripts/check_python_execution_contract.py --launch negative_gate_probe.py -- \
             --workflow .github/workflows/docs-ci.yml --job docs \
             --step 'Check relative Markdown links' \
             --bad . --good . \
@@ -266,7 +266,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          python3 -I scripts/negative_gate_probe.py \
+          python3 scripts/check_python_execution_contract.py --launch negative_gate_probe.py -- \
             --workflow .github/workflows/zizmor-no-sarif.yml --job zizmor \
             --step 'Run zizmor (plain, enforced)' \
             --bad . --good . \
@@ -307,7 +307,7 @@ jobs:
       # that download instead of assuming a hadolint is already present.
       - name: hadolint-ci must reject an unpinned base and package
         run: |
-          python3 -I scripts/negative_gate_probe.py \
+          python3 scripts/check_python_execution_contract.py --launch negative_gate_probe.py -- \
             --workflow .github/workflows/hadolint-ci.yml --job hadolint \
             --before 'Download hadolint (pinned + checksum-verified)' \
             --step 'Run hadolint' \

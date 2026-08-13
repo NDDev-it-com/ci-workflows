@@ -34,6 +34,48 @@ These join the existing Python, Node, Go, Rust, Java, .NET, container, and
 Terraform packs. Swift defaults to a macOS runner (10x minute multiplier); its
 SwiftLint step runs on macOS only.
 
+Flutter, Android and Qt have bounded real projects under `tests/fixtures/` and
+exact-version callers in the language evidence estate. Their reusable jobs emit
+a redacted JSON receipt containing the resolved hosted-runner OS/architecture,
+SDK/tool versions, lock or checksum identities, cache identity, commands, test
+count and produced-binary digest. Independent observer jobs reject missing,
+skipped or partial receipts; a successful static gate is not runtime evidence.
+The authored byte contract is `tests/fixtures/sdk-runtime-spec.yml`, and
+`sdk-runtime-manifest.json` is generated from the exact checked-in bytes.
+
+For Android, `setup-gradle` explicitly selects its MIT-licensed `basic` cache
+provider. This keeps the shared public/private workflow independent of the
+separate enhanced commercial cache service. Consumers should commit the Gradle
+wrapper distribution checksum, wrapper JAR, dependency lockfiles and dependency
+verification metadata. Flutter and Qt callers should use exact SDK versions;
+wildcards remain supported for compatibility but are not eligible runtime proof.
+Android evidence keeps the requested Java selector separate from observation:
+`java_version_input` records the caller contract, while `java_version_resolved`
+and the runtime/vendor/VM fields record the actual executable. Matching
+launcher and daemon JVM identities come from the exact `./gradlew --version`
+invocation; missing or divergent observed identities fail closed. A desired
+major is never repeated as though it were a measured runtime.
+
+The Android lock closure follows the canonical Gradle 9.5 single-project
+writer format, not the reader's broader legacy tolerance: the exact generated
+three-line header is followed by unique lexically ordered dependency records,
+then exactly one terminal `empty=` aggregate. Configuration lists are unique
+and lexical; extra comments, blank lines, malformed/unknown records, partial
+output and records after `empty=` fail closed. The generator validates Gradle's
+bytes as emitted and never sorts or rewrites them to satisfy the evidence gate.
+
+The fixture contract is itself executed in a fresh Python 3.13 process from an
+unrelated working directory. The repository-wide Python execution gate owns the
+complete validator/generator inventory, compiles every file, rejects undefined
+globals and unowned imports, prohibits import-time I/O/process/network calls,
+and runs each validator's positive/adversarial self-check with isolated import
+state and a sanitized environment. This prevents an aggregate in-process import
+cache or contributor shell environment from hiding a missing dependency.
+Repository-owned isolated execution uses one vocabulary:
+`python3 scripts/check_python_execution_contract.py --launch <tool.py> -- <args>`.
+The launcher derives whether pinned PyYAML is permitted from the registered
+transitive graph; stdlib-only tools do not silently acquire that dependency.
+
 The Go pack checks out one commit by default. Callers whose validation reads
 Git ancestry or pull-request merge parents must set `fetch_depth: 0`; the
 default remains `1` for backward compatibility and faster tree-only builds.
@@ -83,4 +125,4 @@ wrap fast-moving third-party services and are opt-in.
 | Release automation | [release-please](../examples/level3/release-please.yml) | Complements the tag-driven attested release; changesets for monorepos. |
 
 ---
-Last verified: 2026-07-10
+Last verified: 2026-08-13

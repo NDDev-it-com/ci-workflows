@@ -288,6 +288,11 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Set up isolated Python contract runtime
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.13'
+
       - name: Render evidence for the runtime-coverage ledger
         env:
           RESULTS: ${{ toJSON(needs) }}
@@ -296,4 +301,4 @@ jobs:
             {"fixture-actionlint":"actionlint.yml","fixture-zizmor-no-sarif":"zizmor-no-sarif.yml","fixture-secret-scan":"secret-scan.yml","fixture-secret-scan-binary":"secret-scan.yml","fixture-private-static":"private-static.yml","fixture-monorepo-router":"monorepo-changed-paths.yml","fixture-osv-scan":"osv-scan.yml","fixture-semgrep":"semgrep-ci.yml","fixture-coverage-gate":"coverage-gate.yml","fixture-grype-scan":"grype-scan.yml","fixture-iac-scan":"iac-scan.yml","fixture-public-codeql":"public-codeql.yml","fixture-zizmor-sarif":"zizmor-sarif.yml","fixture-rust-supply-chain":"rust-supply-chain.yml","fixture-docs-ci":"docs-ci.yml","fixture-gate-report":"gate.yml"}
         run: |
           set -euo pipefail
-          python3 -I scripts/render_runtime_evidence.py
+          python3 scripts/check_python_execution_contract.py --launch render_runtime_evidence.py --

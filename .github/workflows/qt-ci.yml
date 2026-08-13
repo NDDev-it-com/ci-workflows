@@ -6,6 +6,10 @@ name: qt-ci
 
 on:
   workflow_call:
+    outputs:
+      evidence:
+        description: 'Redacted JSON receipt for the Qt/aqt/CMake toolchain and successful CTest lane.'
+        value: ${{ jobs.qt.outputs.evidence }}
     inputs:
       runner:
         type: string
@@ -68,6 +72,8 @@ jobs:
     timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       contents: read
+    outputs:
+      evidence: ${{ steps.evidence.outputs.evidence }}
     defaults:
       run:
         # Explicit, and not redundant with the workflow-level default above:
@@ -92,6 +98,9 @@ jobs:
           arch: ${{ inputs.qt_arch }}
           modules: ${{ inputs.qt_modules }}
           cache: true
+          cache-key-prefix: qt-ci-v1
+          aqtversion: '==3.3.0'
+          py7zrversion: '==1.0.0'
 
       - name: Set up ccache
         if: ${{ inputs.enable_ccache }}
@@ -115,7 +124,62 @@ jobs:
         if: ${{ inputs.test_command != '' }}
         env:
           TEST_COMMAND: ${{ inputs.test_command }}
-        run: bash -euo pipefail -c "$TEST_COMMAND"
+          TEST_LOG: ${{ runner.temp }}/qt-ci-tests.log
+        run: |
+          set -euo pipefail
+          bash -euo pipefail -c "$TEST_COMMAND" 2>&1 | tee "$TEST_LOG"
+
+      - name: Emit runtime evidence
+        id: evidence
+        env:
+          BUILD_COMMAND: ${{ inputs.build_command }}
+          CONFIGURE_COMMAND: ${{ inputs.configure_command }}
+          QT_VERSION_INPUT: ${{ inputs.qt_version }}
+          TEST_COMMAND: ${{ inputs.test_command }}
+          TEST_LOG: ${{ runner.temp }}/qt-ci-tests.log
+        run: |
+          python3 -I <<'PY'
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import re
+          import subprocess
+
+          log = pathlib.Path(os.environ["TEST_LOG"])
+          text = log.read_text(encoding="utf-8", errors="strict") if log.is_file() else ""
+          qmake = subprocess.check_output(["qmake", "-query", "QT_VERSION"], text=True).strip()
+          aqt = subprocess.check_output(["aqt", "version"], text=True).strip()
+          cmake = subprocess.check_output(["cmake", "--version"], text=True).splitlines()[0]
+          compiler = subprocess.check_output(["c++", "--version"], text=True).splitlines()[0]
+          complete = "100% tests passed" in text
+          total = re.search(r"tests failed out of (\d+)", text)
+          binaries = sorted(
+              path for path in pathlib.Path("build").rglob("*")
+              if path.is_file() and os.access(path, os.X_OK) and "CMakeFiles" not in path.parts
+          )
+          receipt = {
+              "aqt_version": aqt,
+              "binary_sha256": [hashlib.sha256(path.read_bytes()).hexdigest() for path in binaries],
+              "build_command": os.environ["BUILD_COMMAND"],
+              "cache_key_prefix": "qt-ci-v1",
+              "cmake_version": cmake.removeprefix("cmake version "),
+              "compiler": compiler,
+              "configure_command": os.environ["CONFIGURE_COMMAND"],
+              "os": os.environ["RUNNER_OS"],
+              "qt_version": qmake,
+              "qt_version_input": os.environ["QT_VERSION_INPUT"],
+              "runner_arch": os.environ["RUNNER_ARCH"],
+              "test_command": os.environ["TEST_COMMAND"],
+              "test_count": int(total.group(1)) if complete and total else 0,
+              "test_log_sha256": hashlib.sha256(log.read_bytes()).hexdigest() if log.is_file() else "",
+          }
+          encoded = json.dumps(receipt, sort_keys=True, separators=(",", ":"))
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"evidence={encoded}\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
+              handle.write(f"\nRuntime evidence: `{encoded}`\n")
+          PY
 
       - name: Summary
         env:

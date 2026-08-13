@@ -13,5 +13,5 @@ jobs:
     uses: NDDev-it-com/ci-workflows/.github/workflows/kotlin-android-ci.yml@<sha>
     with:
       runner: ubuntu-latest
-      lint_command: './gradlew ktlintCheck detekt'
-      build_command: './gradlew build'
+      # The checked wrapper, locks and dependency verification metadata own the
+      # toolchain. The reusable default runs ./gradlew build.

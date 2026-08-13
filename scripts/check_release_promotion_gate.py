@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from _workflow_yaml import WORKFLOWS_DIR, load_yaml
+from check_python_execution_contract import clean_environment
 
 WORKFLOW = WORKFLOWS_DIR / "release-promotion-gate.yml"
 NOW = dt.datetime(2026, 8, 5, 12, 0, tzinfo=dt.timezone.utc)
@@ -150,17 +151,14 @@ def _run(program: str, record: dict[str, Any], *, verified: bool = True) -> subp
         tag_path = root / "tag.json"
         ref_path.write_text(json.dumps(ref), encoding="utf-8")
         tag_path.write_text(json.dumps(tag), encoding="utf-8")
-        env = os.environ.copy()
-        env.update(
-            {
+        env = clean_environment({
                 "CONTROL_PLANE_REPOSITORY": "NDDev-it-com/nddev-harnesses",
                 "PROMOTION_NOW": _timestamp(NOW),
                 "PROMOTION_REF_JSON": str(ref_path),
                 "PROMOTION_TAG_JSON": str(tag_path),
                 "PUBLIC_REPOSITORY": PUBLIC_REPOSITORY,
                 "RELEASE_VERSION": "1.2.3",
-            }
-        )
+        })
         return subprocess.run(
             [sys.executable, "-I", "-"],
             input=program,

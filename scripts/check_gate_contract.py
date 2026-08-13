@@ -32,6 +32,7 @@ import tempfile
 from pathlib import Path
 
 from _workflow_yaml import REPO_ROOT, load_yaml
+from check_python_execution_contract import clean_environment
 
 GATE = REPO_ROOT / ".github" / "workflows" / "gate.yml"
 CATALOG = REPO_ROOT / "catalog" / "capabilities.yml"
@@ -61,13 +62,13 @@ def _run(program: Path, needs, required: str, allow: str = "") -> int:
     payload = "" if needs is None else json.dumps(needs)
     completed = subprocess.run(
         ["python3", "-I", str(program)],
-        env={
+        env=clean_environment({
             "PATH": "/usr/bin:/bin",
             "NEEDS_JSON": payload,
             "REQUIRED_JOBS": required,
             "ALLOW_SKIPPED": allow,
             "CHECK_NAME": "fixture",
-        },
+        }),
         capture_output=True,
         text=True,
         timeout=30,
@@ -185,5 +186,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
     raise SystemExit(main())

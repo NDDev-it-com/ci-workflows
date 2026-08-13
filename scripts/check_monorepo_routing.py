@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from _workflow_yaml import WORKFLOWS_DIR, load_yaml
+from check_python_execution_contract import clean_environment
 
 ROUTER = WORKFLOWS_DIR / "monorepo-changed-paths.yml"
 ZERO_BEFORE = "0" * 40
@@ -70,9 +71,7 @@ def _run(
     command: list[str], *, cwd: Path, env: dict[str, str] | None = None,
     input_text: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
-    process_env = os.environ.copy()
-    if env:
-        process_env.update(env)
+    process_env = clean_environment(env)
     return subprocess.run(
         command,
         cwd=cwd,

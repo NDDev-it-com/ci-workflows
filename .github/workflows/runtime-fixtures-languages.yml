@@ -390,6 +390,132 @@ jobs:
       runner: ubuntu-latest
       working_directory: tests/fixtures/r
 
+  # supporting - exact Flutter 3.47.0 / Dart 3.13.0 proof. The fixture passes
+  # only the exact SDK selector and location; resolve, format, analyze and test
+  # all use the reusable workflow's documented defaults.
+  fixture-dart-flutter-ci:
+    name: fixture / dart-flutter-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/dart-flutter-ci.yml
+    with:
+      runner: ubuntu-latest
+      flutter_version: '3.47.0'
+      working_directory: tests/fixtures/flutter
+
+  observe-dart-flutter-ci:
+    name: observe / dart-flutter-ci
+    needs: fixture-dart-flutter-ci
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up isolated Python contract runtime
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        with:
+          version: 0.11.30
+          python-version: '3.13'
+          activate-environment: true
+          enable-cache: false
+      - name: Install hash-locked validator dependency
+        run: uv pip install --require-hashes -r requirements-ci.txt
+      - name: Reject missing, skipped, or partial Flutter evidence
+        env:
+          CALLER_RESULT: ${{ needs.fixture-dart-flutter-ci.result }}
+          SDK_RUNTIME_EVIDENCE: ${{ needs.fixture-dart-flutter-ci.outputs.evidence }}
+        run: |
+          test "$CALLER_RESULT" = success
+          python3 scripts/check_python_execution_contract.py --launch check_sdk_runtime_fixtures.py -- --receipt flutter
+
+  # supporting - default Android build against a checked Gradle wrapper,
+  # dependency locks/verification metadata and the hosted API 37 SDK.
+  fixture-kotlin-android-ci:
+    name: fixture / kotlin-android-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/kotlin-android-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/android
+
+  observe-kotlin-android-ci:
+    name: observe / kotlin-android-ci
+    needs: fixture-kotlin-android-ci
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up isolated Python contract runtime
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        with:
+          version: 0.11.30
+          python-version: '3.13'
+          activate-environment: true
+          enable-cache: false
+      - name: Install hash-locked validator dependency
+        run: uv pip install --require-hashes -r requirements-ci.txt
+      - name: Reject missing, skipped, or partial Android evidence
+        env:
+          CALLER_RESULT: ${{ needs.fixture-kotlin-android-ci.result }}
+          SDK_RUNTIME_EVIDENCE: ${{ needs.fixture-kotlin-android-ci.outputs.evidence }}
+        run: |
+          test "$CALLER_RESULT" = success
+          python3 scripts/check_python_execution_contract.py --launch check_sdk_runtime_fixtures.py -- --receipt android
+
+  # supporting - exact Qt 6.8.4 Core/Test configure, compile and CTest proof.
+  # The commands remain the reusable defaults and install no optional modules.
+  fixture-qt-ci:
+    name: fixture / qt-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/qt-ci.yml
+    with:
+      runner: ubuntu-latest
+      qt_version: '6.8.4'
+      working_directory: tests/fixtures/qt
+
+  observe-qt-ci:
+    name: observe / qt-ci
+    needs: fixture-qt-ci
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up isolated Python contract runtime
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        with:
+          version: 0.11.30
+          python-version: '3.13'
+          activate-environment: true
+          enable-cache: false
+      - name: Install hash-locked validator dependency
+        run: uv pip install --require-hashes -r requirements-ci.txt
+      - name: Reject missing, skipped, or partial Qt evidence
+        env:
+          CALLER_RESULT: ${{ needs.fixture-qt-ci.result }}
+          SDK_RUNTIME_EVIDENCE: ${{ needs.fixture-qt-ci.outputs.evidence }}
+        run: |
+          test "$CALLER_RESULT" = success
+          python3 scripts/check_python_execution_contract.py --launch check_sdk_runtime_fixtures.py -- --receipt qt
+
   # supporting — mutation testing over the Rust fixture. cargo-mutants is used
   # supporting — mutation testing over the Rust fixture. cargo-mutants is used
   # rather than a Python or JS mutator because the crate is dependency-free, so
@@ -412,6 +538,12 @@ jobs:
     needs:
       - fixture-mutation-testing
       - fixture-r-ci
+      - fixture-dart-flutter-ci
+      - observe-dart-flutter-ci
+      - fixture-kotlin-android-ci
+      - observe-kotlin-android-ci
+      - fixture-qt-ci
+      - observe-qt-ci
       - fixture-benchmark-compare
       - fixture-go-ci
       - fixture-python-ci
@@ -448,12 +580,19 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Set up isolated Python contract runtime
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.13'
+
       - name: Render evidence for the runtime-coverage ledger
         env:
           RESULTS: ${{ toJSON(needs) }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           PROVES: >-
-            {"fixture-go-ci":"go-ci.yml","fixture-python-ci":"python-ci.yml","fixture-node-ci":"node-ci.yml","fixture-rust-ci":"rust-ci.yml","fixture-cpp-ci":"cpp-ci.yml","fixture-terraform-ci":"terraform-ci.yml","fixture-sql-ci":"sql-ci.yml","fixture-docs-quality":"docs-quality.yml","fixture-hadolint":"hadolint-ci.yml","fixture-web-ci":"web-ci.yml","fixture-container-ci":"container-ci.yml","fixture-cross-platform-smoke":"cross-platform-smoke.yml","fixture-java-ci":"java-ci.yml","fixture-dotnet-ci":"dotnet-ci.yml","fixture-swift-ci":"swift-ci.yml","fixture-mutation-testing":"mutation-testing.yml","fixture-r-ci":"r-ci.yml","fixture-benchmark-compare":"benchmark-compare.yml","fixture-go-ci-os":"go-ci.yml","fixture-python-ci-os":"python-ci.yml","fixture-rust-ci-os":"rust-ci.yml","fixture-dotnet-ci-os":"dotnet-ci.yml","fixture-java-ci-os":"java-ci.yml","fixture-node-ci-os":"node-ci.yml","fixture-terraform-ci-os":"terraform-ci.yml","fixture-sql-ci-os":"sql-ci.yml","fixture-web-ci-os":"web-ci.yml"}
+            {"fixture-go-ci":"go-ci.yml","fixture-python-ci":"python-ci.yml","fixture-node-ci":"node-ci.yml","fixture-rust-ci":"rust-ci.yml","fixture-cpp-ci":"cpp-ci.yml","fixture-terraform-ci":"terraform-ci.yml","fixture-sql-ci":"sql-ci.yml","fixture-docs-quality":"docs-quality.yml","fixture-hadolint":"hadolint-ci.yml","fixture-web-ci":"web-ci.yml","fixture-container-ci":"container-ci.yml","fixture-cross-platform-smoke":"cross-platform-smoke.yml","fixture-java-ci":"java-ci.yml","fixture-dotnet-ci":"dotnet-ci.yml","fixture-swift-ci":"swift-ci.yml","fixture-mutation-testing":"mutation-testing.yml","fixture-r-ci":"r-ci.yml","fixture-benchmark-compare":"benchmark-compare.yml","fixture-go-ci-os":"go-ci.yml","fixture-python-ci-os":"python-ci.yml","fixture-rust-ci-os":"rust-ci.yml","fixture-dotnet-ci-os":"dotnet-ci.yml","fixture-java-ci-os":"java-ci.yml","fixture-node-ci-os":"node-ci.yml","fixture-terraform-ci-os":"terraform-ci.yml","fixture-sql-ci-os":"sql-ci.yml","fixture-web-ci-os":"web-ci.yml","fixture-dart-flutter-ci":"dart-flutter-ci.yml","fixture-kotlin-android-ci":"kotlin-android-ci.yml","fixture-qt-ci":"qt-ci.yml"}
+          GUARDS: >-
+            {"fixture-dart-flutter-ci":["observe-dart-flutter-ci"],"fixture-kotlin-android-ci":["observe-kotlin-android-ci"],"fixture-qt-ci":["observe-qt-ci"]}
         run: |
           set -euo pipefail
-          python3 -I scripts/render_runtime_evidence.py
+          python3 scripts/check_python_execution_contract.py --launch render_runtime_evidence.py --
