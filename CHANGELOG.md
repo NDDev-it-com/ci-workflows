@@ -33,6 +33,19 @@
   the tags actually say. `0.11.0` is recorded as known debt with the two ways to
   resolve it, because creating a tag needs authority a validator should not have.
 
+- Scope `secret-scan.yml` to the checked-out ref by default. `gitleaks detect`
+  walks **every ref in the clone**, and `actions/checkout` with `fetch-depth: 0`
+  fetches every branch, so a finding on somebody's unmerged branch failed this
+  scan on every other branch — a required check whose result depended on refs the
+  change does not touch. This was found by running it: the evidence estate went
+  red on a branch cut from a clean `main`, and the finding traced to a commit
+  that is an ancestor of neither. Scanning only `HEAD` history is both what
+  "history-aware" was meant to say and the only scope a caller can be held
+  responsible for. `all-refs` stays reachable through the new `scan_scope` input
+  but has to be asked for, and an unknown value fails closed. **Behaviour
+  change for consumers**: a caller relying on the implicit all-branch sweep must
+  now pass `scan_scope: all-refs`.
+
 - Hold `secret-scan.yml`'s container lane to the standard its binary lane already
   met. The binary path is exhaustively allowlisted — version, OS, architecture,
   SHA-256, asset size, exact tar member set, no links or traversal, verified

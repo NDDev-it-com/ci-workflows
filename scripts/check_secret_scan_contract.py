@@ -51,6 +51,33 @@ def _guard_cases(program: str, problems: list[str]) -> None:
     # nonetheless printed "digest-pinned caller contract" unconditionally. The
     # tag-only and mutable cases below are what makes that summary true.
     tag_only = "zricethezav/gitleaks:v8.30.1"
+    # scan_scope decides whether a finding on an unrelated branch can fail this
+    # caller. The default must resolve to HEAD; `--all` stays reachable but has
+    # to be asked for.
+    scope_cases = [
+        ("scope-default", "ref-history", "HEAD", True),
+        ("scope-all-refs", "all-refs", "--all", True),
+        ("scope-unknown", "everything", None, False),
+        ("scope-empty", "", None, False),
+    ]
+    for label, scope, expected, success in scope_cases:
+        with tempfile.TemporaryDirectory(prefix="gitleaks-scope-") as raw:
+            root = Path(raw)
+            result = _run(program, {
+                "GITLEAKS_EXECUTION_MODE": "container",
+                "GITLEAKS_SCAN_SCOPE": scope,
+                "GITLEAKS_IMAGE": EXPECTED_CONTAINER,
+                "GITLEAKS_BINARY_VERSION": EXPECTED_VERSION,
+                "GITLEAKS_BINARY_SHA256": EXPECTED_SHA256,
+                "GITLEAKS_RUNNER_OS": "Linux",
+                "GITLEAKS_RUNNER_ARCH": "X64",
+                "GITHUB_ENV": str(root / "env"),
+                "GITHUB_STEP_SUMMARY": str(root / "summary"),
+            })
+            if (result.returncode == 0) != success:
+                problems.append(f"scan scope {label} returned {result.returncode}, expected {'success' if success else 'failure'}")
+            if expected is not None and f"GITLEAKS_LOG_OPTS={expected}" not in (root / "env").read_text():
+                problems.append(f"scan scope {label} did not resolve to {expected!r}")
     cases = [
         ("container-default", "container", EXPECTED_CONTAINER, EXPECTED_VERSION, EXPECTED_SHA256, "macOS", "ARM64", True),
         ("container-digest-no-tag", "container", f"zricethezav/gitleaks@sha256:{'a' * 64}", EXPECTED_VERSION, EXPECTED_SHA256, "Linux", "X64", True),
@@ -73,6 +100,7 @@ def _guard_cases(program: str, problems: list[str]) -> None:
             root = Path(raw)
             result = _run(program, {
                 "GITLEAKS_EXECUTION_MODE": mode,
+                "GITLEAKS_SCAN_SCOPE": "ref-history",
                 "GITLEAKS_IMAGE": image,
                 "GITLEAKS_BINARY_VERSION": version,
                 "GITLEAKS_BINARY_SHA256": digest,
