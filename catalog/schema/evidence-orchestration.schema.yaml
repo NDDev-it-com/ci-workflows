@@ -1,0 +1,54 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: NDDev CI evidence orchestration
+type: object
+additionalProperties: false
+required: [schema, levels, platforms, operating_systems, architectures, profiles, risks, changes, environment_classes, evidence_classes, timing_policy, lanes]
+properties:
+  schema: {const: nddev-ci-evidence-orchestration/v1}
+  levels: {const: [fast, pr-required, full, release]}
+  platforms: {type: array, minItems: 1, uniqueItems: true, items: {type: string}}
+  operating_systems: {type: array, minItems: 1, uniqueItems: true, items: {type: string}}
+  architectures: {type: array, minItems: 1, uniqueItems: true, items: {type: string}}
+  profiles: {type: array, minItems: 1, uniqueItems: true, items: {type: string}}
+  risks: {type: array, minItems: 1, uniqueItems: true, items: {type: string}}
+  changes: {type: array, minItems: 1, uniqueItems: true, items: {type: string}}
+  environment_classes: {const: [standard-hosted-vm, native-disposable-host]}
+  evidence_classes:
+    type: object
+    additionalProperties: false
+    required: [operational, durable]
+    properties:
+      operational: {$ref: '#/$defs/retention'}
+      durable: {$ref: '#/$defs/retention'}
+  timing_policy: {const: observe-only}
+  lanes:
+    type: array
+    minItems: 1
+    items: {$ref: '#/$defs/lane'}
+$defs:
+  retention:
+    type: object
+    additionalProperties: false
+    required: [intended_downstream_retention_days]
+    properties:
+      intended_downstream_retention_days: {type: integer, minimum: 1}
+  lane:
+    type: object
+    additionalProperties: false
+    required: [id, title, workflow, handoff, minimum_level, platforms, operating_systems, architectures, profiles, risks_any, changes_any, release, environment_class, host_capabilities, evidence_class]
+    properties:
+      id: {type: string, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'}
+      title: {type: string, minLength: 1}
+      workflow: {type: [string, 'null']}
+      handoff: {type: [string, 'null']}
+      minimum_level: {enum: [fast, pr-required, full, release]}
+      platforms: {type: array, minItems: 1, uniqueItems: true, items: {type: string}}
+      operating_systems: {type: array, minItems: 1, uniqueItems: true, items: {type: string}}
+      architectures: {type: array, minItems: 1, uniqueItems: true, items: {type: string}}
+      profiles: {type: array, minItems: 1, uniqueItems: true, items: {type: string}}
+      risks_any: {type: array, uniqueItems: true, items: {type: string}}
+      changes_any: {type: array, uniqueItems: true, items: {type: string}}
+      release: {enum: [forbidden, allowed, required]}
+      environment_class: {enum: [standard-hosted-vm, native-disposable-host]}
+      host_capabilities: {type: array, uniqueItems: true, items: {enum: [reboot, gui-session, ssh-network, system-hardening]}}
+      evidence_class: {enum: [operational, durable]}
