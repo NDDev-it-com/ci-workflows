@@ -2,7 +2,7 @@
   "schema_version": 1,
   "python": {
     "major_minor": "3.13",
-    "subject_count": 43,
+    "subject_count": 44,
     "launcher": "scripts/check_python_execution_contract.py",
     "launcher_prefix": [".venv/bin/python", "-I", "-B", "scripts/check_python_execution_contract.py", "--launch"],
     "syntax_gate_prefix": [".venv/bin/python", "-I", "-B", "scripts/check_python_syntax.py"],
@@ -114,7 +114,8 @@
     "library": ["_json_schema.py", "_runners.py", "_workflow_yaml.py"],
     "read_only_validator": [
       "_strict_yaml.py", "check_actionlint_contract.py",
-      "check_benchmark_contract.py", "check_docs_links.py", "check_examples.py",
+      "check_benchmark_contract.py", "check_docs_links.py", "check_documented_commands.py",
+      "check_examples.py",
       "check_gate_contract.py", "check_harden_runner_contract.py",
       "check_merge_group.py", "check_monorepo_routing.py",
       "check_permissions.py", "check_pinned_actions.py",
@@ -143,6 +144,7 @@
     "_workflow_yaml.py": ["_strict_yaml"],
     "check_actionlint_contract.py": ["_workflow_yaml", "check_python_execution_contract"],
     "check_benchmark_contract.py": ["_workflow_yaml"],
+    "check_documented_commands.py": ["_workflow_yaml"],
     "check_examples.py": ["_runners", "_workflow_yaml"],
     "check_gate_contract.py": ["_strict_yaml", "_workflow_yaml", "check_python_execution_contract"],
     "check_harden_runner_contract.py": ["_workflow_yaml"],
@@ -171,7 +173,8 @@
     "resolve_profile.py": ["_strict_yaml"],
     "validate_all.py": [
       "_strict_yaml", "check_actionlint_contract", "check_benchmark_contract",
-      "check_docs_links", "check_examples", "check_gate_contract",
+      "check_docs_links", "check_documented_commands", "check_examples",
+      "check_gate_contract",
       "check_harden_runner_contract", "check_merge_group",
       "check_monorepo_routing", "check_permissions", "check_pinned_actions",
       "check_pr_hygiene_contract", "check_privileged_ref_guard",

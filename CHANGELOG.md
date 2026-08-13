@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+- Bind documented tool commands to the ones `ci-gate` actually runs. Four places
+  told a contributor how to run zizmor and three were wrong, each differently:
+  `AGENTS.md` and the `nddev-repo-flow` skill named `--persona regular` while
+  `ci.yml` passes `pedantic`, so following the brief gave a clean local run and a
+  red required check; `CONTRIBUTING.md` carried a comment reading "regular
+  persona, matches CI" above a pedantic command, ran an unpinned `zizmor` off
+  `PATH` against this repository's own "never a mutable version" rule, and
+  omitted `GH_TOKEN` from both invocations — the exact omission documented as how
+  three `ref-version-mismatch` findings reached the default branch. All five
+  invocations are now identical, and `check_documented_commands.py` derives the
+  version, severity and persona from the workflow inputs and from what `ci.yml`
+  really passes, so prose can no longer drift from the gate. It also pins the
+  documented actionlint version and checksum to the workflow defaults.
+
 - Make the ruleset gate assert force, not only shape. `enforcement` was checked
   against an enum that accepts `disabled`, so the default-branch ruleset could
   have been switched off entirely while this gate stayed green and the required
