@@ -187,9 +187,15 @@ entries:
     waiver: null
   - workflow: .github/workflows/pr-hygiene.yml
     criticality: required-gate
-    status: blocked
-    evidence: 'The earlier partial runtime proof remains historical evidence in #127, but adding machine-observable labeler outputs changed the reusable digest. Recovery Attempt 2 must re-run the current bytes and prove upstream new-labels/all-labels plus API-observed absent-to-present-to-absent state before partial-runtime can be restored.'
-    last_run: null
+    status: partial-runtime
+    evidence: 'Recovery Attempt 2 ran two current-digest pull_request callers. Default-discovery and exact explicit-config commitlint paths succeeded, as did PR-title. Labeler reported new-labels=ci and all-labels=ci; independent API observations proved ci absent before, present after the action, and absent after cleanup. The cleanup and evidence guard succeeded. Attempt 1 no-match failure remains preserved in #127. Stale remains unclaimed and owned by #133.'
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31659116371
+    proven_digest: bcd8258db6ee755095a6c8cb2a09839ef0ee1604645e78156b3fc613897b13c4
+    proven_jobs:
+      - commitlint-default-discovery
+      - commitlint-explicit-config
+      - pr-title
+      - labeler-observable-write
     runtime_debt:
       risk: high
       barrier: event-context
