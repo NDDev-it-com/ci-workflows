@@ -1,0 +1,215 @@
+{
+  "byte_contract": {
+    "newline": "lf",
+    "path_order": "lexical-posix",
+    "terminal_newline_count": 1,
+    "text_encoding": "utf-8"
+  },
+  "fixtures": [
+    {
+      "fixture": "android",
+      "kind": "text",
+      "path": "tests/fixtures/android/.gitignore",
+      "sha256": "c64f2b3feacef69a4d6aac99cd71f3a17e20d33733d42d3158b070d3ef990194",
+      "size": 22
+    },
+    {
+      "fixture": "android",
+      "kind": "text",
+      "path": "tests/fixtures/android/app/build.gradle.kts",
+      "sha256": "98296f1bbdff863c72cad63a8561782c5a2626c0de95d54b0dd627016a70e02e",
+      "size": 706
+    },
+    {
+      "fixture": "android",
+      "kind": "text",
+      "path": "tests/fixtures/android/app/gradle.lockfile",
+      "sha256": "246e9a0afc17309692d18f2fe7d093c6b80b6aaf3471e45984ce9fcd87d0261f",
+      "size": 37430
+    },
+    {
+      "fixture": "android",
+      "kind": "text",
+      "path": "tests/fixtures/android/app/src/main/AndroidManifest.xml",
+      "sha256": "b41525b1eead955378d969d88809ae9ddfa549903790a66ab331382342f1ca4d",
+      "size": 470
+    },
+    {
+      "fixture": "android",
+      "kind": "text",
+      "path": "tests/fixtures/android/app/src/main/kotlin/com/nddev/ci/fixture/MainActivity.kt",
+      "sha256": "a0963fba9ac2f93f1b1c51e9d3318ae852835c192e54c53082755b0ea4b11462",
+      "size": 385
+    },
+    {
+      "fixture": "android",
+      "kind": "text",
+      "path": "tests/fixtures/android/app/src/main/res/values/styles.xml",
+      "sha256": "ff396da1ad1d0cbeaf4626c57f95fde9fcf18623795a9be388ba3c155eaef64c",
+      "size": 111
+    },
+    {
+      "fixture": "android",
+      "kind": "text",
+      "path": "tests/fixtures/android/app/src/test/kotlin/com/nddev/ci/fixture/MainActivityTest.kt",
+      "sha256": "7f0038339f7b46ed5c9970371b6a01f93b9af7f452c18ad8d323a41e96331885",
+      "size": 232
+    },
+    {
+      "fixture": "android",
+      "kind": "text",
+      "path": "tests/fixtures/android/build.gradle.kts",
+      "sha256": "6d813db4cdfcf8403a1c7f878bad150b9140abd1d6e8ec484b371c124ccc3027",
+      "size": 199
+    },
+    {
+      "fixture": "android",
+      "kind": "text",
+      "path": "tests/fixtures/android/gradle.properties",
+      "sha256": "a07aad27d265a85cf72fd3367599e091b4c2fe53783670e00eeb3f090474d3f7",
+      "size": 221
+    },
+    {
+      "fixture": "android",
+      "kind": "text",
+      "path": "tests/fixtures/android/gradle/libs.versions.toml",
+      "sha256": "57b5abdc15acae16069620c3f8ffb56a518a328dbfd30f98e987715d8bb3af35",
+      "size": 262
+    },
+    {
+      "fixture": "android",
+      "kind": "text",
+      "path": "tests/fixtures/android/gradle/provenance-manifest.json",
+      "sha256": "2e0dc4e72ce078202eb7d1e86f0be4f9884fe0935d82e8c79d099ed504e351cc",
+      "size": 187141
+    },
+    {
+      "fixture": "android",
+      "kind": "text",
+      "path": "tests/fixtures/android/gradle/verification-metadata.xml",
+      "sha256": "da808164fe8e0c846dbb54ef072e9d712c44d4ae640cd6cdf7d5bbd3b2688fd7",
+      "size": 145765
+    },
+    {
+      "fixture": "android",
+      "kind": "binary",
+      "path": "tests/fixtures/android/gradle/wrapper/gradle-wrapper.jar",
+      "sha256": "497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7",
+      "size": 48462
+    },
+    {
+      "fixture": "android",
+      "kind": "text",
+      "path": "tests/fixtures/android/gradle/wrapper/gradle-wrapper.properties",
+      "sha256": "5b244733103959642b3514c72308d0229e64d84f4f0819f370884fa0f1112d0d",
+      "size": 339
+    },
+    {
+      "fixture": "android",
+      "kind": "text",
+      "path": "tests/fixtures/android/gradlew",
+      "sha256": "45bda8deaef01b732f07bd317f962a736e349c6faa6662829bc0f41293b51212",
+      "size": 8676
+    },
+    {
+      "fixture": "android",
+      "kind": "text",
+      "path": "tests/fixtures/android/gradlew.bat",
+      "sha256": "9e62ee9a1c6eb7cecc90e55acc3ff09a1631ccfe3edddf180538a1e42b1532dc",
+      "size": 2786
+    },
+    {
+      "fixture": "android",
+      "kind": "text",
+      "path": "tests/fixtures/android/settings-gradle.lockfile",
+      "sha256": "e58bb2ed80db9f829601a658d7c33b9802eb7d2191c31e79c28e01f14c225926",
+      "size": 198
+    },
+    {
+      "fixture": "android",
+      "kind": "text",
+      "path": "tests/fixtures/android/settings.gradle.kts",
+      "sha256": "7af014e9bfd45280e1019e620a6f018bafe9574b69018dc64f9d4fd40830741f",
+      "size": 348
+    },
+    {
+      "fixture": "flutter",
+      "kind": "text",
+      "path": "tests/fixtures/flutter/.gitignore",
+      "sha256": "0acc32a9f31862579d67598b43b81bd2dc5e078a7d518f075427d51af10580f0",
+      "size": 21
+    },
+    {
+      "fixture": "flutter",
+      "kind": "text",
+      "path": "tests/fixtures/flutter/analysis_options.yaml",
+      "sha256": "1cc5f29e3f38fd1ca87fe11c7176a8d91a2dbe3a5b84483b3ef8f03a6c6b9450",
+      "size": 315
+    },
+    {
+      "fixture": "flutter",
+      "kind": "text",
+      "path": "tests/fixtures/flutter/lib/main.dart",
+      "sha256": "8d276e4ea7caa8549543052afb7825df422ac4cc8d9fa9ebbc52fac9ea2fe7d9",
+      "size": 329
+    },
+    {
+      "fixture": "flutter",
+      "kind": "text",
+      "path": "tests/fixtures/flutter/pubspec.lock",
+      "sha256": "703ac3bbd097e0233b52eef33b7e6b9da4605c3bb5d5b179193cb337d39d0040",
+      "size": 5382
+    },
+    {
+      "fixture": "flutter",
+      "kind": "text",
+      "path": "tests/fixtures/flutter/pubspec.yaml",
+      "sha256": "e4bf4ba5dd68bbf66b406876efe5c70aea747456f714340277ea3758ccd81673",
+      "size": 334
+    },
+    {
+      "fixture": "flutter",
+      "kind": "text",
+      "path": "tests/fixtures/flutter/test/widget_test.dart",
+      "sha256": "747dc450f0175a9e76ce78e98cf91e460aa8aa14e8c87aad2591aef4e7984b5c",
+      "size": 318
+    },
+    {
+      "fixture": "qt",
+      "kind": "text",
+      "path": "tests/fixtures/qt/.gitignore",
+      "sha256": "020c2606e8ed484089c2083e0be438b9d0736bee1558a6b76af0d58bd23f69cf",
+      "size": 8
+    },
+    {
+      "fixture": "qt",
+      "kind": "text",
+      "path": "tests/fixtures/qt/CMakeLists.txt",
+      "sha256": "9066d4ec02a9f87f5677a0be6d0d5f63e4860c14a2232dbaaa52a299d6a676df",
+      "size": 674
+    },
+    {
+      "fixture": "qt",
+      "kind": "text",
+      "path": "tests/fixtures/qt/src/fixture_identity.cpp",
+      "sha256": "49a23259357ce937a4f11dab4492a9d89fbd04cdd6fa8e89ee9b06a20a3dbe67",
+      "size": 168
+    },
+    {
+      "fixture": "qt",
+      "kind": "text",
+      "path": "tests/fixtures/qt/src/fixture_identity.hpp",
+      "sha256": "e1bb302e4f49e1065fe92a4fc2bf4dc38741b228884ae8e72ea1e13ae091177c",
+      "size": 85
+    },
+    {
+      "fixture": "qt",
+      "kind": "text",
+      "path": "tests/fixtures/qt/tests/fixture_identity_test.cpp",
+      "sha256": "e63eb5adec192ad548557f777f1a45af35248d42dc48a5f8f2ff8c752c95799d",
+      "size": 379
+    }
+  ],
+  "schema_version": 1,
+  "spec_sha256": "1acb459ea139d765c1f7228de480f20abe9920f00ad9772f39fcaf36ae6a2b4c"
+}

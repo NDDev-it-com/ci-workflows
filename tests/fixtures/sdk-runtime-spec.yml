@@ -1,0 +1,149 @@
+schema_version: 1
+generated_manifest: tests/fixtures/sdk-runtime-manifest.json
+byte_contract:
+  text_encoding: utf-8
+  newline: lf
+  terminal_newline_count: 1
+  path_order: lexical-posix
+fixtures:
+  - id: flutter
+    workflow: .github/workflows/dart-flutter-ci.yml
+    runner: ubuntu-latest
+    working_directory: tests/fixtures/flutter
+    default_commands:
+      resolve: flutter pub get
+      format: dart format --output=none --set-exit-if-changed .
+      analyze: flutter analyze
+      test: flutter test
+    cache_contract:
+      provider: subosito/flutter-action
+      sdk_key_template: 'flutter-:os:-:channel:-:version:-:arch:-:hash:'
+      pub_key_template: 'flutter-pub-:os:-:channel:-:version:-:arch:-:hash:-pubspec-lock-sha256'
+    toolchain:
+      channel: stable
+      flutter_version: 3.47.0
+      dart_version: 3.13.0
+      framework_revision: 4cf24164269a5ebf0c16a028a00727d0e77bbb05
+      linux_x64_archive: stable/linux/flutter_linux_3.47.0-stable.tar.xz
+      linux_x64_archive_sha256: 26cd99d3d94b1367e6b50535a18aeef0282c10a535bbe3ec493534dcdab75296
+    source_files:
+      - path: tests/fixtures/flutter/.gitignore
+        kind: text
+      - path: tests/fixtures/flutter/analysis_options.yaml
+        kind: text
+      - path: tests/fixtures/flutter/lib/main.dart
+        kind: text
+      - path: tests/fixtures/flutter/pubspec.lock
+        kind: text
+      - path: tests/fixtures/flutter/pubspec.yaml
+        kind: text
+      - path: tests/fixtures/flutter/test/widget_test.dart
+        kind: text
+  - id: android
+    workflow: .github/workflows/kotlin-android-ci.yml
+    runner: ubuntu-latest
+    working_directory: tests/fixtures/android
+    default_commands:
+      build: ./gradlew build
+    cache_contract:
+      provider: basic
+      isolation: 'gradle-user-home:repository:workflow:job:os:matrix:commit'
+    java_evidence_fields:
+      - java_version_input
+      - java_version_resolved
+      - java_runtime_version_resolved
+      - java_vendor_resolved
+      - java_vm_name_resolved
+      - gradle_launcher_jvm_resolved
+      - gradle_launcher_jvm_version_resolved
+      - gradle_launcher_jvm_runtime_version_resolved
+      - gradle_launcher_jvm_vendor_resolved
+      - gradle_launcher_jvm_vm_name_resolved
+      - gradle_daemon_jvm_resolved
+      - gradle_daemon_jvm_version_resolved
+      - gradle_daemon_jvm_runtime_version_resolved
+      - gradle_daemon_jvm_vendor_resolved
+      - gradle_daemon_jvm_vm_name_resolved
+    lockfile_contract:
+      format: gradle-9.5-single-project-v1
+      encoding: utf-8-lf-terminal-lf
+      header: exact-gradle-generated-three-line-header
+      dependency_order: strict-lexical-unique-module
+      configuration_order: strict-lexical-unique
+      empty_aggregate: exactly-one-terminal
+      source: gradle-v9.5.0-LockFileReaderWriter
+    toolchain:
+      agp_version: 9.3.1
+      kotlin_version: 2.2.10
+      gradle_version: 9.5.0
+      gradle_distribution_sha256: 553c78f50dafcd54d65b9a444649057857469edf836431389695608536d6b746
+      gradle_wrapper_jar_sha256: 497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7
+      java_version_input: 21
+      compile_sdk: 37
+      build_tools: 36.0.0
+    source_files:
+      - path: tests/fixtures/android/.gitignore
+        kind: text
+      - path: tests/fixtures/android/app/build.gradle.kts
+        kind: text
+      - path: tests/fixtures/android/app/gradle.lockfile
+        kind: text
+      - path: tests/fixtures/android/app/src/main/AndroidManifest.xml
+        kind: text
+      - path: tests/fixtures/android/app/src/main/kotlin/com/nddev/ci/fixture/MainActivity.kt
+        kind: text
+      - path: tests/fixtures/android/app/src/main/res/values/styles.xml
+        kind: text
+      - path: tests/fixtures/android/app/src/test/kotlin/com/nddev/ci/fixture/MainActivityTest.kt
+        kind: text
+      - path: tests/fixtures/android/build.gradle.kts
+        kind: text
+      - path: tests/fixtures/android/gradle.properties
+        kind: text
+      - path: tests/fixtures/android/gradle/libs.versions.toml
+        kind: text
+      - path: tests/fixtures/android/gradle/provenance-manifest.json
+        kind: text
+      - path: tests/fixtures/android/gradle/verification-metadata.xml
+        kind: text
+      - path: tests/fixtures/android/gradle/wrapper/gradle-wrapper.jar
+        kind: binary
+      - path: tests/fixtures/android/gradle/wrapper/gradle-wrapper.properties
+        kind: text
+      - path: tests/fixtures/android/gradlew
+        kind: text
+      - path: tests/fixtures/android/gradlew.bat
+        kind: text
+      - path: tests/fixtures/android/settings-gradle.lockfile
+        kind: text
+      - path: tests/fixtures/android/settings.gradle.kts
+        kind: text
+  - id: qt
+    workflow: .github/workflows/qt-ci.yml
+    runner: ubuntu-latest
+    working_directory: tests/fixtures/qt
+    default_commands:
+      configure: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      build: cmake --build build --parallel
+      test: ctest --test-dir build --output-on-failure
+    cache_contract:
+      provider: jurplel/install-qt-action
+      key_prefix: qt-ci-v1
+    toolchain:
+      qt_version: 6.8.4
+      aqtinstall_version: 3.3.0
+      py7zr_version: 1.0.0
+      cmake_minimum: 3.21
+      cxx_standard: 17
+      archive_verification: aqtinstall-official-metadata-sha256
+    source_files:
+      - path: tests/fixtures/qt/.gitignore
+        kind: text
+      - path: tests/fixtures/qt/CMakeLists.txt
+        kind: text
+      - path: tests/fixtures/qt/src/fixture_identity.cpp
+        kind: text
+      - path: tests/fixtures/qt/src/fixture_identity.hpp
+        kind: text
+      - path: tests/fixtures/qt/tests/fixture_identity_test.cpp
+        kind: text
