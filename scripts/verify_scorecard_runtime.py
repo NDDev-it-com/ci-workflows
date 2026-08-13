@@ -79,7 +79,7 @@ def main() -> int:
         fail("run did not load the local SARIF reusable from its exact caller SHA")
 
     jobs = api(f"repos/{args.repo}/actions/runs/{args.run_id}/jobs").get("jobs") or []
-    matching_jobs = [job for job in jobs if job.get("name") == "scorecard / OSSF Scorecard"]
+    matching_jobs = [job for job in jobs if job.get("name") == "scorecard / OSSF Scorecard (publish)"]
     if len(matching_jobs) != 1:
         fail(f"expected one Scorecard SARIF job, found {len(matching_jobs)}")
     job = matching_jobs[0]
@@ -95,6 +95,24 @@ def main() -> int:
     for name, conclusion in required_steps.items():
         if steps.get(name) != conclusion:
             fail(f"required step {name!r} concluded {steps.get(name)!r}, expected success")
+    analysis_only_jobs = [
+        candidate for candidate in jobs
+        if candidate.get("name") == "analysis-only / OSSF Scorecard (analysis only)"
+    ]
+    if len(analysis_only_jobs) != 1:
+        fail(f"expected one analysis-only job, found {len(analysis_only_jobs)}")
+    analysis_only_job = analysis_only_jobs[0]
+    if analysis_only_job.get("conclusion") != "success":
+        fail(f"analysis-only job concluded {analysis_only_job.get('conclusion')!r}")
+    analysis_only_steps = {
+        step.get("name"): step.get("conclusion")
+        for step in analysis_only_job.get("steps") or []
+    }
+    if analysis_only_steps.get("Run analysis") != "success":
+        fail("analysis-only Scorecard step did not execute successfully")
+    forbidden_runtime_steps = {"Upload artifact", "Upload SARIF to code scanning"}
+    if forbidden_runtime_steps & set(analysis_only_steps):
+        fail("analysis-only job unexpectedly contains a publication step")
 
     analyses = api(f"repos/{args.repo}/code-scanning/analyses?per_page=100")
     candidates = [
@@ -122,6 +140,9 @@ def main() -> int:
         "run_url": run["html_url"],
         "job_id": job["id"],
         "job_url": f"{run['html_url']}/job/{job['id']}",
+        "analysis_only_job_id": analysis_only_job["id"],
+        "analysis_only_job_url": f"{run['html_url']}/job/{analysis_only_job['id']}",
+        "analysis_only_step": analysis_only_steps["Run analysis"],
         "analysis_step": steps["Run analysis"],
         "upload_step": steps["Upload SARIF to code scanning"],
         "reusable_sha": exact_refs[0]["sha"],

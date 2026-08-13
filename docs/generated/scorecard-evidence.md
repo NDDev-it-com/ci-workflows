@@ -14,7 +14,9 @@ private, fork, skipped-step, wrong-tool, and wrong-category runs are rejected.
 | Events | push, schedule |
 | Runner | `ubuntu-latest` |
 | SARIF category / tool | `ossf-scorecard` / `Scorecard` |
-| Scorecard API publish | `disabled` |
+| Scorecard API publish | `enabled` |
+| Preserved failed attempt | `1` / `product-failure` |
+| Failed run | [run](https://github.com/NDDev-it-com/ci-workflows/actions/runs/31662081168) (`1c5545457b36d6875a43695902fca66a02136a18`) |
 | Runtime status | `pending post-merge default-branch proof` |
 
 ---

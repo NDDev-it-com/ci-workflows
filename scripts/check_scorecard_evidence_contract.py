@@ -23,22 +23,38 @@ EXPECTED_CONSUMER = {
     "reusable_workflow": ".github/workflows/public-scorecard.yml",
     "supported_events": ["push", "schedule"],
     "runner": "ubuntu-latest",
-    "publish_results": False,
+    "publish_results": True,
     "sarif_category": "ossf-scorecard",
     "sarif_tool": "Scorecard",
     "required_permissions": {
         "actions": "read",
         "contents": "read",
+        "id-token": "write",
         "security-events": "write",
     },
-    "forbidden_permissions": ["id-token"],
+    "analysis_only_permissions": {
+        "actions": "read",
+        "contents": "read",
+    },
 }
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
+EXPECTED_ATTEMPT_1 = {
+    "attempt": 1,
+    "classification": "product-failure",
+    "caller_sha": "1c5545457b36d6875a43695902fca66a02136a18",
+    "run_id": 31662081168,
+    "run_url": "https://github.com/NDDev-it-com/ci-workflows/actions/runs/31662081168",
+    "conclusion": "startup_failure",
+    "reason": (
+        "Nested scorecard job requested id-token: write while its "
+        "publish_results:false caller allowed id-token: none."
+    ),
+}
 
 
-def _steps(workflow: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    raw = workflow.get("jobs", {}).get("scorecard", {}).get("steps", [])
+def _steps(workflow: dict[str, Any], job_id: str) -> dict[str, dict[str, Any]]:
+    raw = workflow.get("jobs", {}).get(job_id, {}).get("steps", [])
     return {str(step.get("name")): step for step in raw if isinstance(step, dict)}
 
 
@@ -82,19 +98,34 @@ def _caller_contract_problems(caller: dict[str, Any], consumer: dict[str, Any]) 
     concurrency = caller.get("concurrency", {})
     if concurrency.get("cancel-in-progress") is not False:
         problems.append("canonical Scorecard evidence must preserve the first run rather than cancel it")
-    job = caller.get("jobs", {}).get("scorecard", {})
-    if job.get("uses") != "./.github/workflows/public-scorecard.yml":
-        problems.append("canonical consumer must call the SARIF reusable from the same immutable commit")
-    if job.get("permissions") != consumer["required_permissions"]:
-        problems.append("canonical consumer permissions must be the exact least-privilege SARIF set")
-    if "id-token" in (job.get("permissions") or {}):
-        problems.append("publish_results false must not receive id-token: write")
-    if job.get("with") != {
-        "runner": "ubuntu-latest", "publish_results": False,
-        "sarif_category": "ossf-scorecard",
-    }:
-        problems.append("canonical consumer inputs must select hosted SARIF evidence deterministically")
+    jobs = caller.get("jobs", {})
+    expected = {
+        "analysis-only": (consumer["analysis_only_permissions"], False),
+        "scorecard": (consumer["required_permissions"], True),
+    }
+    if set(jobs) != set(expected):
+        problems.append("canonical consumer must contain exactly analysis-only and publish jobs")
+    for job_id, (permissions, publish_results) in expected.items():
+        job = jobs.get(job_id, {})
+        if job.get("uses") != "./.github/workflows/public-scorecard.yml":
+            problems.append(f"canonical {job_id} consumer must call the exact local SARIF reusable")
+        if job.get("permissions") != permissions:
+            problems.append(f"canonical {job_id} permissions drifted from its exact mode")
+        if job.get("with") != {
+            "runner": "ubuntu-latest", "publish_results": publish_results,
+            "sarif_category": "ossf-scorecard",
+        }:
+            problems.append(f"canonical {job_id} inputs must select its exact boolean mode")
+    analysis_permissions = jobs.get("analysis-only", {}).get("permissions", {})
+    if {"id-token", "security-events"} & set(analysis_permissions):
+        problems.append("analysis-only caller must not grant OIDC or Code Scanning writes")
     return problems
+
+
+def _selected_mode(value: Any) -> str:
+    if type(value) is not bool:
+        raise ValueError("publish_results must be an exact YAML boolean")
+    return "publish" if value else "analysis-only"
 
 
 def verify_proof(proof: Any, consumer: dict[str, Any]) -> list[str]:
@@ -105,7 +136,8 @@ def verify_proof(proof: Any, consumer: dict[str, Any]) -> list[str]:
         return ["scorecard proof must be null or a mapping"]
     required = {
         "repository", "caller_sha", "caller_ref", "caller_workflow", "event",
-        "run_id", "run_url", "job_id", "job_url", "analysis_step",
+        "run_id", "run_url", "job_id", "job_url", "analysis_only_job_id",
+        "analysis_only_job_url", "analysis_only_step", "analysis_step",
         "upload_step", "reusable_sha", "reusable_digest", "reusable_workflow",
         "analysis_id", "analysis_url", "analysis_key", "analysis_ref",
         "analysis_commit_sha", "analysis_category", "analysis_tool",
@@ -125,6 +157,7 @@ def verify_proof(proof: Any, consumer: dict[str, Any]) -> list[str]:
         "caller_ref": f"refs/heads/{consumer['default_branch']}",
         "caller_workflow": consumer["caller_workflow"],
         "event": "push",
+        "analysis_only_step": "success",
         "analysis_step": "success",
         "upload_step": "success",
         "reusable_workflow": consumer["reusable_workflow"],
@@ -144,10 +177,10 @@ def verify_proof(proof: Any, consumer: dict[str, Any]) -> list[str]:
         problems.append("local reusable was not loaded from the exact caller commit")
     if not DIGEST_RE.fullmatch(str(proof.get("reusable_digest", ""))):
         problems.append("scorecard proof reusable_digest must be a lowercase SHA-256")
-    for key in ("run_id", "job_id", "analysis_id"):
+    for key in ("run_id", "job_id", "analysis_only_job_id", "analysis_id"):
         if not isinstance(proof.get(key), int) or proof[key] <= 0:
             problems.append(f"scorecard proof {key} must be a positive integer")
-    for key in ("run_url", "job_url", "analysis_url"):
+    for key in ("run_url", "job_url", "analysis_only_job_url", "analysis_url"):
         allowed_prefixes = ("https://github.com/", "https://api.github.com/")
         if not str(proof.get(key, "")).startswith(allowed_prefixes):
             problems.append(f"scorecard proof {key} must be an immutable GitHub URL")
@@ -167,6 +200,9 @@ def _proof_selftests(consumer: dict[str, Any]) -> list[str]:
         "run_url": "https://github.com/NDDev-it-com/ci-workflows/actions/runs/1",
         "job_id": 2,
         "job_url": "https://github.com/NDDev-it-com/ci-workflows/actions/runs/1/job/2",
+        "analysis_only_job_id": 4,
+        "analysis_only_job_url": "https://github.com/NDDev-it-com/ci-workflows/actions/runs/1/job/4",
+        "analysis_only_step": "success",
         "analysis_step": "success",
         "upload_step": "success",
         "reusable_sha": "a" * 40,
@@ -188,6 +224,7 @@ def _proof_selftests(consumer: dict[str, Any]) -> list[str]:
         "non-default-ref": {"caller_ref": "refs/heads/fixtures/test"},
         "private-or-nondesignated": {"repository": "NDDev-it-com/other"},
         "skipped-analysis": {"analysis_step": "skipped"},
+        "skipped-analysis-only": {"analysis_only_step": "skipped"},
         "skipped-upload": {"upload_step": "skipped"},
         "unpinned-reusable": {"reusable_sha": "main"},
         "wrong-sha": {"analysis_commit_sha": "c" * 40},
@@ -209,6 +246,8 @@ def check() -> list[str]:
     contract = strict_load(CONTRACT_PATH)
     if contract.get("schema") != "nddev-ci-scorecard-evidence/v1":
         problems.append("scorecard evidence catalog has an unknown schema")
+    if contract.get("attempts") != [EXPECTED_ATTEMPT_1]:
+        problems.append("Scorecard Attempt 1 product-failure receipt drifted")
     consumer = contract.get("designated_consumer")
     if consumer != EXPECTED_CONSUMER:
         problems.append("scorecard evidence consumer must be the exact owned public default-branch contract")
@@ -220,18 +259,53 @@ def check() -> list[str]:
     del missing_security_events["jobs"]["scorecard"]["permissions"]["security-events"]
     if not _caller_contract_problems(missing_security_events, consumer):
         problems.append("Scorecard caller self-test accepted missing security-events permission")
+    missing_oidc = deepcopy(caller)
+    del missing_oidc["jobs"]["scorecard"]["permissions"]["id-token"]
+    if not _caller_contract_problems(missing_oidc, consumer):
+        problems.append("Scorecard caller self-test accepted missing publish OIDC permission")
     json_only_caller = deepcopy(caller)
     json_only_caller["jobs"]["scorecard"]["uses"] = "./.github/workflows/public-scorecard-json.yml"
     if not _caller_contract_problems(json_only_caller, consumer):
         problems.append("Scorecard caller self-test accepted the JSON-only reusable")
+    overgranted_caller = deepcopy(caller)
+    overgranted_caller["jobs"]["analysis-only"]["permissions"]["id-token"] = "write"
+    if not _caller_contract_problems(overgranted_caller, consumer):
+        problems.append("Scorecard caller self-test accepted analysis-only OIDC overgrant")
+    if _selected_mode(False) != "analysis-only" or _selected_mode(True) != "publish":
+        problems.append("Scorecard exact boolean modes are not mutually exclusive")
+    for invalid_mode in (None, "false", "true", 0, 1):
+        try:
+            _selected_mode(invalid_mode)
+        except ValueError:
+            pass
+        else:
+            problems.append(f"Scorecard mode accepted ambiguous value {invalid_mode!r}")
 
     reusable = load_yaml(REUSABLE_PATH)
     reusable_call = get_on(reusable).get("workflow_call", {})
-    if reusable_call.get("outputs", {}).get("sarif_id", {}).get("value") != "${{ jobs.scorecard.outputs.sarif_id }}":
+    publish_input = reusable_call.get("inputs", {}).get("publish_results", {})
+    if publish_input != {
+        "description": "Publish results to the OpenSSF Scorecard API (public repos).",
+        "type": "boolean", "default": True,
+    }:
+        problems.append("publish_results must remain an exact typed boolean with its compatible default")
+    if reusable_call.get("outputs", {}).get("sarif_id", {}).get("value") != "${{ jobs.scorecard-publish.outputs.sarif_id }}":
         problems.append("public-scorecard must expose the SARIF upload identifier")
-    if reusable.get("jobs", {}).get("scorecard", {}).get("outputs", {}).get("sarif_id") != "${{ steps.upload-sarif.outputs.sarif-id }}":
-        problems.append("Scorecard job must bind sarif_id to the upload-sarif output")
-    steps = _steps(reusable)
+    jobs = reusable.get("jobs", {})
+    analysis_job = jobs.get("scorecard-analysis", {})
+    publish_job = jobs.get("scorecard-publish", {})
+    if analysis_job.get("if") != "${{ !inputs.publish_results }}" or publish_job.get("if") != "${{ inputs.publish_results }}":
+        problems.append("Scorecard modes must use exact mutually exclusive boolean job guards")
+    if analysis_job.get("permissions") != consumer["analysis_only_permissions"]:
+        problems.append("analysis-only reusable must request only contents/actions read")
+    if {"id-token", "security-events"} & set(analysis_job.get("permissions", {})):
+        problems.append("analysis-only reusable must never request OIDC or Code Scanning writes")
+    if publish_job.get("permissions") != consumer["required_permissions"]:
+        problems.append("publish reusable must request the exact proven publication permissions")
+    if publish_job.get("outputs", {}).get("sarif_id") != "${{ steps.upload-sarif.outputs.sarif-id }}":
+        problems.append("publish job must bind sarif_id to the upload-sarif output")
+    steps = _steps(reusable, "scorecard-publish")
+    analysis_steps = _steps(reusable, "scorecard-analysis")
     required_steps = {
         "Harden runner", "Validate public default-branch contract", "Run analysis",
         "Upload artifact", "Upload SARIF to code scanning",
@@ -239,6 +313,21 @@ def check() -> list[str]:
     if not required_steps <= steps.keys():
         problems.append(f"public-scorecard is missing required evidence steps {sorted(required_steps - steps.keys())}")
         return problems
+    if "Upload SARIF to code scanning" in analysis_steps:
+        problems.append("analysis-only mode must not contain a SARIF upload step")
+    forbidden_analysis_steps = {"Upload artifact", "Upload SARIF to code scanning"}
+    if forbidden_analysis_steps & set(analysis_steps):
+        problems.append("analysis-only mode must not publish SARIF as an artifact or Code Scanning analysis")
+    common_names = list(analysis_steps)
+    publish_common_names = [name for name in steps if name not in {"Upload artifact", "Upload SARIF to code scanning"}]
+    if common_names != publish_common_names:
+        problems.append("Scorecard mode common-step order drifted")
+    for name in common_names:
+        if analysis_steps[name] != steps[name]:
+            problems.append(f"Scorecard mode common step {name!r} drifted")
+    for field in ("runs-on", "timeout-minutes"):
+        if analysis_job.get(field) != publish_job.get(field):
+            problems.append(f"Scorecard mode {field} drifted")
     if list(steps)[0] != "Harden runner" or list(steps)[1] != "Validate public default-branch contract":
         problems.append("Scorecard hardening and event guard must run before checkout or analysis")
     try:

@@ -7,6 +7,9 @@
   identifier. The repository's persistent Scorecard caller now exercises the
   SARIF path with least privilege, while a machine-readable ledger rejects
   JSON-only, skipped, wrong-ref, wrong-tool and wrong-analysis evidence (#128).
+- Split Scorecard analysis-only and publication into exact mutually exclusive
+  jobs. The analysis-only path cannot request OIDC or Code Scanning writes;
+  publication retains only the permissions needed for provenance and SARIF.
 
 - Add an explicit, fail-closed non-Docker Gitleaks mode for Linux X64. The
   existing digest-pinned container remains the default; binary execution binds

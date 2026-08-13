@@ -33,13 +33,120 @@ on:
     outputs:
       sarif_id:
         description: 'Code Scanning SARIF upload identifier returned by upload-sarif.'
-        value: ${{ jobs.scorecard.outputs.sarif_id }}
+        value: ${{ jobs.scorecard-publish.outputs.sarif_id }}
 
 permissions: {}
 
 jobs:
-  scorecard:
-    name: OSSF Scorecard
+  scorecard-analysis:
+    name: OSSF Scorecard (analysis only)
+    if: ${{ !inputs.publish_results }}
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 15
+    permissions:
+      contents: read          # read the repository Scorecard evaluates
+      actions: read           # Scorecard inspects workflow definitions
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920  # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Validate public default-branch contract
+        shell: bash
+        env:
+          SCORECARD_EVENT_NAME: ${{ github.event_name }}
+          SCORECARD_REF: ${{ github.ref }}
+          SCORECARD_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          SCORECARD_REPOSITORY_PRIVATE: ${{ github.event.repository.private }}
+          SCORECARD_REPOSITORY_FORK: ${{ github.event.repository.fork }}
+          SCORECARD_SERVER_URL: ${{ github.server_url }}
+          SCORECARD_SARIF_CATEGORY: ${{ inputs.sarif_category }}
+        run: |
+          set -euo pipefail
+          python3 -I <<'PY'
+          import os
+          import re
+
+          def fail(message):
+              print(f"Scorecard contract rejected: {message}")
+              raise SystemExit(1)
+
+          event = os.environ["SCORECARD_EVENT_NAME"]
+          default_branch = os.environ["SCORECARD_DEFAULT_BRANCH"]
+          expected_ref = f"refs/heads/{default_branch}"
+          if os.environ["SCORECARD_SERVER_URL"] != "https://github.com":
+              fail("OpenSSF Scorecard Action does not support GitHub Enterprise Server")
+          if os.environ["SCORECARD_REPOSITORY_PRIVATE"] != "false":
+              fail("the SARIF workflow requires a public repository")
+          if os.environ["SCORECARD_REPOSITORY_FORK"] != "false":
+              fail("OpenSSF Scorecard Action does not support fork repositories")
+          if event not in {"push", "schedule"}:
+              fail("supported events are push and schedule only")
+          if not default_branch or os.environ["SCORECARD_REF"] != expected_ref:
+              fail(f"the run must evaluate the actual default-branch ref {expected_ref!r}")
+          category = os.environ["SCORECARD_SARIF_CATEGORY"]
+          if not re.fullmatch(r"[a-z0-9][a-z0-9._-]{0,63}", category):
+              fail("sarif_category must be 1-64 lowercase URI-safe characters")
+          print(
+              f"validated public Scorecard run: event={event} "
+              f"ref={expected_ref} category={category}"
+          )
+          PY
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run analysis
+        uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc  # v2.4.4
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: ${{ inputs.publish_results }}
+
+      - name: Normalize placeholder URIs
+        if: ${{ inputs.normalize_placeholder_uris }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Replace the non-URI-safe placeholder that Scorecard emits for
+          # alerts not tied to a specific file, which causes upload errors.
+          jq '(.runs[].results[].artifactLocation.uri // empty) |=
+              (if . == "no file associated with this alert"
+               then "no-file-associated-with-this-alert" else . end)' \
+            results.sarif > results.filtered.sarif
+          mv results.filtered.sarif results.sarif
+
+      - name: Filter rule IDs
+        if: ${{ inputs.filter_rule_ids != '' }}
+        shell: bash
+        env:
+          FILTER_RULE_IDS: ${{ inputs.filter_rule_ids }}
+        run: |
+          set -euo pipefail
+          # Build a jq "select" condition to drop results/rules by ruleId.
+          IFS=',' read -ra IDS <<< "$FILTER_RULE_IDS"
+          cond=""
+          for id in "${IDS[@]}"; do
+            id=$(echo "$id" | xargs)  # trim whitespace
+            cond+="select(.ruleId != \"$id\") and "
+          done
+          cond="${cond% and }"
+          # Filter results and drop orphaned rule definitions
+          jq --argjson cond "$cond" '
+            .runs[].results |= map(. | select($cond)) |
+            .runs[].tool.driver.rules |= map(. | select(.id as $id | $cond))
+          ' results.sarif > results.filtered.sarif
+          mv results.filtered.sarif results.sarif
+
+  # GitHub does not allow expressions in a permissions map and a called
+  # workflow cannot elevate beyond its caller. Keep the OIDC-enabled path
+  # mutually exclusive so publish_results: false callers need not grant it.
+  scorecard-publish:
+    name: OSSF Scorecard (publish)
+    if: ${{ inputs.publish_results }}
     outputs:
       sarif_id: ${{ steps.upload-sarif.outputs.sarif-id }}
     runs-on: ${{ inputs.runner }}

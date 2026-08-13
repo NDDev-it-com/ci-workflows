@@ -80,12 +80,13 @@ capabilities:
     example: examples/public-oss/scorecard-sarif.yml
     required_permissions:
       - "security-events: write"
+      - "id-token: write"
       - "contents: read"
       - "actions: read"
     required_settings:
       - "Public repository (Scorecard is public-oriented; forks unsupported)"
       - "Code scanning enabled to render SARIF results"
-      - "id-token: write only when publish_results is explicitly enabled"
+      - "security-events: write and id-token: write only for publish_results: true"
     risks:
       - "Supported triggers are push and schedule on the default branch only; pull_request and workflow_dispatch are experimental"
       - "Do not place under pull_request in caller workflows"

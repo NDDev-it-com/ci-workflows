@@ -90,17 +90,19 @@ jobs:
   scorecard:
     permissions:
       security-events: write
+      id-token: write
       contents: read
       actions: read
     uses: NDDev-it-com/ci-workflows/.github/workflows/public-scorecard.yml@<full-sha>
     with:
-      publish_results: false
+      publish_results: true
       sarif_category: ossf-scorecard
 ```
 
-Grant `id-token: write` only when intentionally enabling `publish_results`.
-That upstream publishing path has additional workflow-shape verification and is
-separate from accepting SARIF in GitHub Code Scanning.
+Grant `id-token: write` and `security-events: write` only to the
+`publish_results: true` path. With `false`, the reusable runs the same pinned
+analysis but neither publishes nor uploads SARIF and requires only
+`contents: read` plus `actions: read`.
 
 <a id="dependency-review"></a>
 ## Dependency review — `public-dependency-review.yml`
