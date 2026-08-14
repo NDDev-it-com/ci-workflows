@@ -31,19 +31,33 @@ Dual-tier, caller-command-driven with sensible defaults.
 | SQL | `sql-ci.yml` | [sql](../examples/languages/sql.yml) |
 
 The Dart/Flutter, Kotlin/Android, and Qt callers above deliberately retain each
-reusable workflow's default resolve/build/test commands. Pin an exact Flutter or
-Qt release for reproducible evidence. Android projects should commit the Gradle
-wrapper with its published distribution checksum, dependency locks, and strict
-verification metadata covering the complete default `./gradlew build` graph.
-The local provenance generator strips ambient Android/JDK roots, derives them
-from verified `java` and `sdkmanager` executables on its clean `PATH`, then
-injects only coherent JDK 21 and SDK roots into the build child.
-Root validation walks directory identities without following symlinks. On
-Darwin, only the operating system's identity-equivalent `/var` → `/private/var`
-namespace alias is accepted; owned-root symlinks and alternate aliases fail.
-The reusable emits a redacted evidence receipt; fixture observers reject a
-missing/skipped caller, toolchain drift, empty test result, or substituted
-command. Provisioning duration is telemetry, not a correctness threshold.
+reusable workflow's default resolve/build/test commands, so the fixture estate
+exercises the defaults a consumer inherits rather than a bespoke invocation. Pin
+an exact Flutter or Qt release: a mutable channel selector resolves to different
+bytes on different days and cannot be evidence of anything.
+
+Each of the three emits a **runtime receipt** as a `workflow_call` output. The
+receipt is a discriminated record — `kind` names the pack, `sections` lists what
+that run actually produced — and it is deliberately generic. A caller who takes
+a documented "Empty to skip" option simply gets a receipt without that section;
+the reusable never requires a Gradle wrapper, an Android SDK, an APK, a module
+named `app`, or dependency-verification metadata, because none of those are
+things a reusable workflow may demand of an arbitrary project. Android also
+reports `untrusted_roots`, which keeps "no SDK on this runner" distinct from "an
+SDK I will not vouch for".
+
+Provenance in the receipt names the **callee**, via
+`job.workflow_repository` / `job.workflow_sha` / `job.workflow_file_path`. Inside
+a called reusable every `github.*` value describes the *caller*, so anything
+derived from `github.workspace` or `github.workflow_ref` would describe the
+consumer's tree instead of the workflow that ran.
+
+Assertions specific to this repository's fixtures — the exact task graph, the
+required SDK platform and build-tools, the APK, the dependency locks, the
+verification metadata, the CTest count — live in the observer jobs of
+`runtime-fixtures-languages.yml` and in `check_sdk_runtime_fixtures.py`, never in
+the reusable. Observers reject a missing, skipped, or partial caller result.
+Provisioning duration is telemetry, not a correctness threshold.
 
 These join the existing Python, Node, Go, Rust, Java, .NET, container, and
 Terraform packs. Swift defaults to a macOS runner (10x minute multiplier); its
