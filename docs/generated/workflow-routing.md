@@ -39,7 +39,7 @@ of a value is not proof that a workflow runs on that platform.
 | `.github/workflows/public-scorecard-json.yml` | `linux-shell` | linux | shell only | — |
 | `.github/workflows/public-scorecard.yml` | `linux-shell` | linux | shell only | — |
 | `.github/workflows/python-ci.yml` | `portable-shell` | linux, macos, windows | shell only | linux, macos, windows |
-| `.github/workflows/qt-ci.yml` | `linux-shell` | linux | shell only | — |
+| `.github/workflows/qt-ci.yml` | `linux-shell` | linux | shell only | linux |
 | `.github/workflows/r-ci.yml` | `linux-shell` | linux | shell only | — |
 | `.github/workflows/release-promotion-gate.yml` | `linux-shell` | linux | shell only | — |
 | `.github/workflows/release-supply-chain-free.yml` | `linux-shell` | linux | shell only | — |

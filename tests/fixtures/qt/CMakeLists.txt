@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(Qt6 6.8.4 EXACT REQUIRED COMPONENTS Core Test)
+find_package(Qt6 6.8.3 EXACT REQUIRED COMPONENTS Core Test)
 
 add_library(fixture_identity STATIC src/fixture_identity.cpp)
 target_include_directories(fixture_identity PUBLIC src)

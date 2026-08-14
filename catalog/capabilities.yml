@@ -1239,7 +1239,7 @@ capabilities:
       - "contents: read"
     required_settings: []
     risks:
-      - "Cannot start where the caller enforces full-SHA action pinning: jurplel/install-qt-action names actions/setup-python and its own sub-action by tag, and GitHub resolves the nested graph at job setup. See issue 150"
+      - "Qt is downloaded at runtime by aqtinstall; an exact qt_version pins what is installed, and a wildcard resolves to the newest published patch on the day"
       - "Runtime evidence needs an exact qt_version plus pinned aqtinstall/py7zr identities; a wildcard selector is not reproducible proof"
       - "aqtinstall downloads Qt at runtime; pin qt_version for reproducible builds"
       - "Private-repo runner minutes are metered beyond the included free allotment"

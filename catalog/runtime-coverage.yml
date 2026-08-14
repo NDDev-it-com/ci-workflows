@@ -69,9 +69,9 @@ entries:
       - linux
     criticality: supporting
     status: runtime-proven
-    evidence: "Fixture caller ran the default resolve/format/analyze/test lanes against tests/fixtures/flutter on ubuntu-latest and the observer accepted the receipt: four sections (cache, resolve, test, toolchain), one test, and a toolchain identity matching the pinned release exactly \u2014 3.47.0 stable, Dart 3.13.0, revision 4cf24164269a5ebf0c16a028a00727d0e77bbb05. The SDK is provisioned from Google's published manifest and verified against the SHA-256 that manifest publishes, so the workflow reaches no action it does not pin and starts where full-SHA pinning is enforced; check_transitive_action_pins reports it clean. Provenance names the callee. Linux only: the resolve step selects the host manifest and architecture, but only ubuntu-latest has been run."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31823739241
-    proven_digest: a62f0ba22c60d0e8425f5206628750579c670bcb3a5c5de7d5a7738394bfe32a
+    evidence: "Fixture caller ran the default resolve/format/analyze/test lanes against tests/fixtures/flutter on ubuntu-latest and the observer accepted the receipt: four sections (cache, resolve, test, toolchain), one test, and a toolchain identity matching the pinned release exactly \u2014 3.47.0 stable, Dart 3.13.0, revision 4cf24164269a5ebf0c16a028a00727d0e77bbb05. The SDK is provisioned from Google's published manifest and verified against the SHA-256 that manifest publishes, so the workflow reaches no action it does not pin. Re-proven after actions/cache moved off the deprecated Node 20 runtime. Linux only: only ubuntu-latest has been run."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31827607547
+    proven_digest: d2efaa6ca69813ce7ed4ac5f65cda9eea79e9f798c4c1e8c22159a2680c25591
     waiver: null
   - workflow: .github/workflows/docs-ci.yml
     criticality: supporting
@@ -249,15 +249,13 @@ entries:
     proven_digest: 3c2a15c1f9cdae90f15b57d47dd6f776143f388cb85f9166d46b20d9e4573b09
     waiver: null
   - workflow: .github/workflows/qt-ci.yml
+    proven_os:
+      - linux
     criticality: supporting
-    status: blocked
-    evidence: "Fixture and observer are wired, but the job is rejected during `Set up job`: jurplel/install-qt-action refers to nested actions by tag and this repository requires every action to be pinned to a full-length commit SHA. No step runs, so nothing is proven. Not a fixture gap: any consumer with the same control enabled cannot call this workflow either. Observed in https://github.com/NDDev-it-com/ci-workflows/actions/runs/31782942981. A second defect sat behind it: the fixture pinned Qt 6.8.4, which the open-source repository does not publish at all -- 6.8.3 is the highest 6.8.x -- so the lane could not have installed a toolchain even once the action problem is solved. Corrected, and check_qt_pin.py now resolves the pin against the published index."
-    last_run: null
-    runtime_debt:
-      risk: medium
-      barrier: dependency-policy-conflict
-      required_capability: Self-provisioned toolchain install that pins every action it uses, replacing the vendored setup action.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/150
+    status: runtime-proven
+    evidence: "Fixture caller ran the default configure/build/test lanes against tests/fixtures/qt on ubuntu-latest and the observer accepted the receipt: four sections (build, configure, test, toolchain), one CTest test, Qt 6.8.3 resolved and installed, and aqtinstall(aqt) v3.3.0. Qt is installed by a pinned aqtinstall invoked directly, so the workflow reaches no action it does not pin and starts where full-SHA pinning is enforced; check_transitive_action_pins reports the tree clean. The version resolves to exactly one published release and the architecture to exactly one published architecture, both refusing to guess, and the install root is located by its own qmake rather than derived from the architecture name. Linux only: only ubuntu-latest has been run."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31827607547
+    proven_digest: bdabfaf58640dc13965fe9b00c14325fa961587a16b82e9eae06bada09b5fbf6
     waiver: null
   - workflow: .github/workflows/r-ci.yml
     criticality: supporting
