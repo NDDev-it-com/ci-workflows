@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+- Teach the transitive pin audit the difference between an action and a reusable
+  workflow. A pinned `owner/repo/.github/workflows/x.yml@<sha>` would have sent
+  it looking for `.github/workflows/x.yml/action.yml`, produced a 404, and
+  reported a missing definition for a perfectly good pin. No such reference
+  exists here yet, which is exactly why it was worth finding before one does —
+  it is how consumers pin this library. Reusable workflows carry `uses:` of
+  their own, so they are now read rather than skipped: a third party's workflow
+  can name unpinned actions just as a third party's composite action can. The
+  kind-selection is a pure function tested on stated inputs.
+
+
 - Make the one actionlint suppression carry its own gate. `.github/actionlint.yaml`
   claimed `check_actionlint_contract.py` proved it was still narrow and still
   needed. No validator did anything of the kind — the same shape as a catalog
