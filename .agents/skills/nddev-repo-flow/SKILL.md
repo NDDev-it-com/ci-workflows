@@ -146,8 +146,13 @@ environment. `check_release_graph.py` enforces that shape.
    release must not ship carrying an expired fact.
 2. **Build the promotion record** in the control plane —
    `scripts/promotion_record.py create --module ci-workflows` in
-   `nddev-harnesses`. It already exists and enforces the same schema the gate
-   does; do not hand-write one.
+   `nddev-harnesses`. It enforces the same schema the gate does; do not
+   hand-write one. **Its `--evidence-manifest` input has no producer yet**, so
+   this step currently cannot be completed: the manifest needs nine lane records
+   — two of them macOS architectures — each with a real run identity and log
+   digest inside a 168-hour window, and nothing in the estate emits one. That is
+   why no release has run since the gate landed on 2026-08-05. See issue #157
+   before starting a release; if it is still open, stop after step 1.
 3. **Cut the signed tag** with that record as the annotation:
    `git tag -s X.Y.Z -F promotion.json`, then push the tag. Numeric SemVer only,
    no `v`. The annotation must be canonical compact JSON plus one LF, and the

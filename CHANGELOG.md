@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+- Stop the release skill telling an agent to run a command it cannot complete.
+  `nddev-repo-flow` step 2 said the promotion-record builder "already exists" and
+  to use it. The builder does exist; its required `--evidence-manifest` input has
+  no producer, so an agent following the procedure reaches step 2 and has nowhere
+  to get the argument. This is the agent-facing surface, where an instruction is
+  executed literally rather than read sceptically, so it now says what is missing
+  and to stop after step 1 while #157 is open.
+
+
 - Say that the release path has never been walked. `docs/09` described a
   tag-driven flow as though following it were routine, and the ledger said the
   supply-chain proof would be restored by "the next real release". Both read as
