@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import Any
 
 from ci_workflows_tools._strict_yaml import strict_load
-from ci_workflows_tools._workflow_yaml import WORKFLOWS_DIR, load_yaml, workflow_files
+from ci_workflows_tools._workflow_yaml import load_yaml, workflow_files
 
 ROOT = Path(__file__).resolve().parent.parent
 CONTRACT = ROOT / "catalog/cache-contract.yml"
