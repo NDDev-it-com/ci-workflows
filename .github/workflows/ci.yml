@@ -126,6 +126,19 @@ jobs:
         run: |
           "$PYTHON_PATH" -I -B -m venv --copies .venv
           uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
+      # Resolving the base is the whole job of this step, and giving up on it
+      # used to divert the run into `--tier scheduled`. That tier is advisory
+      # calendar and network work: it does not contain these blocking
+      # changed-path checks at all, and it does contain checks that need a token
+      # and two external hosts this job deliberately does not grant. So the
+      # fallback both skipped what it was required to prove and made a required
+      # gate fail on an expired third-party fact. `--tier touched --all-paths`
+      # would not fix it either: `facts_reached_by` returns "all facts" as soon
+      # as the ledger itself is in scope, so a whole-tree touched run *is* the
+      # calendar sweep -- the exact thing the tier split moved off the PR path.
+      #
+      # No event base is not "nothing to scope". Everything this ref adds on top
+      # of the default branch is the change, and that is resolvable.
       - name: Resolve the change base
         id: base
         env:
@@ -133,33 +146,68 @@ jobs:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
           PUSH_BEFORE: ${{ github.event.before }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -euo pipefail
-          case "$EVENT_NAME" in
-            pull_request) base="$PR_BASE_SHA" ;;
-            merge_group)  base="$MERGE_GROUP_BASE_SHA" ;;
-            push)         base="$PUSH_BEFORE" ;;
-            *)            base="" ;;
-          esac
-          # An all-zero oid means "no previous tip" (branch creation or a
-          # force-push beyond reachable history). Go conservative and scope to
-          # the whole tree rather than silently scoping to nothing.
-          case "$base" in
-            ""|0000000000000000000000000000000000000000) base="" ;;
-          esac
-          printf 'ref=%s\n' "$base" >> "$GITHUB_OUTPUT"
+          python3 -I <<'PY'
+          import os
+          import subprocess
+          import sys
+
+          ZERO_OID = "0" * 40
+
+          event = os.environ.get("EVENT_NAME", "")
+          default_branch = os.environ.get("DEFAULT_BRANCH", "")
+          base = {
+              "pull_request": os.environ.get("PR_BASE_SHA", ""),
+              "merge_group": os.environ.get("MERGE_GROUP_BASE_SHA", ""),
+              "push": os.environ.get("PUSH_BEFORE", ""),
+          }.get(event, "")
+
+          # An all-zero oid means "no previous tip": branch creation, or a
+          # force-push beyond reachable history.
+          if base == ZERO_OID:
+              base = ""
+
+
+          def git(*args):
+              return subprocess.run(["git", *args], capture_output=True, text=True, check=False)
+
+
+          if not base:
+              if not default_branch:
+                  sys.exit("no event base, and no default branch to resolve one against")
+              remote = f"refs/remotes/origin/{default_branch}"
+              # `fetch-depth: 0` fetches every branch, so this ref is normally
+              # already here. Fetch it explicitly when it is not, rather than
+              # let a missing ref become an empty scope that reports success.
+              if git("rev-parse", "--verify", "--quiet", remote).returncode != 0:
+                  fetched = git(
+                      "fetch", "--no-tags", "origin",
+                      f"+refs/heads/{default_branch}:{remote}")
+                  if fetched.returncode != 0:
+                      sys.exit(f"cannot fetch {remote}: {fetched.stderr.strip()}")
+              resolved = git("merge-base", "HEAD", remote)
+              if resolved.returncode != 0 or not resolved.stdout.strip():
+                  sys.exit(
+                      f"cannot resolve a merge base between HEAD and {remote}: "
+                      f"{resolved.stderr.strip()}")
+              base = resolved.stdout.strip()
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"base={base}\n")
+          PY
+      # One command, no branch: the tier is not a function of how the run was
+      # triggered. A base that resolves to HEAD itself -- dispatching on the
+      # default branch -- scopes to nothing and says so, which is honest; the
+      # structural half of these ledgers already blocks in `core`.
       - name: Run changed-path validators
         env:
-          BASE_REF: ${{ steps.base.outputs.ref }}
+          BASE_REF: ${{ steps.base.outputs.base }}
         run: |
           set -euo pipefail
           .venv/bin/python -I -B scripts/check_python_syntax.py
-          if [ -z "$BASE_REF" ]; then
-            echo "no resolvable base; running the full sweep instead of scoping to nothing"
-            .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch validate_all.py -- --tier scheduled
-          else
-            .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch validate_all.py -- --tier touched --changed-from "$BASE_REF"
-          fi
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch validate_all.py -- --tier touched --changed-from "$BASE_REF"
 
   actionlint:
     permissions:
