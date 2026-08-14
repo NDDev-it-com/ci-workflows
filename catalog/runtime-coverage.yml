@@ -151,7 +151,7 @@ entries:
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran the default `./gradlew build` against tests/fixtures/android on ubuntu-latest and the observer accepted the receipt: nine sections (android_sdk, artifacts, build, dependency_verification, gradle, jdk, locks, tests, wrapper), an empty untrusted_roots, one test, two APKs, two Gradle 9.5 lockfiles, and the exact default task graph including :app:assembleDebug, :app:testDebugUnitTest, :app:lintDebug and :app:build. Provenance names the callee: callee_path is kotlin-android-ci.yml while the caller is runtime-fixtures-languages.yml. The committed dependency closure of 557 verified artifacts is regenerated from a clean tree and diffed in the same run. Linux only \u2014 the closure was generated on ubuntu-latest and macOS/Windows would each need their own."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31782942981
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31783511309
     proven_digest: 25229a37bc855db163f6ba58b1b7a6b52187c981a2e34694e6eb194ce27f94a6
     waiver: null
   - workflow: .github/workflows/monorepo-changed-paths.yml
