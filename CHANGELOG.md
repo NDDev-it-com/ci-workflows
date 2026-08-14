@@ -2,6 +2,28 @@
 
 ## [Unreleased]
 
+- Let the advisory sweep survive finding something. The first real run of
+  `maintenance.yml` failed, and the reason was only visible from the run: GitHub
+  runs `run:` steps as `bash -e {0}`, and `-e` arrives on the shell's own command
+  line where no `set` inside the script can reach it. The sweep step said
+  `set -uo pipefail` and carried a comment stating `-e` was deliberately absent.
+  It was not. On the first finding bash aborted at that very line, so `$?` was
+  never read, `sweep.txt` was never printed, and `$GITHUB_OUTPUT` never received a
+  status — leaving the report step nothing to act on. The reporting mechanism was
+  unreachable in exactly the case it exists for.
+
+  The step now declares `shell: bash {0}`. The report step is `if: always()`, so a
+  sweep that dies for any other reason is still reported, and a missing status is
+  treated as a finding rather than as silence — an advisory lane whose findings
+  vanish looks identical to one with nothing to say.
+
+  `check_maintenance_report_contract.py` now resolves the shell the way GitHub
+  does — step, then job defaults, then workflow defaults, then `bash -e {0}` — and
+  executes the sweep step under it with a stub interpreter, asserting the exit
+  code is recorded for both a clean and a finding sweep. Reverting to the default
+  shell is caught; so is declaring plain `bash`, which expands to
+  `--noprofile --norc -eo pipefail` and is equally fatal here.
+
 - Make the advisory sweep able to produce the one output it exists for. The
   whole justification for moving calendar and network debt off the pull-request
   path is that findings become a single tracking issue a human meets rather than
