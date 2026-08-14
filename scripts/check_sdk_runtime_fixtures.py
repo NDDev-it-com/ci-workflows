@@ -7,7 +7,7 @@ import hashlib
 import json
 import os
 import tempfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 from ci_workflows_tools import _gradle_lockfile, _sdk_environment, generate_sdk_runtime_manifest
@@ -18,6 +18,97 @@ ROOT = Path(__file__).resolve().parent.parent
 SPEC_PATH = ROOT / "tests/fixtures/sdk-runtime-spec.yml"
 MANIFEST = ROOT / "tests/fixtures/sdk-runtime-manifest.json"
 WORKFLOWS = ROOT / ".github/workflows"
+
+# The receipt is a discriminated record: `kind` selects the vocabulary and
+# `sections` says which parts of it this run actually produced. A field may
+# appear only inside a section the receipt declares, which is what keeps a
+# generic reusable from having to invent values for lanes a caller skipped --
+# the previous shape had one flat record, so "not applicable" and "missing"
+# were the same thing and the only way to satisfy it was to run the one
+# canonical fixture.
+ENVELOPE = frozenset({
+    "callee_path", "callee_repository", "callee_sha", "caller_repository",
+    "caller_sha", "kind", "os", "runner_arch", "schema_version", "sections",
+})
+KIND_ENVELOPE = {
+    "flutter": frozenset(),
+    "android": frozenset({
+        "cache_provider", "java_version_input", "setup_android", "untrusted_roots",
+    }),
+    "qt": frozenset(),
+}
+SECTIONS: dict[str, dict[str, tuple[frozenset[str], frozenset[str]]]] = {
+    "flutter": {
+        "toolchain": (frozenset({
+            "dart_version", "flutter_arch", "flutter_channel", "flutter_revision",
+            "flutter_version",
+        }), frozenset()),
+        "cache": (frozenset({"cache_key", "pub_cache_key"}), frozenset()),
+        "resolve": (frozenset({"pub_get_command", "pubspec_lock_sha256"}), frozenset()),
+        "test": (frozenset({"test_command", "test_count", "test_log_sha256"}), frozenset()),
+    },
+    "android": {
+        "build": (frozenset({"build_command", "build_log_sha256", "task_graph"}), frozenset()),
+        "jdk": (frozenset({
+            "java_home_resolved", "java_runtime_version_resolved",
+            "java_vendor_resolved", "java_version_resolved", "java_vm_name_resolved",
+        }), frozenset()),
+        "gradle": (frozenset({
+            "gradle_daemon_jvm_home_resolved", "gradle_daemon_jvm_resolved",
+            "gradle_daemon_jvm_runtime_version_resolved",
+            "gradle_daemon_jvm_vendor_resolved", "gradle_daemon_jvm_version_resolved",
+            "gradle_daemon_jvm_vm_name_resolved", "gradle_launcher_jvm_resolved",
+            "gradle_launcher_jvm_runtime_version_resolved",
+            "gradle_launcher_jvm_vendor_resolved", "gradle_launcher_jvm_version_resolved",
+            "gradle_launcher_jvm_vm_name_resolved", "gradle_version",
+        }), frozenset()),
+        "tests": (frozenset({"test_count"}), frozenset()),
+        "artifacts": (frozenset({"apk_sha256"}), frozenset()),
+        "locks": (frozenset({"lock_sha256"}), frozenset()),
+        "dependency_verification": (
+            frozenset({"verification_metadata_sha256"}), frozenset()),
+        "wrapper": (frozenset({
+            "wrapper_jar_sha256", "wrapper_properties_sha256"}), frozenset()),
+        "android_sdk": (frozenset({
+            "android_sdk_root_resolved", "sdk_build_tools", "sdk_platforms",
+        }), frozenset()),
+    },
+    "qt": {
+        "toolchain": (
+            frozenset({"cache_key_prefix", "qt_version_input"}),
+            frozenset({"aqt_version", "cmake_version", "qt_version"}),
+        ),
+        "configure": (frozenset({"configure_command"}), frozenset()),
+        "build": (frozenset({"build_command"}), frozenset()),
+        "test": (frozenset({"test_command", "test_count", "test_log_sha256"}), frozenset()),
+    },
+}
+
+# What the canonical fixture in tests/fixtures must show. These live here, in
+# the observer's validator, and nowhere in the reusable workflows: they are
+# assertions about one repository's fixture, not part of the reusable API.
+CANONICAL_SECTIONS = {
+    "flutter": frozenset({"toolchain", "cache", "resolve", "test"}),
+    "android": frozenset({
+        "android_sdk", "artifacts", "build", "dependency_verification", "gradle",
+        "jdk", "locks", "tests", "wrapper",
+    }),
+    "qt": frozenset({"toolchain", "configure", "build", "test"}),
+}
+CANONICAL_TASKS = frozenset({
+    ":app:assembleDebug", ":app:testDebugUnitTest", ":app:lintDebug", ":app:build",
+})
+
+# Every digest in a receipt is checked by the same grammar. Before this, only
+# `test_log_sha256` and `build_log_sha256` were shape-checked at all; the lock
+# map, the APK list and the dependency-verification digest were accepted on
+# truthiness, so `"apk_sha256": ["nope"]` passed.
+DIGEST_SCALARS = frozenset({
+    "build_log_sha256", "pubspec_lock_sha256", "test_log_sha256",
+    "verification_metadata_sha256", "wrapper_jar_sha256", "wrapper_properties_sha256",
+})
+DIGEST_LISTS = frozenset({"apk_sha256"})
+DIGEST_MAPS = frozenset({"lock_sha256"})
 
 
 def _digest(path: Path) -> str:
@@ -30,61 +121,167 @@ def _workflow_call(path: Path) -> dict[str, Any]:
     return on.get("workflow_call", {}) if isinstance(on, dict) else {}
 
 
-def _receipt_problems(kind: str, receipt: Any, spec: dict[str, Any]) -> list[str]:
+def _is_sha(value: Any) -> bool:
+    return isinstance(value, str) and len(value) == 64 and all(c in "0123456789abcdef" for c in value)
+
+
+def _is_git_sha(value: Any) -> bool:
+    return isinstance(value, str) and len(value) == 40 and all(c in "0123456789abcdef" for c in value)
+
+
+def _digest_problems(kind: str, receipt: dict[str, Any]) -> list[str]:
+    """Hold every digest in the receipt to one grammar.
+
+    Scalars are exactly 64 lowercase hex. Lists are non-empty and repeat
+    nothing. Mappings are non-empty, keyed by relative POSIX paths in lexical
+    order, so a receipt cannot smuggle an absolute path, a traversal, or a
+    Windows separator into what reads like a project-relative digest table.
+    """
     problems: list[str] = []
-    if not isinstance(receipt, dict):
-        return [f"{kind}: evidence must be a JSON object"]
-    common = {"os": "Linux", "runner_arch": "X64",
-              "workflow_sha256": _digest(ROOT / spec["workflow"])}
-    for key, expected in common.items():
-        if receipt.get(key) != expected:
-            problems.append(f"{kind}: {key} must equal {expected!r}")
-    caller_sha = receipt.get("caller_sha")
-    if not isinstance(caller_sha, str) or len(caller_sha) != 40 \
-            or any(char not in "0123456789abcdef" for char in caller_sha):
-        problems.append(f"{kind}: caller_sha must be a full lowercase Git SHA")
+    for key in sorted(DIGEST_SCALARS & set(receipt)):
+        if not _is_sha(receipt[key]):
+            problems.append(f"{kind}: {key} must be 64 lowercase hex")
+    for key in sorted(DIGEST_LISTS & set(receipt)):
+        value = receipt[key]
+        if not isinstance(value, list) or not value:
+            problems.append(f"{kind}: {key} must be a non-empty list of digests")
+            continue
+        if any(not _is_sha(item) for item in value):
+            problems.append(f"{kind}: {key} holds a value that is not 64 lowercase hex")
+            continue
+        if len(set(value)) != len(value):
+            problems.append(f"{kind}: {key} repeats a digest")
+    for key in sorted(DIGEST_MAPS & set(receipt)):
+        value = receipt[key]
+        if not isinstance(value, dict) or not value:
+            problems.append(f"{kind}: {key} must be a non-empty path-to-digest mapping")
+            continue
+        paths = list(value)
+        if paths != sorted(paths):
+            problems.append(f"{kind}: {key} paths are not in lexical order")
+        for path, item in value.items():
+            parts = PurePosixPath(path).parts if isinstance(path, str) else ()
+            if not isinstance(path, str) or not path or path.startswith("/") \
+                    or "\\" in path or ".." in parts:
+                problems.append(f"{kind}: {key} key {path!r} is not a relative POSIX path")
+            if not _is_sha(item):
+                problems.append(f"{kind}: {key}[{path!r}] must be 64 lowercase hex")
+    return problems
+
+
+def _shape_problems(kind: str, receipt: dict[str, Any]) -> list[str]:
+    """Validate the receipt against the vocabulary its own discriminator selects."""
+    vocabulary = SECTIONS[kind]
+    sections = receipt.get("sections")
+    if not isinstance(sections, list) or sections != sorted(set(sections)) \
+            or any(name not in vocabulary for name in sections):
+        return [f"{kind}: sections must be a sorted unique subset of {sorted(vocabulary)}"]
+    problems: list[str] = []
+    declared = set(sections)
+    envelope = set(ENVELOPE) | set(KIND_ENVELOPE[kind])
+    vocabulary_fields: set[str] = set()
+    for required, optional in vocabulary.values():
+        vocabulary_fields |= required | optional
+    for name in sorted(declared):
+        required, _ = vocabulary[name]
+        missing = sorted(required - set(receipt))
+        if missing:
+            problems.append(
+                f"{kind}: section {name!r} is declared but {', '.join(missing)} absent")
+    # Two disjoint failures, so neither can hide the other: a field of the
+    # vocabulary whose section was not declared is a *leak* -- the receipt
+    # answered a question it did not claim to have asked -- while a field
+    # outside the vocabulary entirely is simply unknown.
+    for name, (required, optional) in sorted(vocabulary.items()):
+        if name in declared:
+            continue
+        leaked = sorted((required | optional) & set(receipt))
+        if leaked:
+            problems.append(
+                f"{kind}: {', '.join(leaked)} present without declaring section {name!r}")
+    absent = sorted(envelope - set(receipt))
+    if absent:
+        problems.append(f"{kind}: envelope field(s) absent: {', '.join(absent)}")
+    unknown = sorted(set(receipt) - envelope - vocabulary_fields)
+    if unknown:
+        problems.append(f"{kind}: unknown field(s): {', '.join(unknown)}")
+    if receipt.get("schema_version") != 1:
+        problems.append(f"{kind}: schema_version must be 1")
+    if receipt.get("kind") != kind:
+        problems.append(f"{kind}: kind must equal {kind!r}")
+    return problems
+
+
+def _provenance_problems(kind: str, receipt: dict[str, Any], spec: dict[str, Any]) -> list[str]:
+    """Require the receipt to name the workflow that ran, not the caller's tree.
+
+    `callee_*` comes from `job.workflow_*`, which the runner binds to the called
+    workflow; `caller_*` comes from `github.*`, which inside a reusable is bound
+    to the calling workflow. A commit SHA is already the cryptographic identity
+    of the content at that path, so the triple pins the bytes without hashing
+    anything the caller controls.
+    """
+    problems: list[str] = []
+    for key in ("callee_sha", "caller_sha"):
+        if not _is_git_sha(receipt.get(key)):
+            problems.append(f"{kind}: {key} must be a full lowercase Git SHA")
+    if receipt.get("callee_path") != spec["workflow"]:
+        problems.append(f"{kind}: callee_path must equal {spec['workflow']!r}")
+    for key in ("callee_repository", "caller_repository"):
+        value = receipt.get(key)
+        if not isinstance(value, str) or value.count("/") != 1 or not all(value.split("/")):
+            problems.append(f"{kind}: {key} must be 'owner/name'")
+    return problems
+
+
+def _canonical_problems(kind: str, receipt: dict[str, Any], spec: dict[str, Any]) -> list[str]:
+    """Assert what this repository's own fixture must show.
+
+    Everything here is about `tests/fixtures/**`, which is why it lives in the
+    observer's validator rather than in the reusable. A reusable that enforced
+    these would be demanding that every consumer own an `app` module, produce an
+    APK, and commit dependency-verification metadata.
+    """
+    problems: list[str] = []
+    expected = spec["toolchain"]
     defaults = spec["default_commands"]
+    missing = sorted(CANONICAL_SECTIONS[kind] - set(receipt.get("sections", [])))
+    if missing:
+        problems.append(f"{kind}: canonical run must produce section(s): {', '.join(missing)}")
+    checks: dict[str, Any] = {"os": "Linux", "runner_arch": "X64"}
     if kind == "flutter":
-        expected = spec["toolchain"]
-        checks = {
-            "flutter_version": str(expected["flutter_version"]),
+        version = str(expected["flutter_version"])
+        checks.update({
             "dart_version": str(expected["dart_version"]),
             "flutter_revision": expected["framework_revision"],
-            "pub_get_command": defaults["resolve"], "test_command": defaults["test"],
-        }
-        if receipt.get("test_count", 0) < 1 or not receipt.get("pubspec_lock_sha256"):
-            problems.append("flutter: evidence needs a lock digest and at least one test")
-        version = str(expected["flutter_version"])
+            "flutter_version": version,
+            "pub_get_command": defaults["resolve"],
+            "test_command": defaults["test"],
+        })
+        if receipt.get("test_count", 0) < 1:
+            problems.append("flutter: canonical run must report at least one test")
         if any(version not in str(receipt.get(key, "")) for key in ("cache_key", "pub_cache_key")):
             problems.append("flutter: action cache identities are required")
     elif kind == "android":
-        expected = spec["toolchain"]
-        checks = {
-            "build_command": defaults["build"], "cache_provider": "basic",
+        checks.update({
+            "build_command": defaults["build"],
+            "cache_provider": "basic",
             "gradle_version": str(expected["gradle_version"]),
             "java_version_input": str(expected["java_version_input"]),
             "setup_android": "false",
             "wrapper_jar_sha256": expected["gradle_wrapper_jar_sha256"],
-        }
-        if receipt.get("test_count", 0) < 1 or not receipt.get("apk_sha256"):
-            problems.append("android: evidence needs an APK and at least one test")
-        expected_platforms = {
-            f"android-{expected['compile_sdk']}",
-            f"android-{expected['compile_sdk']}.0",
-        }
-        observed_platforms = set(receipt.get("sdk_platforms", []))
-        if len(expected_platforms & observed_platforms) != 1:
+        })
+        if receipt.get("test_count", 0) < 1:
+            problems.append("android: canonical run must report at least one test")
+        if receipt.get("untrusted_roots"):
+            problems.append(
+                f"android: canonical run vouched for no root: {receipt['untrusted_roots']}")
+        platforms = {f"android-{expected['compile_sdk']}", f"android-{expected['compile_sdk']}.0"}
+        if len(platforms & set(receipt.get("sdk_platforms", []))) != 1:
             problems.append("android: required SDK platform is absent")
         if str(expected["build_tools"]) not in receipt.get("sdk_build_tools", []):
             problems.append("android: required build-tools are absent")
-        if not receipt.get("lock_sha256") or not receipt.get("verification_metadata_sha256"):
-            problems.append("android: lock and dependency-verification identities are required")
-        if not receipt.get("gradle_launcher_jvm_resolved") or not receipt.get("gradle_daemon_jvm_resolved"):
-            problems.append("android: Gradle launcher/daemon JVM identities are required")
-        if not receipt.get("android_sdk_root_resolved") or not receipt.get("java_home_resolved"):
-            problems.append("android: canonical Android/JDK roots are required")
-        required_tasks = {":app:assembleDebug", ":app:testDebugUnitTest", ":app:lintDebug", ":app:build"}
-        if not required_tasks.issubset(receipt.get("task_graph", [])):
+        if not CANONICAL_TASKS.issubset(receipt.get("task_graph", [])):
             problems.append("android: exact default build task graph is incomplete")
         try:
             _sdk_environment.validate_jvm_identity(_jvm_identity(receipt))
@@ -102,30 +299,37 @@ def _receipt_problems(kind: str, receipt: Any, spec: dict[str, Any]) -> list[str
         ):
             problems.append("android: raw Gradle daemon identity diverged from typed fields")
     elif kind == "qt":
-        expected = spec["toolchain"]
-        checks = {
+        checks.update({
+            "build_command": defaults["build"],
+            "cache_key_prefix": "qt-ci-v1",
+            "configure_command": defaults["configure"],
             "qt_version": str(expected["qt_version"]),
             "qt_version_input": str(expected["qt_version"]),
-            "configure_command": defaults["configure"], "build_command": defaults["build"],
-            "test_command": defaults["test"], "cache_key_prefix": "qt-ci-v1",
-        }
-        if receipt.get("test_count", 0) < 1 or not receipt.get("test_log_sha256"):
-            problems.append("qt: evidence needs a log digest and at least one CTest test")
+            "test_command": defaults["test"],
+        })
+        if receipt.get("test_count", 0) < 1:
+            problems.append("qt: canonical run must report at least one CTest test")
         if str(expected["aqtinstall_version"]) not in str(receipt.get("aqt_version", "")):
             problems.append("qt: wrong aqtinstall version")
-    else:
-        return [f"unknown SDK receipt kind {kind!r}"]
-    for key, expected_value in checks.items():
-        if receipt.get(key) != expected_value:
-            problems.append(f"{kind}: {key} must equal {expected_value!r}")
-    for key in ("test_log_sha256", "build_log_sha256"):
-        if key in receipt and not _is_sha(receipt[key]):
-            problems.append(f"{kind}: {key} is not SHA-256")
+    for key, value in sorted(checks.items()):
+        if receipt.get(key) != value:
+            problems.append(f"{kind}: {key} must equal {value!r}")
     return problems
 
 
-def _is_sha(value: Any) -> bool:
-    return isinstance(value, str) and len(value) == 64 and all(c in "0123456789abcdef" for c in value)
+def _receipt_problems(kind: str, receipt: Any, spec: dict[str, Any]) -> list[str]:
+    if kind not in SECTIONS:
+        return [f"unknown SDK receipt kind {kind!r}"]
+    if not isinstance(receipt, dict):
+        return [f"{kind}: evidence must be a JSON object"]
+    shape = _shape_problems(kind, receipt)
+    if shape:
+        return shape
+    return (
+        _provenance_problems(kind, receipt, spec)
+        + _digest_problems(kind, receipt)
+        + _canonical_problems(kind, receipt, spec)
+    )
 
 
 def _contract_problems(*, require_generated: bool = True) -> list[str]:
@@ -198,9 +402,8 @@ def _contract_problems(*, require_generated: bool = True) -> list[str]:
         except (OSError, json.JSONDecodeError) as exc:
             problems.append(f"android: invalid provenance receipt: {exc}")
         else:
-            required_tasks = {":app:assembleDebug", ":app:testDebugUnitTest", ":app:lintDebug", ":app:build"}
             if proof.get("default_command") != "./gradlew build" \
-                    or not required_tasks.issubset(proof.get("task_graph", [])):
+                    or not CANONICAL_TASKS.issubset(proof.get("task_graph", [])):
                 problems.append("android: provenance was generated from a narrower task graph")
             if proof.get("verification_metadata_sha256") != _digest(metadata):
                 problems.append("android: provenance metadata digest is stale")
@@ -239,64 +442,193 @@ def _cache_identity(slot: str, version: str) -> str:
     return "flutter-" + slot + "-" + version
 
 
+def _digest_negatives(kind: str, sample: dict[str, Any], spec: dict[str, Any]) -> list[str]:
+    """Substitute a malformed digest into every digest field the receipt carries.
+
+    The point is coverage rather than cleverness: before this, four of the six
+    digest-bearing fields were checked only for truthiness, so the suite proved
+    nothing about them. Driving the list off `DIGEST_*` means a field added to
+    the grammar is negatively tested the moment it appears in a sample.
+    """
+    problems: list[str] = []
+    scalars = {
+        "empty": "", "short": "a" * 63, "long": "a" * 65, "uppercase": "A" * 64,
+        "non-hex": "g" * 64, "wrong-type": 12345, "absent": None,
+    }
+    for field in sorted(DIGEST_SCALARS & set(sample)):
+        for label, value in scalars.items():
+            broken = dict(sample)
+            if value is None:
+                del broken[field]
+            else:
+                broken[field] = value
+            if not _receipt_problems(kind, broken, spec):
+                problems.append(f"{kind}: digest {field} accepted {label!r}")
+    for field in sorted(DIGEST_LISTS & set(sample)):
+        first = sample[field][0]
+        for label, value in {
+            "empty-list": [], "duplicate": [first, first], "short-member": ["a" * 63],
+            "uppercase-member": ["A" * 64], "non-hex-member": ["z" * 64],
+            "wrong-type": first, "nested": [[first]],
+        }.items():
+            broken = dict(sample)
+            broken[field] = value
+            if not _receipt_problems(kind, broken, spec):
+                problems.append(f"{kind}: digest list {field} accepted {label}")
+    for field in sorted(DIGEST_MAPS & set(sample)):
+        digest = next(iter(sample[field].values()))
+        for label, value in {
+            "empty-map": {},
+            "absolute-path": {"/etc/shadow": digest},
+            "traversal": {"../outside.lockfile": digest},
+            "windows-separator": {"app\\gradle.lockfile": digest},
+            "unordered": {"z/gradle.lockfile": digest, "a/gradle.lockfile": digest},
+            "short-digest": {"app/gradle.lockfile": "e" * 63},
+            "uppercase-digest": {"app/gradle.lockfile": "E" * 64},
+            "wrong-type": ["app/gradle.lockfile"],
+        }.items():
+            broken = dict(sample)
+            broken[field] = value
+            if not _receipt_problems(kind, broken, spec):
+                problems.append(f"{kind}: digest map {field} accepted {label}")
+    return problems
+
+
 def _negative_selftests(fixtures: dict[str, Any]) -> list[str]:
     problems: list[str] = []
-    flutter_version = str(fixtures["flutter"]["toolchain"]["flutter_version"])
-    valid_common = {"os": "Linux", "runner_arch": "X64", "caller_sha": "a" * 40}
-    samples = {
-        "flutter": {**valid_common, "workflow_sha256": _digest(ROOT / fixtures["flutter"]["workflow"]),
-                    "flutter_version": flutter_version,
-                    "dart_version": str(fixtures["flutter"]["toolchain"]["dart_version"]),
-                    "flutter_revision": fixtures["flutter"]["toolchain"]["framework_revision"],
-                    "pub_get_command": "flutter pub get", "test_command": "flutter test",
-                    "pubspec_lock_sha256": "b" * 64, "test_log_sha256": "c" * 64, "test_count": 1,
-                    "cache_key": _cache_identity("cache", flutter_version),
-                    "pub_cache_key": _cache_identity("pub", flutter_version)},
-        "android": {**valid_common, "workflow_sha256": _digest(ROOT / fixtures["android"]["workflow"]),
-                    "build_command": "./gradlew build", "cache_provider": "basic", "gradle_version": "9.5.0",
-                    "java_version_input": "21", "setup_android": "false", "wrapper_jar_sha256": fixtures["android"]["toolchain"]["gradle_wrapper_jar_sha256"],
-                    "sdk_platforms": ["android-37"], "sdk_build_tools": ["36.0.0"], "test_count": 1,
-                    "apk_sha256": ["d" * 64], "lock_sha256": {"app/gradle.lockfile": "e" * 64},
-                    "verification_metadata_sha256": "f" * 64,
-                    "java_version_resolved": "21.0.11", "java_runtime_version_resolved": "21.0.11+0",
-                    "java_vendor_resolved": "Fixture", "java_vm_name_resolved": "Fixture VM",
-                    "gradle_launcher_jvm_resolved": "21.0.11 (Fixture 21.0.11+0)",
-                    "gradle_launcher_jvm_version_resolved": "21.0.11",
-                    "gradle_launcher_jvm_runtime_version_resolved": "21.0.11+0",
-                    "gradle_launcher_jvm_vendor_resolved": "Fixture",
-                    "gradle_launcher_jvm_vm_name_resolved": "Fixture VM",
-                    "gradle_daemon_jvm_resolved": "/opt/jdk-21 (no JDK specified, using current Java home)",
-                    "gradle_daemon_jvm_home_resolved": "/opt/jdk-21",
-                    "gradle_daemon_jvm_version_resolved": "21.0.11",
-                    "gradle_daemon_jvm_runtime_version_resolved": "21.0.11+0",
-                    "gradle_daemon_jvm_vendor_resolved": "Fixture",
-                    "gradle_daemon_jvm_vm_name_resolved": "Fixture VM",
-                    "android_sdk_root_resolved": "/opt/android", "java_home_resolved": "/opt/jdk-21",
-                    "task_graph": [":app:assembleDebug", ":app:testDebugUnitTest", ":app:lintDebug", ":app:build"]},
-        "qt": {**valid_common, "workflow_sha256": _digest(ROOT / fixtures["qt"]["workflow"]),
-               "qt_version": "6.8.4", "qt_version_input": "6.8.4", "aqt_version": "aqtinstall(aqt) v3.3.0",
-               "configure_command": "cmake -S . -B build -DCMAKE_BUILD_TYPE=Release",
-               "build_command": "cmake --build build --parallel", "test_command": "ctest --test-dir build --output-on-failure",
-               "cache_key_prefix": "qt-ci-v1", "test_count": 1, "test_log_sha256": "a" * 64},
+    flutter_tools = fixtures["flutter"]["toolchain"]
+    android_tools = fixtures["android"]["toolchain"]
+    qt_tools = fixtures["qt"]["toolchain"]
+    flutter_version = str(flutter_tools["flutter_version"])
+    repository = "NDDev-it-com/ci-workflows"
+    envelope = {
+        "callee_repository": repository, "callee_sha": "b" * 40,
+        "caller_repository": repository, "caller_sha": "a" * 40,
+        "os": "Linux", "runner_arch": "X64", "schema_version": 1,
+    }
+    samples: dict[str, dict[str, Any]] = {
+        "flutter": {
+            **envelope, "kind": "flutter",
+            "callee_path": fixtures["flutter"]["workflow"],
+            "sections": ["cache", "resolve", "test", "toolchain"],
+            "dart_version": str(flutter_tools["dart_version"]),
+            "flutter_arch": "x64", "flutter_channel": str(flutter_tools["channel"]),
+            "flutter_revision": flutter_tools["framework_revision"],
+            "flutter_version": flutter_version,
+            "cache_key": _cache_identity("cache", flutter_version),
+            "pub_cache_key": _cache_identity("pub", flutter_version),
+            "pub_get_command": "flutter pub get", "pubspec_lock_sha256": "b" * 64,
+            "test_command": "flutter test", "test_count": 1, "test_log_sha256": "c" * 64,
+        },
+        "android": {
+            **envelope, "kind": "android",
+            "callee_path": fixtures["android"]["workflow"],
+            "sections": [
+                "android_sdk", "artifacts", "build", "dependency_verification",
+                "gradle", "jdk", "locks", "tests", "wrapper",
+            ],
+            "cache_provider": "basic", "java_version_input": "21",
+            "setup_android": "false", "untrusted_roots": [],
+            "build_command": "./gradlew build", "build_log_sha256": "1" * 64,
+            "task_graph": sorted(CANONICAL_TASKS),
+            "java_home_resolved": "/opt/jdk-21",
+            "java_runtime_version_resolved": "21.0.11+0",
+            "java_vendor_resolved": "Fixture", "java_version_resolved": "21.0.11",
+            "java_vm_name_resolved": "Fixture VM",
+            "gradle_version": str(android_tools["gradle_version"]),
+            "gradle_launcher_jvm_resolved": "21.0.11 (Fixture 21.0.11+0)",
+            "gradle_launcher_jvm_version_resolved": "21.0.11",
+            "gradle_launcher_jvm_runtime_version_resolved": "21.0.11+0",
+            "gradle_launcher_jvm_vendor_resolved": "Fixture",
+            "gradle_launcher_jvm_vm_name_resolved": "Fixture VM",
+            "gradle_daemon_jvm_resolved": "/opt/jdk-21 (no JDK specified, using current Java home)",
+            "gradle_daemon_jvm_home_resolved": "/opt/jdk-21",
+            "gradle_daemon_jvm_version_resolved": "21.0.11",
+            "gradle_daemon_jvm_runtime_version_resolved": "21.0.11+0",
+            "gradle_daemon_jvm_vendor_resolved": "Fixture",
+            "gradle_daemon_jvm_vm_name_resolved": "Fixture VM",
+            "test_count": 1, "apk_sha256": ["d" * 64],
+            "lock_sha256": {"app/gradle.lockfile": "e" * 64},
+            "verification_metadata_sha256": "f" * 64,
+            "wrapper_jar_sha256": android_tools["gradle_wrapper_jar_sha256"],
+            "wrapper_properties_sha256": "9" * 64,
+            "android_sdk_root_resolved": "/opt/android",
+            "sdk_build_tools": [str(android_tools["build_tools"])],
+            "sdk_platforms": [f"android-{android_tools['compile_sdk']}"],
+        },
+        "qt": {
+            **envelope, "kind": "qt",
+            "callee_path": fixtures["qt"]["workflow"],
+            "sections": ["build", "configure", "test", "toolchain"],
+            "cache_key_prefix": "qt-ci-v1",
+            "qt_version": str(qt_tools["qt_version"]),
+            "qt_version_input": str(qt_tools["qt_version"]),
+            "aqt_version": f"aqtinstall(aqt) v{qt_tools['aqtinstall_version']}",
+            "cmake_version": "cmake version 3.31.6",
+            "configure_command": fixtures["qt"]["default_commands"]["configure"],
+            "build_command": fixtures["qt"]["default_commands"]["build"],
+            "test_command": fixtures["qt"]["default_commands"]["test"],
+            "test_count": 1, "test_log_sha256": "a" * 64,
+        },
     }
     for kind, sample in samples.items():
-        if _receipt_problems(kind, sample, fixtures[kind]):
-            problems.append(f"{kind}: valid receipt selftest rejected")
-        for field in ("workflow_sha256", "caller_sha", "test_count"):
+        spec = fixtures[kind]
+        if _receipt_problems(kind, sample, spec):
+            problems.append(
+                f"{kind}: valid receipt selftest rejected: "
+                f"{_receipt_problems(kind, sample, spec)}")
+        for field in ("callee_sha", "caller_sha", "test_count", "callee_path", "kind"):
             broken = dict(sample)
             broken[field] = 0 if field == "test_count" else "wrong"
-            if not _receipt_problems(kind, broken, fixtures[kind]):
+            if not _receipt_problems(kind, broken, spec):
                 problems.append(f"{kind}: negative {field} substitution was accepted")
+        # Shape negatives are asserted against `_shape_problems` directly. Run
+        # through the whole pipeline they would pass for the wrong reason: the
+        # canonical check also requires these sections, so dropping one is
+        # rejected by the canonical rule and the shape rule is never exercised.
+        for section in sorted(SECTIONS[kind]):
+            if section not in sample["sections"]:
+                continue
+            undeclared = dict(sample)
+            undeclared["sections"] = sorted(set(sample["sections"]) - {section})
+            if not any("without declaring section" in problem
+                       for problem in _shape_problems(kind, undeclared)):
+                problems.append(
+                    f"{kind}: fields of undeclared section {section!r} were accepted")
+            required = SECTIONS[kind][section][0]
+            if required:
+                dropped = sorted(required)[0]
+                hollow = {key: value for key, value in sample.items() if key != dropped}
+                if not any("is declared but" in problem
+                           for problem in _shape_problems(kind, hollow)):
+                    problems.append(
+                        f"{kind}: section {section!r} without {dropped!r} was accepted")
+        stray = dict(sample)
+        stray["totally_unexpected_field"] = "x"
+        if not any("unknown field" in problem for problem in _shape_problems(kind, stray)):
+            problems.append(f"{kind}: unknown receipt field was accepted")
+        for label, value in {
+            "not-a-list": "toolchain", "unsorted": list(reversed(sample["sections"])),
+            "duplicated": sample["sections"] + sample["sections"][:1],
+            "out-of-vocabulary": sorted(sample["sections"] + ["invented"]),
+        }.items():
+            broken = dict(sample)
+            broken["sections"] = value
+            if not _shape_problems(kind, broken):
+                problems.append(f"{kind}: {label} sections list was accepted")
         targeted = {
-            "flutter": ("test_command", "cache_key", "pub_cache_key"),
-            "android": ("build_command", "cache_provider", "gradle_launcher_jvm_resolved", "task_graph"),
-            "qt": ("configure_command", "cache_key_prefix", "test_command"),
+            "flutter": ("test_command", "cache_key", "pub_cache_key", "flutter_revision"),
+            "android": ("build_command", "cache_provider", "gradle_launcher_jvm_resolved",
+                        "task_graph", "untrusted_roots"),
+            "qt": ("configure_command", "cache_key_prefix", "test_command", "aqt_version"),
         }[kind]
         for field in targeted:
             broken = dict(sample)
-            broken[field] = [] if field == "task_graph" else "substituted"
-            if not _receipt_problems(kind, broken, fixtures[kind]):
+            broken[field] = [] if field == "task_graph" else (
+                ["untrusted"] if field == "untrusted_roots" else "substituted")
+            if not _receipt_problems(kind, broken, spec):
                 problems.append(f"{kind}: negative {field} drift was accepted")
+        problems.extend(_digest_negatives(kind, sample, spec))
         if kind == "android":
             identity_fields = (
                 "java_version_input", "java_home_resolved", "java_version_resolved",
@@ -311,7 +643,7 @@ def _negative_selftests(fixtures: dict[str, Any]) -> list[str]:
             for field in identity_fields:
                 broken = dict(sample)
                 broken[field] = "substituted"
-                if not _receipt_problems(kind, broken, fixtures[kind]):
+                if not _receipt_problems(kind, broken, spec):
                     problems.append(f"android: JVM identity negative {field!r} was accepted")
     canonical = "\n".join((*_gradle_lockfile.HEADER, "a:b:1=alpha,beta", "empty=gamma", ""))
     mutations = {
