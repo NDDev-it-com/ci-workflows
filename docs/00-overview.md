@@ -12,11 +12,11 @@ The library is intentionally opinionated:
 - Every third-party action is pinned to a **full commit SHA** with a version
   comment. Dependabot bumps the SHA. That is one level deep: a composite action
   may name further actions by tag inside its own `action.yml`, and GitHub
-  resolves the whole nested graph at job setup. One does —
-  `jurplel/install-qt-action` — which is why `qt-ci.yml` cannot start in a
-  repository that *enforces* SHA pinning (issue #150).
-  `check_transitive_action_pins.py` resolves every pinned action and reports the
-  rest in the advisory sweep.
+  resolves the whole nested graph at job setup, so a pin one level deep is not
+  the whole story. `check_transitive_action_pins.py` resolves every pinned action
+  and reports any that reaches a tag; the two that did — the Flutter and Qt setup
+  actions — are gone, replaced by toolchain provisioning this repository pins
+  itself.
 - Every workflow declares least-privilege `permissions`, `concurrency`, and
   `timeout-minutes`.
 - Container images are digest-pinned; downloaded binaries are checksum-verified.

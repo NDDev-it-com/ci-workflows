@@ -358,10 +358,10 @@ examples/   copy-paste callers: per-tier + languages/ quality/ security/ testing
 
 ## Conventions
 
-- Third-party actions pinned to full commit SHAs with version comments — one
-  level deep. `qt-ci.yml`'s vendored setup action resolves nested references by
-  tag, so it is refused where SHA pinning is enforced; see issue #150.
-  `check_transitive_action_pins.py` reports that class in the advisory sweep.
+- Third-party actions pinned to full commit SHAs with version comments, and
+  `check_transitive_action_pins.py` resolves each one to check what *it* calls —
+  a pin is only one level deep, and the advisory sweep reports any action
+  reaching a tag.
 - Least-privilege `permissions`, `concurrency`, and `timeout-minutes` everywhere.
 - No `${{ inputs.* }}` inline in `run:` (passed via `env:` — zizmor
   template-injection hardening).

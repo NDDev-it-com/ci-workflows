@@ -23,19 +23,12 @@ Dual-tier, caller-command-driven with sensible defaults.
 | --- | --- | --- |
 | Dart/Flutter | `dart-flutter-ci.yml` | [dart-flutter](../examples/languages/dart-flutter.yml) |
 | C/C++ | `cpp-ci.yml` | [cpp](../examples/languages/cpp.yml) |
-| Qt † | `qt-ci.yml` | [qt](../examples/languages/qt.yml) |
+| Qt | `qt-ci.yml` | [qt](../examples/languages/qt.yml) |
 | Kotlin/Android | `kotlin-android-ci.yml` | [kotlin-android](../examples/languages/kotlin-android.yml) |
 | Swift | `swift-ci.yml` | [swift](../examples/languages/swift.yml) |
 | R | `r-ci.yml` | [r](../examples/languages/r.yml) |
 | HTML/CSS/web | `web-ci.yml` | [web](../examples/languages/web.yml) |
 | SQL | `sql-ci.yml` | [sql](../examples/languages/sql.yml) |
-
-† Refused during `Set up job` in a repository that enforces full-SHA action
-pinning — `jurplel/install-qt-action` names nested actions by tag, and GitHub
-resolves that graph before any step runs. See issue #150. `dart-flutter-ci.yml`
-had the same problem and no longer does: it provisions the SDK itself from
-Google's published manifest, verified against the digest that manifest
-publishes.
 
 The Dart/Flutter, Kotlin/Android, and Qt callers above deliberately retain each
 reusable workflow's default resolve/build/test commands, so the fixture estate
@@ -66,19 +59,19 @@ verification metadata — live in the observer job of
 the reusable. The observer rejects a missing, skipped, or partial caller result.
 Provisioning duration is telemetry, not a correctness threshold.
 
-The Kotlin/Android and Dart/Flutter lanes run in the estate and are the two
-recorded as `runtime-proven`. A companion job regenerates the Android dependency closure
+All three SDK lanes run in the estate and all three are recorded as
+`runtime-proven`. A companion job regenerates the Android dependency closure
 from a clean tree on every run and fails if it differs from what is committed,
 so the locks and verification metadata cannot rot unnoticed.
 
-`qt-ci.yml` has no lane, which is a fact about it rather than about the
-fixtures: `jurplel/install-qt-action` names nested actions by tag, so the job is
-refused during `Set up job` in any repository that enforces full-SHA action
-pinning — the control this library recommends. It is recorded as `blocked` in
-`catalog/runtime-coverage.yml` with that barrier, and
-`check_transitive_action_pins.py` reports the same class for any other action in
-the advisory sweep. `dart-flutter-ci.yml` was in the same position until it
-began provisioning the SDK itself. See issue #150.
+All three SDK packs provision their own toolchain rather than delegating to a
+vendored setup action. Flutter resolves Google's published release manifest and
+verifies the archive against the SHA-256 it publishes; Qt drives a pinned
+`aqtinstall` directly. Both used to be refused during `Set up job` in any
+repository enforcing full-SHA action pinning — the control this library
+recommends — because their vendored actions named nested actions by tag.
+`check_transitive_action_pins.py` reports that class for any action in the
+advisory sweep, and currently reports the tree clean.
 
 These join the existing Python, Node, Go, Rust, Java, .NET, container, and
 Terraform packs. Swift defaults to a macOS runner (10x minute multiplier); its

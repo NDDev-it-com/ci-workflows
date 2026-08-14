@@ -65,15 +65,13 @@ entries:
     proven_digest: 768e143bfe9fa3fe97463b926098ce6ad62ba30bf33751f36ce20af58655ebe3
     waiver: null
   - workflow: .github/workflows/dart-flutter-ci.yml
+    proven_os:
+      - linux
     criticality: supporting
-    status: unverified
-    evidence: "Proven on 2026-08-14 by run 31823739241, then the bytes changed: actions/cache moved off the deprecated Node 20 runtime to v6.1.0, so the proven digest no longer describes this file. The provisioning is unchanged -- the SDK comes from Google's published manifest, verified against the digest that manifest publishes. Awaiting the re-run that re-proves it."
-    last_run: null
-    runtime_debt:
-      risk: medium
-      barrier: heavy-toolchain
-      required_capability: A fixture re-run after the cache action bump.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/150
+    status: runtime-proven
+    evidence: "Fixture caller ran the default resolve/format/analyze/test lanes against tests/fixtures/flutter on ubuntu-latest and the observer accepted the receipt: four sections (cache, resolve, test, toolchain), one test, and a toolchain identity matching the pinned release exactly \u2014 3.47.0 stable, Dart 3.13.0, revision 4cf24164269a5ebf0c16a028a00727d0e77bbb05. The SDK is provisioned from Google's published manifest and verified against the SHA-256 that manifest publishes, so the workflow reaches no action it does not pin. Re-proven after actions/cache moved off the deprecated Node 20 runtime. Linux only: only ubuntu-latest has been run."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31827607547
+    proven_digest: d2efaa6ca69813ce7ed4ac5f65cda9eea79e9f798c4c1e8c22159a2680c25591
     waiver: null
   - workflow: .github/workflows/docs-ci.yml
     criticality: supporting
@@ -251,15 +249,13 @@ entries:
     proven_digest: 3c2a15c1f9cdae90f15b57d47dd6f776143f388cb85f9166d46b20d9e4573b09
     waiver: null
   - workflow: .github/workflows/qt-ci.yml
+    proven_os:
+      - linux
     criticality: supporting
-    status: unverified
-    evidence: "Qt is now installed with a pinned aqtinstall invoked directly, so the workflow reaches no action it does not pin and can start where full-SHA pinning is enforced. The version resolves to exactly one published release and the architecture to exactly one published architecture, both refusing to guess. The fixture previously pinned Qt 6.8.4, which the open-source repository does not publish; that is corrected and check_qt_pin.py now guards it. The lane is wired and awaiting its first successful run; nothing is claimed until one lands."
-    last_run: null
-    runtime_debt:
-      risk: medium
-      barrier: heavy-toolchain
-      required_capability: A successful fixture run of the self-provisioned Qt toolchain on the standard hosted runner.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/150
+    status: runtime-proven
+    evidence: "Fixture caller ran the default configure/build/test lanes against tests/fixtures/qt on ubuntu-latest and the observer accepted the receipt: four sections (build, configure, test, toolchain), one CTest test, Qt 6.8.3 resolved and installed, and aqtinstall(aqt) v3.3.0. Qt is installed by a pinned aqtinstall invoked directly, so the workflow reaches no action it does not pin and starts where full-SHA pinning is enforced; check_transitive_action_pins reports the tree clean. The version resolves to exactly one published release and the architecture to exactly one published architecture, both refusing to guess, and the install root is located by its own qmake rather than derived from the architecture name. Linux only: only ubuntu-latest has been run."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31827607547
+    proven_digest: bdabfaf58640dc13965fe9b00c14325fa961587a16b82e9eae06bada09b5fbf6
     waiver: null
   - workflow: .github/workflows/r-ci.yml
     criticality: supporting

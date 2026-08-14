@@ -2,6 +2,42 @@
 
 ## [Unreleased]
 
+- Install Qt with a pinned `aqtinstall` instead of an action that cannot be
+  pinned, and prove it. `jurplel/install-qt-action` names `actions/setup-python`
+  and its own sub-action by tag, so `qt-ci.yml` was refused during `Set up job`
+  in any repository enforcing the full-SHA pinning control this library
+  recommends. That was the second and last workflow in this position:
+  **`check_transitive_action_pins` now reports the whole tree clean**, and all
+  three SDK packs are `runtime-proven` — 41 of 47 entries.
+
+  Two resolutions refuse to guess: a wildcard `qt_version` resolves to exactly
+  one published release before anything downloads, so the cache key and the
+  receipt name one version; and the architecture resolves to the single
+  published one, or fails and lists them when the caller named none and there is
+  more than one.
+
+  Four things only running it could have told us. `aqt version` writes to
+  stderr and leaves stdout empty, so the receipt's `check_output` would have
+  recorded an empty string against a check that requires the pinned version to
+  appear in it. `aqt` is not on `PATH` at all, since it runs through `uvx`. The
+  published architecture `linux_gcc_64` installs into a directory called
+  `gcc_64`, so the install is located by its own `qmake` rather than by a rule
+  guessing another tool's naming. And the fixture's `CMakeLists.txt` asked for
+  `Qt6 6.8.4 EXACT` — the version that does not exist — which the earlier sweep
+  missed by searching only `.yml`, `.yaml`, `.md` and `.py`.
+
+  `actions/cache`, pinned hours earlier at v4.3.0, targets the deprecated Node 20
+  runtime; both usages move to v6.1.0 on `node24`, same inputs and output. That
+  edited bytes `dart-flutter-ci.yml` had been proven with, and the coverage
+  contract said so at once — its entry dropped to `unverified` until the same
+  estate run re-proved it rather than keeping a digest that no longer described
+  the file.
+
+  Every caveat added while these two were broken is retracted rather than left
+  to rot: both examples, the `docs/15` table footnote and prose, both capability
+  risks, the README convention and `docs/00`.
+
+
 - Fix a Qt version that does not exist, and add the check that would have caught
   it. `tests/fixtures/sdk-runtime-spec.yml` and the consumer-facing
   `examples/languages/qt.yml` both pinned Qt **6.8.4**. The open-source
