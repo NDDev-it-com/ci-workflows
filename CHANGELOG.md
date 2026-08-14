@@ -2,6 +2,33 @@
 
 ## [Unreleased]
 
+- Make the advisory sweep able to produce the one output it exists for. The
+  whole justification for moving calendar and network debt off the pull-request
+  path is that findings become a single tracking issue a human meets rather than
+  a red run nobody opens. `maintenance.yml` had never run, and both halves of
+  that promise were broken on the path its first run would have taken.
+
+  It checked out shallow, while the sweep it owns reconciles CHANGELOG headings
+  against SemVer tags and fails closed when it can see none — correctly, since a
+  shallow checkout cannot tell "no tags" from "no tags fetched". Its first run
+  would therefore have reported a defect in its own checkout. It now fetches full
+  history and tags.
+
+  It also filed with `gh issue create --label maintenance` while no `maintenance`
+  label existed, under `set -e`. GitHub rejects a create naming a label that does
+  not exist, and the create was the last command in the step — so the finding
+  would have been computed, written to the step summary, and then thrown away.
+  The label is a filing convenience; the report is the point. The step now creates
+  first, labels after, and warns rather than fails if labelling does not work. The
+  label itself now exists.
+
+  `check_maintenance_report_contract.py` executes the real step against a fake
+  `gh` for seven cases: filing, commenting, closing, staying silent when clean,
+  surviving a missing label, and failing closed on an unreadable issue list or a
+  rejected creation — where failing open would have quietly duplicated or lost the
+  report. The fake models GitHub's actual rejection of an unknown `--label`;
+  modelling it as harmless let the original defect pass on the first attempt.
+
 - Pick the validation tier from the tree, not from how the run was triggered.
   The changed-path job resolved a base from the event and, when it could not,
   fell through to `validate_all.py --tier scheduled` under a message announcing

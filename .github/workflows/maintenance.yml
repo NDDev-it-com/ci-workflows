@@ -65,6 +65,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          # The sweep reconciles CHANGELOG headings against SemVer tags and
+          # fails closed when it can see none -- correctly, since a shallow
+          # checkout cannot tell "no tags" from "no tags fetched". This job owns
+          # that check, so it has to bring the refs it needs; without them its
+          # very first run would have reported a defect in itself.
+          fetch-depth: 0
+          fetch-tags: true
           persist-credentials: false
 
       - name: Set up Python
@@ -115,6 +122,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           SWEEP_STATUS: ${{ steps.sweep.outputs.status }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          LABEL: maintenance
         run: |
           set -euo pipefail
           title="Maintenance: advisory sweep findings"
@@ -154,5 +162,15 @@ jobs:
             gh issue comment "$existing" --body-file body.md
             echo "commented on tracking issue #${existing}"
           else
-            gh issue create --title "$title" --body-file body.md --label maintenance
+            # The label is a filing convenience; the report is the point. Passing
+            # `--label` to `gh issue create` makes a label that does not exist in
+            # the repository -- which was the case here -- abort the creation
+            # under `set -e`, so the one mechanism that turns an advisory finding
+            # into something a human meets would have destroyed itself on its
+            # first run. Create first, label after, and survive not labelling.
+            url="$(gh issue create --title "$title" --body-file body.md)"
+            echo "filed tracking issue ${url}"
+            if ! gh issue edit "$url" --add-label "$LABEL"; then
+              echo "::warning::filed ${url} but could not apply the '${LABEL}' label"
+            fi
           fi
