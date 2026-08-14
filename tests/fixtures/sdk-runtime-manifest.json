@@ -63,7 +63,7 @@
     {
       "kind": "text",
       "path": "tests/fixtures/android/gradle/provenance-manifest.json",
-      "sha256": "fbffd87340ebd475561ea2c918bcbed76be4b42d0854a89d45b80eee15079de2",
+      "sha256": "31d8b69c28dadaf18d6da5bd1ecc88521cb907e019219d384a8927e7a7d74f58",
       "size": 157126
     },
     {

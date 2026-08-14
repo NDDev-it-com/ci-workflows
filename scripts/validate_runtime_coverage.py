@@ -43,6 +43,13 @@ VALID_DEBT_BARRIER = {
     "event-context", "permission-side-effect", "heavy-toolchain",
     "specialized-harness", "destructive-release", "external-secret",
     "licensing", "real-host", "external-authority",
+    # A dependency the repository's own supply-chain policy forbids. Distinct
+    # from `heavy-toolchain`, which says provisioning is expensive, and from
+    # `external-authority`, which says someone else must act: here the workflow
+    # is refused before it starts because a third-party action names nested
+    # actions by tag and this repository requires full-length commit SHAs. The
+    # fix is ours to make, and no amount of fixture work reaches it.
+    "dependency-policy-conflict",
 }
 OBJECTIVE_WAIVER_TYPES = {"external-secret", "licensing", "real-host"}
 # For these tiers, absence of evidence is itself a failure. `unverified` — the

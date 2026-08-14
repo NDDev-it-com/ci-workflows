@@ -26,7 +26,7 @@ of a value is not proof that a workflow runs on that platform.
 | `.github/workflows/hadolint-ci.yml` | `linux-shell` | linux | shell only | — |
 | `.github/workflows/iac-scan.yml` | `linux-shell` | linux | shell only | — |
 | `.github/workflows/java-ci.yml` | `portable-shell` | linux, macos, windows | shell only | linux, macos, windows |
-| `.github/workflows/kotlin-android-ci.yml` | `linux-shell` | linux | shell only | — |
+| `.github/workflows/kotlin-android-ci.yml` | `linux-shell` | linux | shell only | linux |
 | `.github/workflows/monorepo-changed-paths.yml` | `linux-shell` | linux | shell only | — |
 | `.github/workflows/mutation-testing.yml` | `linux-shell` | linux | shell only | — |
 | `.github/workflows/node-ci.yml` | `portable-shell` | linux, macos, windows | shell only | linux, macos, windows |

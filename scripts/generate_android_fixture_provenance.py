@@ -209,14 +209,19 @@ def _lock_receipts(root: Path) -> list[dict[str, object]]:
 def _task_graph(output: str) -> list[str]:
     tasks: list[str] = []
     for line in output.splitlines():
-        match = re.match(r"> Task (:[^ ]+)", line)
+        match = re.match(r"> Task (:\S+)", line)
         if match and match.group(1) not in tasks:
             tasks.append(match.group(1))
     required = {":app:assembleDebug", ":app:testDebugUnitTest", ":app:lintDebug", ":app:build"}
     missing = sorted(required - set(tasks))
     if missing:
         raise RuntimeError(f"exact build task graph is incomplete: missing {missing}")
-    return tasks
+    # Sorted, not in execution order. Gradle schedules independent tasks
+    # concurrently, so two runs of the identical build emit the same set in a
+    # different sequence; committing the sequence made the reproduction lane
+    # report drift for a build that had not changed. The set is what the
+    # evidence is about -- which tasks the default command really ran.
+    return sorted(tasks)
 
 
 def _java_identity(executable: Path | str, home: Path) -> dict[str, str]:
