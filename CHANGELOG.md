@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+- Put the SLSA Build L3 claim in the fact ledger it belongs to.
+  `release-supply-chain.yml` writes `"slsa_build_level": 3` into the release
+  manifest of every release — a machine-readable security claim that ships to
+  consumers — and `docs/07` states it as a table row. Neither was backed by a
+  dated fact. The two attestation facts the capability declared cover
+  *availability* and plan-gating, not the level, so the strongest claim in the
+  supply chain was the one nothing would ever re-verify or expire.
+
+  Verified against the primary source before recording it, and it holds:
+  attestations alone reach Build L2, and GitHub says "Reusable workflows can
+  provide isolation between the build process and the calling workflow, to meet
+  SLSA v1.0 Build Level 3". `release-supply-chain.yml` is a reusable workflow,
+  so the value is correct today. `github-slsa-build-level-reusable` now records
+  that with the source and an expiry, and the `artifact-attestations` capability
+  declares it — so touching the release workflow checks the claim has not gone
+  stale, and the scheduled sweep raises it when the date passes. Proven by
+  backdating the expiry: the touched tier fails naming the fact.
+
+
 - Warn at the point of copy, not only in the ledger. The Dart/Flutter and Qt
   examples begin "Replace @<sha> with a pinned full commit SHA" — the exact
   control that makes those two workflows refuse to start — and said nothing

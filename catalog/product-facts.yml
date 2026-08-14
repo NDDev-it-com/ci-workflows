@@ -291,6 +291,47 @@ facts:
   source_urls:
   - https://docs.github.com/en/code-security/concepts/supply-chain-security/supply-chain-security
   notes: []
+- id: github-slsa-build-level-reusable
+  provider: GitHub
+  product: SLSA build level for artifact attestations
+  surface: supply-chain
+  repository_visibility:
+  - public
+  - private
+  - internal
+  plans:
+  - Free
+  - Pro
+  - Team
+  - Enterprise Cloud
+  model: included-feature
+  allowance:
+    value: 3
+    unit: slsa-v1-build-level
+    period: feature
+    multipliers: {}
+  conditions:
+  - 'Artifact attestations on their own reach SLSA v1.0 Build Level 2. GitHub states
+    that Level 3 additionally requires build isolation: "Reusable workflows can provide
+    isolation between the build process and the calling workflow, to meet SLSA v1.0
+    Build Level 3."'
+  - release-supply-chain.yml is a reusable workflow, which is why its release manifest
+    records slsa_build_level 3; release-supply-chain-free.yml publishes no attestations
+    and records null.
+  - This is a claim shipped to consumers in every release manifest. If GitHub restates
+    the level, or SLSA revises what Build L3 requires, the manifest becomes wrong and
+    the emitting workflow must change with it.
+  payment_method: not-required
+  overage: not-applicable
+  status: official
+  source_authority: primary
+  verified_at: '2026-08-14'
+  expires_after: '2026-11-06'
+  source_urls:
+  - https://docs.github.com/en/actions/concepts/security/artifact-attestations
+  notes:
+  - Backs the slsa_build_level 3 value emitted by release-supply-chain.yml and the Build
+    L3 row in docs/07.
 - id: github-attestations-private
   provider: GitHub
   product: Artifact attestations
