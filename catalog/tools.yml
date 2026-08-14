@@ -446,8 +446,8 @@ tools:
     name: actions/cache
     homepage: "https://github.com/actions/cache"
     kind: action
-    current_version: "v4.3.0"
-    pin: "actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830"
+    current_version: "v6.1.0"
+    pin: "actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9"
     used_by:
       - .github/workflows/dart-flutter-ci.yml
       - .github/workflows/qt-ci.yml

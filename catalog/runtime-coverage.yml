@@ -65,13 +65,15 @@ entries:
     proven_digest: 768e143bfe9fa3fe97463b926098ce6ad62ba30bf33751f36ce20af58655ebe3
     waiver: null
   - workflow: .github/workflows/dart-flutter-ci.yml
-    proven_os:
-      - linux
     criticality: supporting
-    status: runtime-proven
-    evidence: "Fixture caller ran the default resolve/format/analyze/test lanes against tests/fixtures/flutter on ubuntu-latest and the observer accepted the receipt: four sections (cache, resolve, test, toolchain), one test, and a toolchain identity matching the pinned release exactly \u2014 3.47.0 stable, Dart 3.13.0, revision 4cf24164269a5ebf0c16a028a00727d0e77bbb05. The SDK is provisioned from Google's published manifest and verified against the SHA-256 that manifest publishes, so the workflow reaches no action it does not pin and starts where full-SHA pinning is enforced; check_transitive_action_pins reports it clean. Provenance names the callee. Linux only: the resolve step selects the host manifest and architecture, but only ubuntu-latest has been run."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31823739241
-    proven_digest: a62f0ba22c60d0e8425f5206628750579c670bcb3a5c5de7d5a7738394bfe32a
+    status: unverified
+    evidence: "Proven on 2026-08-14 by run 31823739241, then the bytes changed: actions/cache moved off the deprecated Node 20 runtime to v6.1.0, so the proven digest no longer describes this file. The provisioning is unchanged -- the SDK comes from Google's published manifest, verified against the digest that manifest publishes. Awaiting the re-run that re-proves it."
+    last_run: null
+    runtime_debt:
+      risk: medium
+      barrier: heavy-toolchain
+      required_capability: A fixture re-run after the cache action bump.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/150
     waiver: null
   - workflow: .github/workflows/docs-ci.yml
     criticality: supporting
