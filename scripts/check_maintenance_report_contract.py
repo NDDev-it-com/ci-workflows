@@ -32,7 +32,18 @@ from ci_workflows_tools.check_python_execution_contract import clean_environment
 WORKFLOW = REPO_ROOT / ".github/workflows/maintenance.yml"
 JOB = "sweep"
 CHECKOUT_STEP = "Checkout"
+SWEEP_STEP = "Run the advisory sweep"
 REPORT_STEP = "File or update the tracking issue"
+
+# How GitHub turns a `shell:` value into a command line. The default matters
+# most: an unspecified shell is `bash -e {0}`, and `-e` arrives on the shell's
+# own argv where no `set` inside the script can reach it.
+DEFAULT_SHELL = "bash -e {0}"
+NAMED_SHELLS = {
+    "bash": "bash --noprofile --norc -eo pipefail {0}",
+    "sh": "sh -e {0}",
+    "python": "python {0}",
+}
 
 FAKE_GH = """#!/usr/bin/env bash
 set -u
@@ -107,6 +118,93 @@ def _run_with_fake_gh(script: str, mode: str, env: dict[str, str]):
         return done, log.read_text(encoding="utf-8")
 
 
+def _shell_argv(step: dict, job: dict, doc: dict) -> list[str]:
+    """The argv GitHub would actually run this step's script under."""
+    declared = (
+        step.get("shell")
+        or ((job.get("defaults") or {}).get("run") or {}).get("shell")
+        or ((doc.get("defaults") or {}).get("run") or {}).get("shell")
+    )
+    template = NAMED_SHELLS.get(str(declared), str(declared)) if declared else DEFAULT_SHELL
+    return str(template).split()
+
+
+def _run_sweep(argv: list[str], script: str, sweep_exit: int) -> tuple[int, str, str]:
+    """Execute the sweep step with a stub interpreter, under the real shell."""
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        venv = root / ".venv" / "bin"
+        venv.mkdir(parents=True)
+        stub = venv / "python"
+        # Exits 0 for the cold syntax gate and `sweep_exit` for the sweep, so the
+        # case under test is "the sweep reported a finding", not "python broke".
+        stub.write_text(
+            "#!/usr/bin/env bash\n"
+            'case "$*" in *check_python_syntax.py*) exit 0 ;; esac\n'
+            f"exit {sweep_exit}\n",
+            encoding="utf-8")
+        stub.chmod(0o755)
+        (root / "scripts").mkdir()
+        output = root / "github_output"
+        output.write_text("", encoding="utf-8")
+        summary = root / "github_step_summary"
+        summary.write_text("", encoding="utf-8")
+        program = root / "step.sh"
+        program.write_text(script, encoding="utf-8")
+        done = subprocess.run(
+            [*(str(program) if part == "{0}" else part for part in argv)], cwd=root,
+            env=clean_environment({
+                "PATH": "/usr/bin:/bin",
+                "GITHUB_OUTPUT": str(output),
+                "GITHUB_STEP_SUMMARY": str(summary),
+                "GH_TOKEN": "fake",
+            }),
+            capture_output=True, text=True, timeout=60)
+        return done.returncode, output.read_text(encoding="utf-8"), done.stdout
+
+
+def _sweep_problems() -> list[str]:
+    """The sweep must record its own exit code, including when it finds something.
+
+    This is the case the first real run of the workflow failed on, and no amount
+    of reading the script could have shown it: the script said `set -uo pipefail`
+    and a comment said `-e` was deliberately absent, while GitHub was running the
+    whole thing under `bash -e`. On the first finding bash aborted at the sweep
+    line, so `$?` was never read and the report step never had a status to act on.
+    """
+    doc = load_yaml(WORKFLOW)
+    job = (doc.get("jobs") or {}).get(JOB) or {}
+    try:
+        step = _step(SWEEP_STEP)
+    except ValueError as exc:
+        return [str(exc)]
+    script = str(step.get("run") or "")
+    argv = _shell_argv(step, job, doc)
+    problems: list[str] = []
+    for sweep_exit in (0, 1):
+        code, output, stdout = _run_sweep(argv, script, sweep_exit)
+        if f"status={sweep_exit}" not in output:
+            problems.append(
+                f"{WORKFLOW.name}: {SWEEP_STEP!r} did not record `status={sweep_exit}` "
+                f"when the sweep exited {sweep_exit} (shell: {' '.join(argv)}); "
+                f"step exit {code}, GITHUB_OUTPUT {output.strip()!r}")
+    return problems
+
+
+def _always_problems() -> list[str]:
+    try:
+        step = _step(REPORT_STEP)
+    except ValueError as exc:
+        return [str(exc)]
+    if str(step.get("if") or "").strip() not in {"always()", "${{ always() }}"}:
+        return [
+            f"{WORKFLOW.name}: {REPORT_STEP!r} must be `if: always()`; a sweep step "
+            "that dies for any reason would otherwise skip reporting entirely, and "
+            "an advisory lane whose findings vanish looks exactly like one with "
+            "nothing to say"]
+    return []
+
+
 def _checkout_problems() -> list[str]:
     try:
         options = _step(CHECKOUT_STEP).get("with") or {}
@@ -173,7 +271,8 @@ def _report_problems() -> list[str]:
 
 
 def check() -> list[str]:
-    return _checkout_problems() + _report_problems()
+    return (_checkout_problems() + _sweep_problems()
+            + _always_problems() + _report_problems())
 
 
 def main() -> int:

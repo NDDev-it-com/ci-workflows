@@ -242,7 +242,10 @@
       "_resolve": {"count": 1, "profile": "isolated-python-fixture"}
     },
     "check_gate_contract.py": {"_run": {"count": 1, "profile": "isolated-python-fixture"}},
-    "check_maintenance_report_contract.py": {"_run_with_fake_gh": {"count": 1, "profile": "shell-fixture"}},
+    "check_maintenance_report_contract.py": {
+      "_run_sweep": {"count": 1, "profile": "shell-fixture"},
+      "_run_with_fake_gh": {"count": 1, "profile": "shell-fixture"}
+    },
     "check_monorepo_routing.py": {"_run": {"count": 1, "profile": "external-tool-fixture"}},
     "check_pr_hygiene_contract.py": {"_exercise_validator": {"count": 1, "profile": "shell-fixture"}},
     "check_privileged_ref_guard.py": {"_run_guard": {"count": 1, "profile": "shell-fixture"}},
