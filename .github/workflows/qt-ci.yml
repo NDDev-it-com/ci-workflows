@@ -214,12 +214,23 @@ jobs:
           QT_VERSION: ${{ steps.release.outputs.version }}
         run: |
           set -euo pipefail
-          root="${RUNNER_TEMP}/qt/${QT_VERSION}/${QT_ARCH}"
-          if [ ! -x "$root/bin/qmake" ] && [ ! -x "$root/bin/qmake.exe" ]; then
-            echo "Qt install did not produce ${root}/bin/qmake" >&2
-            ls -la "${RUNNER_TEMP}/qt" >&2 || true
+          # The published architecture identifier and the directory aqt writes
+          # are not the same string: `linux_gcc_64` installs into `gcc_64`. That
+          # mapping is aqt's business and differs by host, so the prefix is not
+          # stripped by a rule here -- the install is located by the thing that
+          # actually identifies it, a `bin/qmake`. Zero or several is a failure,
+          # never a guess.
+          base="${RUNNER_TEMP}/qt/${QT_VERSION}"
+          roots="$(find "$base" -mindepth 3 -maxdepth 3 -type f \
+            \( -name qmake -o -name qmake.exe \) -printf '%h\n' 2>/dev/null \
+            | sed 's#/bin$##' | sort -u || true)"
+          count="$(printf '%s\n' "$roots" | grep -c . || true)"
+          if [ "$count" != "1" ]; then
+            echo "expected exactly one Qt install under ${base}, found ${count}" >&2
+            ls -la "$base" >&2 || true
             exit 1
           fi
+          root="$roots"
           echo "$root/bin" >> "$GITHUB_PATH"
           {
             echo "QT_ROOT_DIR=$root"
