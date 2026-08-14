@@ -52,6 +52,11 @@ jobs:
             astral.sh:443
             pypi.org:443
             files.pythonhosted.org:443
+            # check_flutter_pin resolves the fixture's pinned release against
+            # Google's published Flutter manifest. This is the only host the
+            # advisory sweep reaches beyond GitHub and the Python index, and
+            # without it the check reports the pin as unverified every week.
+            storage.googleapis.com:443
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -79,6 +84,11 @@ jobs:
 
       - name: Run the advisory sweep
         id: sweep
+        env:
+          # check_transitive_action_pins resolves every pinned action's own
+          # definition through the API. Unauthenticated that is 60 requests an
+          # hour, which 44 actions exhaust, so the sweep passes its own token.
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -uo pipefail
           .venv/bin/python -I -B scripts/check_python_syntax.py

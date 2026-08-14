@@ -54,10 +54,23 @@ consumer's tree instead of the workflow that ran.
 
 Assertions specific to this repository's fixtures — the exact task graph, the
 required SDK platform and build-tools, the APK, the dependency locks, the
-verification metadata, the CTest count — live in the observer jobs of
+verification metadata — live in the observer job of
 `runtime-fixtures-languages.yml` and in `check_sdk_runtime_fixtures.py`, never in
-the reusable. Observers reject a missing, skipped, or partial caller result.
+the reusable. The observer rejects a missing, skipped, or partial caller result.
 Provisioning duration is telemetry, not a correctness threshold.
+
+Only the Kotlin/Android lane runs in the estate, and it is the only one recorded
+as `runtime-proven`. A companion job regenerates the Android dependency closure
+from a clean tree on every run and fails if it differs from what is committed,
+so the locks and verification metadata cannot rot unnoticed.
+
+`dart-flutter-ci.yml` and `qt-ci.yml` have no lane, which is a fact about them
+rather than about the fixtures: their vendored setup actions name nested actions
+by tag, so the job is refused during `Set up job` in any repository that
+enforces full-SHA action pinning — the control this library recommends. Both are
+recorded as `blocked` in `catalog/runtime-coverage.yml` with that barrier, and
+`check_transitive_action_pins.py` reports the same class for any other action in
+the advisory sweep. See issue #150.
 
 These join the existing Python, Node, Go, Rust, Java, .NET, container, and
 Terraform packs. Swift defaults to a macOS runner (10x minute multiplier); its

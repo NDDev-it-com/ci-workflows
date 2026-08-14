@@ -22,10 +22,19 @@
 # https://github.com/NDDev-it-com/ci-workflows/actions/runs/31779014883.
 #
 # The suppression names the three properties explicitly, so a typo such as
-# `job.workflow_shaa` is still reported. `check_actionlint_contract.py`
-# additionally proves this file is still load-bearing and still narrow: it runs
-# actionlint without the config and fails if these errors have stopped
-# appearing, which is how this file gets deleted once upstream catches up.
+# `job.workflow_shaa` is still reported. `check_actionlint_config.py` holds this
+# file to that scope in the blocking tier: it runs the ignore pattern against
+# the real diagnostic text for each of the three properties and against several
+# unknown ones, requires the glob to cover exactly the files that reference
+# them, and rejects any `job.<property>` in an expression that is neither
+# modelled by actionlint nor one of the three — which is the case actionlint can
+# no longer report here.
+#
+# It does not check whether upstream has since learned these properties; that is
+# a fact about somebody else's release schedule, not about this tree. Re-run
+# `actionlint -config-file /dev/null .github/workflows` when bumping the pin: if
+# the three errors have stopped appearing, delete this file and the validator
+# will tell you the glob is stale.
 paths:
   .github/workflows/{dart-flutter-ci,kotlin-android-ci,qt-ci}.yml:
     ignore:

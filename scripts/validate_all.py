@@ -43,6 +43,7 @@ from pathlib import Path
 
 from ci_workflows_tools import (
     _strict_yaml,
+    check_actionlint_config,
     check_actionlint_contract,
     check_benchmark_contract,
     check_docs_links,
@@ -72,6 +73,7 @@ from ci_workflows_tools import (
     check_sdk_runtime_fixtures,
     check_side_effect_fixture_contract,
     check_skills,
+    check_transitive_action_pins,
     check_tool_pinning,
     check_tool_registry,
     check_workflow_contracts,
@@ -110,6 +112,7 @@ CORE = [
     ("monorepo-routing", check_monorepo_routing.check),
     ("benchmark-contract", check_benchmark_contract.check),
     ("actionlint-contract", check_actionlint_contract.check),
+    ("actionlint-config", check_actionlint_config.check),
     ("documented-commands", check_documented_commands.check),
     ("examples", check_examples.check),
     ("public-docs", check_public_docs.check),
@@ -147,6 +150,7 @@ SCHEDULED = [
     ("release-ledger-tags", check_release_ledger.check_tags),
     ("docs-links", check_docs_links.check),
     ("flutter-pin", check_flutter_pin.check),
+    ("transitive-action-pins", check_transitive_action_pins.check),
 ]
 
 
