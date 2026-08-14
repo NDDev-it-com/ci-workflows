@@ -2,6 +2,34 @@
 
 ## [Unreleased]
 
+- Make a tier's requirements data, and hold every caller to them. `--tier
+  scheduled` needs a GitHub token, two external hosts and the tag refs. That was
+  written down once, as comments beside `maintenance.yml`'s egress allow-list, and
+  enforced nowhere. Three jobs invoked the tier and one granted what it needs.
+
+  `release.yml` ran **every** tier with no token, no tags and an allow-list
+  omitting both SDK hosts, so a release stopped in preflight on four capability
+  failures — before its own promotion gate, and long before the missing evidence
+  manifest that is the *known* release blocker. Nothing had noticed because the
+  graph had never been exercised: at 0.13.3 `resolve` did not run `validate_all`
+  at all, and the step that does arrived ten days after the last release.
+
+  The advisory tier splits by what a check reaches for. `CALENDAR` —
+  product-fact expiry, runtime-coverage waivers, the release ledger against tags,
+  documentation links — reaches no further than the checkout. `EXTERNAL` — the two
+  SDK pins and the two GitHub-API checks — does. A new `--tier release` is core
+  plus `CALENDAR`, so a release still refuses to ship an expired external fact
+  without a publishing graph reaching the network to find out. It passes with no
+  token and no reachable host, which is the point.
+
+  `catalog/validation-tiers.yml` records what each check needs and which job may
+  run which tier. `check_validation_tier_contract.py` reads tier membership from
+  `validate_all` itself, the requirement from the catalog, and the grant from the
+  job — allow-list, step and job `env`, checkout inputs. Discovery is fail-closed
+  in both directions: an undeclared caller is a finding, and so is a declared
+  caller that no longer exists. Six mutations were each caught, including
+  `release.yml` reverting to every tier.
+
 - Let the advisory sweep survive finding something. The first real run of
   `maintenance.yml` failed, and the reason was only visible from the run: GitHub
   runs `run:` steps as `bash -e {0}`, and `-e` arrives on the shell's own command

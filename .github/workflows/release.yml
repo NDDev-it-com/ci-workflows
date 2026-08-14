@@ -62,6 +62,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          # The preflight reconciles CHANGELOG headings against SemVer tags, and
+          # that check fails closed when it can see none -- a shallow checkout
+          # cannot tell "no tags" from "no tags fetched". A release of all things
+          # must not be the run that cannot see its own ledger.
+          fetch-depth: 0
+          fetch-tags: true
           persist-credentials: false
       - name: Set up Python
         id: python
@@ -88,14 +94,25 @@ jobs:
           "$PYTHON_PATH" -I -B -m venv --copies .venv
           uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
 
-      # A release is the one place where the full sweep is the right gate: an
-      # immutable artifact must not ship carrying an expired external fact or a
-      # runtime-coverage waiver that is already past due. Pull requests get the
-      # scoped tiers; a release gets everything.
-      - name: Full validation sweep
+      # An immutable artifact must not ship carrying an expired external fact or
+      # a runtime-coverage waiver already past due, so the release keeps the
+      # calendar checks. What it cannot keep is the rest of the advisory tier:
+      # `transitive-action-pins` and `anchor-contexts` fail closed without a
+      # GitHub token, and `flutter-pin` and `qt-pin` need two hosts this job's
+      # egress policy blocks. Running `validate_all.py --` here meant every
+      # release stopped in preflight on four capability failures -- before the
+      # promotion gate, and long before the missing evidence manifest (#157) that
+      # is the *known* blocker. The graph had never been exercised: at 0.13.3
+      # `resolve` did not run validate_all at all.
+      #
+      # `--tier release` is core plus the calendar checks, and reaches no further
+      # than this checkout. `catalog/validation-tiers.yml` records why, and
+      # `check_validation_tier_contract.py` fails if this job ever invokes a tier
+      # it does not grant the capabilities for.
+      - name: Release validation preflight
         run: |
           .venv/bin/python -I -B scripts/check_python_syntax.py
-          .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch validate_all.py --
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch validate_all.py -- --tier release
 
       - name: Resolve and validate version
         id: v
