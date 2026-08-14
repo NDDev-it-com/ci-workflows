@@ -425,6 +425,7 @@ capabilities:
     product_facts:
       - "github-attestations-public"
       - "github-attestations-private"
+      - "github-slsa-build-level-reusable"
     cluster: supply-chain
     status: ga
     public_oss: free
