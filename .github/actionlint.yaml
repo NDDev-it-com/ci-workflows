@@ -1,0 +1,32 @@
+# actionlint configuration.
+#
+# One suppression, scoped to three files and three property names.
+#
+# `job.workflow_repository`, `job.workflow_sha` and `job.workflow_file_path` are
+# real GitHub Actions contexts. They are the only way a called reusable workflow
+# can name *itself*: inside a reusable, every `github.*` value describes the
+# CALLER, so `github.workflow_ref` and `github.workflow_sha` identify the calling
+# workflow, not the called one. The three SDK reusables record the callee triple
+# in their runtime receipt so the provenance in that receipt is the workflow that
+# actually ran.
+#
+# actionlint v1.7.12 -- the current release, and the version `actionlint.yml`
+# pins -- models the `job` context as only
+# `{check_run_id, container, services, status}` and so reports these three as
+# undefined properties. Upstream has no issue or commit for them.
+#
+# Proven to exist rather than assumed: a probe reusable pinned at an absolute
+# commit and called from a different commit reported
+# `job.workflow_sha=39f043f016b382760a566f9a2a3189c47b8ef74b` (the callee) while
+# `github.sha=f40c3f0a63e7d29ffe07864615ae7bcd5e16f2b8` (the caller), in run
+# https://github.com/NDDev-it-com/ci-workflows/actions/runs/31779014883.
+#
+# The suppression names the three properties explicitly, so a typo such as
+# `job.workflow_shaa` is still reported. `check_actionlint_contract.py`
+# additionally proves this file is still load-bearing and still narrow: it runs
+# actionlint without the config and fails if these errors have stopped
+# appearing, which is how this file gets deleted once upstream catches up.
+paths:
+  .github/workflows/{dart-flutter-ci,kotlin-android-ci,qt-ci}.yml:
+    ignore:
+      - '^property "workflow_(file_path|repository|sha)" is not defined in object type \{check_run_id: number; container: .+\}$'

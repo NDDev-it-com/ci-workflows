@@ -6,6 +6,10 @@ name: kotlin-android-ci
 
 on:
   workflow_call:
+    outputs:
+      evidence:
+        description: 'Redacted JSON receipt for the JDK, Gradle, Android and successful build lanes.'
+        value: ${{ jobs.kotlin-android.outputs.evidence }}
     inputs:
       runner:
         type: string
@@ -52,6 +56,8 @@ jobs:
     timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       contents: read
+    outputs:
+      evidence: ${{ steps.evidence.outputs.evidence }}
     defaults:
       run:
         # Explicit, and not redundant with the workflow-level default above:
@@ -74,7 +80,10 @@ jobs:
           distribution: ${{ inputs.java_distribution }}
 
       - name: Set up Gradle
+        id: gradle
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb  # v6.3.0
+        with:
+          cache-provider: basic
 
       - name: Set up Android SDK
         if: ${{ inputs.setup_android }}
@@ -92,6 +101,256 @@ jobs:
         env:
           BUILD_COMMAND: ${{ inputs.build_command }}
           JAVA_VER: ${{ inputs.java_version }}
+          BUILD_LOG: ${{ runner.temp }}/kotlin-android-build.log
         run: |
-          bash -euo pipefail -c "$BUILD_COMMAND"
+          set -euo pipefail
+          bash -euo pipefail -c "$BUILD_COMMAND" 2>&1 | tee "$BUILD_LOG"
           echo "Kotlin/Android (JDK ${JAVA_VER}) build passed." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Emit runtime evidence
+        id: evidence
+        env:
+          BUILD_COMMAND: ${{ inputs.build_command }}
+          BUILD_LOG: ${{ runner.temp }}/kotlin-android-build.log
+          CALLEE_PATH: ${{ job.workflow_file_path }}
+          CALLEE_REPOSITORY: ${{ job.workflow_repository }}
+          CALLEE_SHA: ${{ job.workflow_sha }}
+          JAVA_VERSION_INPUT: ${{ inputs.java_version }}
+          SETUP_ANDROID: ${{ inputs.setup_android }}
+        run: |
+          python3 -I <<'PY'
+          import hashlib, json, os, pathlib, re, shutil, stat, subprocess, sys
+          import xml.etree.ElementTree as ET
+
+          untrusted = []
+          # GitHub-hosted runners ship a world-writable tool cache, so mode bits
+          # there name no other principal: the VM is single-tenant and destroyed
+          # with the job. On any other runner the bits mean what they say, and a
+          # writable toolchain root is refused. `RUNNER_ENVIRONMENT` is set by
+          # the runner itself, so the caller cannot assert the weaker model.
+          EPHEMERAL = os.environ.get("RUNNER_ENVIRONMENT") == "github-hosted"
+
+          def digest(path):
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+
+          def trusted_root(raw, label):
+              """Resolve a root, or record why it is not vouched for and return None.
+
+              Returning None rather than exiting is deliberate. This workflow is a
+              generic reusable: a consumer whose runner image happens not to ship
+              an Android SDK must still get a green build and an honest receipt
+              that simply makes no claim about a root it could not verify. Every
+              refusal is named in `untrusted_roots`, so "absent" and "present but
+              untrustworthy" stay distinguishable and an observer can require the
+              list to be empty.
+              """
+              if not raw:
+                  return None
+              path = pathlib.Path(raw)
+              if not path.is_absolute() or not path.is_dir() or path.is_symlink():
+                  untrusted.append(f"{label}: not an absolute non-symlink directory")
+                  return None
+              if sys.platform == "darwin" and path.parts[:2] == ("/", "var"):
+                  candidate = pathlib.Path("/private").joinpath(*path.parts[1:])
+                  if not candidate.exists() or not os.path.samefile(path, candidate):
+                      untrusted.append(f"{label}: incoherent Darwin /var alias")
+                      return None
+                  path = candidate
+              resolved = path.resolve(strict=True)
+              if resolved != path:
+                  untrusted.append(f"{label}: untrusted ancestor alias")
+                  return None
+              flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+              descriptor = os.open("/", flags)
+              try:
+                  for component in resolved.parts[1:]:
+                      child = os.open(component, flags, dir_fd=descriptor)
+                      os.close(descriptor)
+                      descriptor = child
+                  opened = os.fstat(descriptor)
+                  current = resolved.stat()
+                  if (opened.st_dev, opened.st_ino) != (current.st_dev, current.st_ino):
+                      untrusted.append(f"{label}: identity changed during validation")
+                      return None
+              finally:
+                  os.close(descriptor)
+              if opened.st_uid not in {0, os.getuid()}:
+                  untrusted.append(f"{label}: unowned uid {opened.st_uid}")
+                  return None
+              if not EPHEMERAL and opened.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+                  untrusted.append(
+                      f"{label}: group/world writable (mode {opened.st_mode & 0o7777:04o})")
+                  return None
+              return resolved
+
+          required = {"java.home", "java.runtime.version", "java.vendor", "java.version", "java.vm.name"}
+
+          def java_identity(executable):
+              output = subprocess.check_output(
+                  [str(executable), "-XshowSettings:properties", "-version"],
+                  stderr=subprocess.STDOUT, text=True)
+              identity = dict(re.findall(
+                  r"^\s+(java\.(?:home|runtime\.version|vendor|version|vm\.name)) = (.+)$",
+                  output, re.MULTILINE))
+              return identity if set(identity) == required else None
+
+          # Provenance of the workflow that is running, not of the caller's tree.
+          # `github.*` inside a called reusable is bound to the CALLER, so hashing
+          # `${github.workspace}/.github/workflows/kotlin-android-ci.yml` digests
+          # whatever the caller keeps at that path -- or fails when they keep
+          # nothing there. `job.workflow_*` is bound to the callee and supplied by
+          # the runner, so the triple names these exact bytes unforgeably.
+          receipt = {
+              "callee_path": os.environ["CALLEE_PATH"],
+              "callee_repository": os.environ["CALLEE_REPOSITORY"],
+              "callee_sha": os.environ["CALLEE_SHA"],
+              "caller_repository": os.environ["GITHUB_REPOSITORY"],
+              "caller_sha": os.environ["GITHUB_SHA"],
+              "cache_provider": "basic",
+              "kind": "android",
+              "os": os.environ["RUNNER_OS"],
+              "runner_arch": os.environ["RUNNER_ARCH"],
+              "java_version_input": os.environ["JAVA_VERSION_INPUT"],
+              "root_trust_model": (
+                  "ephemeral-single-tenant-runner" if EPHEMERAL else "exclusive-filesystem"
+              ),
+              "schema_version": 1,
+              "setup_android": os.environ["SETUP_ANDROID"],
+          }
+          sections = []
+
+          build_log = pathlib.Path(os.environ["BUILD_LOG"])
+          if build_log.is_file():
+              sections.append("build")
+              receipt["build_command"] = os.environ["BUILD_COMMAND"]
+              receipt["build_log_sha256"] = digest(build_log)
+              # `[^ ]` matches a newline, so the previous pattern ran past the
+              # end of each line and produced entries like ":app:build\n>".
+              receipt["task_graph"] = list(dict.fromkeys(re.findall(
+                  r"^> Task (:\S+)", build_log.read_text(encoding="utf-8"), re.MULTILINE)))
+
+          prop = java_identity("java")
+          if prop is None:
+              raise SystemExit("the JDK selected by setup-java reports no usable identity")
+          requested = os.environ["JAVA_VERSION_INPUT"] + "."
+          if not prop["java.version"].startswith(requested) \
+                  or not prop["java.runtime.version"].startswith(requested):
+              raise SystemExit("the JDK on PATH does not satisfy the requested java_version")
+          # A section is claimed only when every field in it is real. If the JDK
+          # root cannot be vouched for, the receipt records why in
+          # `untrusted_roots` and makes no JDK claim, rather than shipping an
+          # empty string that reads like a verified answer.
+          observed_java_home = trusted_root(prop["java.home"], "observed JAVA_HOME")
+          if observed_java_home is not None:
+              sections.append("jdk")
+              receipt.update({
+                  "java_home_resolved": str(observed_java_home),
+                  "java_runtime_version_resolved": prop["java.runtime.version"],
+                  "java_vendor_resolved": prop["java.vendor"],
+                  "java_version_resolved": prop["java.version"],
+                  "java_vm_name_resolved": prop["java.vm.name"],
+              })
+
+          # Gradle identity is a section, not a precondition. `build_command` is
+          # caller-supplied and need not involve Gradle at all, and a project may
+          # legitimately have no wrapper; neither is this workflow's business to
+          # refuse. `./gradlew --version` unconditionally made the wrapper
+          # mandatory for every consumer.
+          launcher_argv = None
+          wrapper = pathlib.Path("./gradlew")
+          if wrapper.is_file() and os.access(wrapper, os.X_OK):
+              launcher_argv = ["./gradlew"]
+          elif shutil.which("gradle"):
+              launcher_argv = ["gradle"]
+          if launcher_argv is not None:
+              gradle = subprocess.check_output(
+                  [*launcher_argv, "--version", "--console", "plain"], text=True)
+              gradle_version = re.search(r"^Gradle (\S+)$", gradle, re.MULTILINE)
+              launcher = re.search(r"^Launcher JVM:\s+(.+)$", gradle, re.MULTILINE)
+              daemon = re.search(r"^Daemon JVM:\s+(.+)$", gradle, re.MULTILINE)
+              launcher_identity = re.fullmatch(
+                  r"(\S+) \((.+)\)", launcher.group(1).strip()) if launcher else None
+              daemon_home = trusted_root(
+                  daemon.group(1).strip().split(" (", 1)[0], "Gradle daemon JAVA_HOME",
+              ) if daemon else None
+              daemon_prop = java_identity(daemon_home / "bin/java") if daemon_home else None
+              if gradle_version and launcher_identity and daemon and daemon_prop:
+                  launcher_version = launcher_identity.group(1)
+                  sections.append("gradle")
+                  receipt.update({
+                      "gradle_daemon_jvm_home_resolved": daemon_prop["java.home"],
+                      "gradle_daemon_jvm_resolved": daemon.group(1).strip(),
+                      "gradle_daemon_jvm_runtime_version_resolved": daemon_prop["java.runtime.version"],
+                      "gradle_daemon_jvm_vendor_resolved": daemon_prop["java.vendor"],
+                      "gradle_daemon_jvm_version_resolved": daemon_prop["java.version"],
+                      "gradle_daemon_jvm_vm_name_resolved": daemon_prop["java.vm.name"],
+                      "gradle_launcher_jvm_resolved": launcher.group(1).strip(),
+                      "gradle_launcher_jvm_runtime_version_resolved": prop["java.runtime.version"],
+                      "gradle_launcher_jvm_vendor_resolved": launcher_identity.group(2).removesuffix(
+                          " " + prop["java.runtime.version"]),
+                      "gradle_launcher_jvm_version_resolved": launcher_version,
+                      "gradle_launcher_jvm_vm_name_resolved": prop["java.vm.name"],
+                      "gradle_version": gradle_version.group(1),
+                  })
+              else:
+                  untrusted.append("Gradle launcher/daemon JVM identity is unreadable")
+
+          reports = sorted(pathlib.Path(".").glob("**/test-results/*/TEST-*.xml"))
+          if reports:
+              sections.append("tests")
+              receipt["test_count"] = sum(
+                  int(ET.parse(path).getroot().attrib.get("tests", "0")) for path in reports)
+
+          # Everything below is a property of the caller's project, so each is a
+          # section that appears when the project has it. Requiring an APK, an
+          # `app` module, a dependency lock and a `verification-metadata.xml`
+          # unconditionally contradicted this workflow's own promise to work "for
+          # pure-JVM Kotlin and Android" -- a pure-JVM build produces no APK, and
+          # most projects have no verification metadata at all.
+          apks = sorted(pathlib.Path(".").glob("**/build/outputs/apk/**/*.apk"))
+          if apks:
+              sections.append("artifacts")
+              receipt["apk_sha256"] = [digest(path) for path in apks]
+          locks = sorted(pathlib.Path(".").glob("**/*.lockfile"))
+          if locks:
+              sections.append("locks")
+              receipt["lock_sha256"] = {path.as_posix(): digest(path) for path in locks}
+          metadata = pathlib.Path("gradle/verification-metadata.xml")
+          if metadata.is_file():
+              sections.append("dependency_verification")
+              receipt["verification_metadata_sha256"] = digest(metadata)
+          wrapper_jar = pathlib.Path("gradle/wrapper/gradle-wrapper.jar")
+          wrapper_props = pathlib.Path("gradle/wrapper/gradle-wrapper.properties")
+          if wrapper_jar.is_file() and wrapper_props.is_file():
+              sections.append("wrapper")
+              receipt["wrapper_jar_sha256"] = digest(wrapper_jar)
+              receipt["wrapper_properties_sha256"] = digest(wrapper_props)
+
+          # The Android SDK is present only when the caller asked for it or the
+          # runner image already had it. Absent is a fact about the caller, not a
+          # failure of this workflow.
+          android_home = trusted_root(os.environ.get("ANDROID_HOME", ""), "ANDROID_HOME")
+          android_sdk_root = trusted_root(os.environ.get("ANDROID_SDK_ROOT", ""), "ANDROID_SDK_ROOT")
+          if android_home and android_sdk_root:
+              if android_home != android_sdk_root:
+                  untrusted.append("ANDROID_HOME and ANDROID_SDK_ROOT disagree")
+              else:
+                  sections.append("android_sdk")
+                  receipt.update({
+                      "android_sdk_root_resolved": str(android_sdk_root),
+                      "sdk_build_tools": sorted(
+                          path.name for path in (android_sdk_root / "build-tools").glob("*")
+                          if path.is_dir()),
+                      "sdk_platforms": sorted(
+                          path.name for path in (android_sdk_root / "platforms").glob("android-*")
+                          if path.is_dir()),
+                  })
+
+          receipt["sections"] = sorted(sections)
+          receipt["untrusted_roots"] = sorted(untrusted)
+          encoded = json.dumps(receipt, sort_keys=True, separators=(",", ":"))
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"evidence={encoded}\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write(f"\nRuntime evidence: `{encoded}`\n")
+          PY

@@ -135,6 +135,14 @@ jobs:
     uses: ./.github/workflows/osv-scan.yml
     with:
       runner: ubuntu-latest
+      # tests/fixtures/android vendors the Android Gradle Plugin's transitive
+      # closure so the fixture can build under LockMode.STRICT. It is a fixture
+      # input, not something this library ships or whose versions it picks, and
+      # scanning it reports 159 findings nobody here can act on. osv-scanner has
+      # no config-file path scoping -- `PackageOverrides.path` is rejected as an
+      # unknown key by 2.4.0 -- so the exclusion is a scan argument. Grype and
+      # Trivy express the same exclusion in .grype.yaml and trivy.yaml.
+      scan_args: '--recursive --experimental-exclude tests/fixtures/android .'
 
   # security-blocking — Semgrep SAST, exercising the config input and the
   # non-SARIF gate path.

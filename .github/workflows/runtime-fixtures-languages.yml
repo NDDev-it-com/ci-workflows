@@ -406,13 +406,131 @@ jobs:
       install_command: "cargo install cargo-mutants --locked"
       mutation_command: "cargo mutants --no-shuffle --test-tool=cargo -j 2"
 
+  fixture-kotlin-android-ci:
+    name: fixture / kotlin-android-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/kotlin-android-ci.yml
+    with:
+      runner: ubuntu-latest
+      working_directory: tests/fixtures/android
+
+  observe-kotlin-android-ci:
+    name: observe / kotlin-android-ci
+    needs: fixture-kotlin-android-ci
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up isolated Python contract runtime
+        id: python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.13'
+          update-environment: false
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+      - name: Provision validator
+        env:
+          PYTHON_PATH: ${{ steps.python.outputs.python-path }}
+        run: |
+          "$PYTHON_PATH" -I -B -m venv --copies .venv
+          uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
+      - name: Reject missing, skipped, or partial Android evidence
+        env:
+          CALLER_RESULT: ${{ needs.fixture-kotlin-android-ci.result }}
+          SDK_RUNTIME_EVIDENCE: ${{ needs.fixture-kotlin-android-ci.outputs.evidence }}
+        run: |
+          test "$CALLER_RESULT" = success
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch check_sdk_runtime_fixtures.py -- --receipt android
+
+  # Proves the committed Android closure still reproduces from a clean tree. The
+  # generator resolves the exact default `./gradlew build` twice -- once writing
+  # locks and verification metadata, once replaying them strictly from a fresh
+  # Gradle home -- and compares the result against what is committed. Only facts
+  # any conforming toolchain reproduces are compared; host JDK and SDK identity
+  # belong to the per-run receipt, not to a file in git.
+  generate-android-provenance:
+    name: reproduce / android provenance
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up JDK
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961  # v5.7.0
+        with:
+          java-version: '21'
+          distribution: temurin
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699  # v4.0.1
+        with:
+          packages: 'platforms;android-37.0 build-tools;36.0.0'
+      - name: Set up isolated Python contract runtime
+        id: python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.13'
+          update-environment: false
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+      - name: Provision validator
+        env:
+          PYTHON_PATH: ${{ steps.python.outputs.python-path }}
+        run: |
+          "$PYTHON_PATH" -I -B -m venv --copies .venv
+          uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
+      - name: Regenerate the exact-build closure
+        run: |
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py \
+            --launch generate_android_fixture_provenance.py --
+      - name: Publish the generated closure
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: android-fixture-closure
+          path: |
+            tests/fixtures/android/gradle/verification-metadata.xml
+            tests/fixtures/android/gradle/provenance-manifest.json
+            tests/fixtures/android/**/*.lockfile
+          if-no-files-found: error
+      - name: Reject drift from the committed closure
+        run: |
+          set -euo pipefail
+          if ! git --no-pager diff --exit-code -- tests/fixtures/android; then
+            echo "::error::the committed Android closure no longer reproduces" >&2
+            exit 1
+          fi
+          echo "Android exact-build closure reproduced byte for byte." \
+            >> "$GITHUB_STEP_SUMMARY"
+
   # One place to read the outcome, and the digests to paste into the ledger when
+  # `dart-flutter-ci.yml` and `qt-ci.yml` have no lane here on purpose. Their
+  # vendored setup actions name nested actions by tag, and this repository
+  # requires every action to be pinned to a full-length commit SHA, so the job is
+  # refused during `Set up job` before a step runs. A lane that cannot start is
+  # not evidence, and leaving it wired keeps this summary red for as long as the
+  # block lasts, which is how an estate stops reporting the next real
+  # regression. `catalog/runtime-coverage.yml` records both as `blocked` with the
+  # barrier and the handoff, and `check_sdk_runtime_fixtures.py` fails if the two
+  # ever disagree. See https://github.com/NDDev-it-com/ci-workflows/issues/150
   evidence:
     name: evidence summary (languages)
     needs:
       - fixture-mutation-testing
       - fixture-r-ci
       - fixture-benchmark-compare
+      - fixture-kotlin-android-ci
+      - observe-kotlin-android-ci
       - fixture-go-ci
       - fixture-python-ci
       - fixture-node-ci
@@ -466,7 +584,9 @@ jobs:
           RESULTS: ${{ toJSON(needs) }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           PROVES: >-
-            {"fixture-go-ci":"go-ci.yml","fixture-python-ci":"python-ci.yml","fixture-node-ci":"node-ci.yml","fixture-rust-ci":"rust-ci.yml","fixture-cpp-ci":"cpp-ci.yml","fixture-terraform-ci":"terraform-ci.yml","fixture-sql-ci":"sql-ci.yml","fixture-docs-quality":"docs-quality.yml","fixture-hadolint":"hadolint-ci.yml","fixture-web-ci":"web-ci.yml","fixture-container-ci":"container-ci.yml","fixture-cross-platform-smoke":"cross-platform-smoke.yml","fixture-java-ci":"java-ci.yml","fixture-dotnet-ci":"dotnet-ci.yml","fixture-swift-ci":"swift-ci.yml","fixture-mutation-testing":"mutation-testing.yml","fixture-r-ci":"r-ci.yml","fixture-benchmark-compare":"benchmark-compare.yml","fixture-go-ci-os":"go-ci.yml","fixture-python-ci-os":"python-ci.yml","fixture-rust-ci-os":"rust-ci.yml","fixture-dotnet-ci-os":"dotnet-ci.yml","fixture-java-ci-os":"java-ci.yml","fixture-node-ci-os":"node-ci.yml","fixture-terraform-ci-os":"terraform-ci.yml","fixture-sql-ci-os":"sql-ci.yml","fixture-web-ci-os":"web-ci.yml"}
+            {"fixture-go-ci":"go-ci.yml","fixture-python-ci":"python-ci.yml","fixture-node-ci":"node-ci.yml","fixture-rust-ci":"rust-ci.yml","fixture-cpp-ci":"cpp-ci.yml","fixture-terraform-ci":"terraform-ci.yml","fixture-sql-ci":"sql-ci.yml","fixture-docs-quality":"docs-quality.yml","fixture-hadolint":"hadolint-ci.yml","fixture-web-ci":"web-ci.yml","fixture-container-ci":"container-ci.yml","fixture-cross-platform-smoke":"cross-platform-smoke.yml","fixture-java-ci":"java-ci.yml","fixture-dotnet-ci":"dotnet-ci.yml","fixture-swift-ci":"swift-ci.yml","fixture-mutation-testing":"mutation-testing.yml","fixture-r-ci":"r-ci.yml","fixture-benchmark-compare":"benchmark-compare.yml","fixture-kotlin-android-ci":"kotlin-android-ci.yml","fixture-go-ci-os":"go-ci.yml","fixture-python-ci-os":"python-ci.yml","fixture-rust-ci-os":"rust-ci.yml","fixture-dotnet-ci-os":"dotnet-ci.yml","fixture-java-ci-os":"java-ci.yml","fixture-node-ci-os":"node-ci.yml","fixture-terraform-ci-os":"terraform-ci.yml","fixture-sql-ci-os":"sql-ci.yml","fixture-web-ci-os":"web-ci.yml"}
+          GUARDS: >-
+            {"fixture-kotlin-android-ci":["observe-kotlin-android-ci"]}
         run: |
           set -euo pipefail
           .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch render_runtime_evidence.py --

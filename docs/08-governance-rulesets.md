@@ -200,6 +200,22 @@ Push rulesets evaluate **before** the ref updates and can block:
 
 These run on the push itself, catching mistakes earlier than a PR check.
 
+## Long-lived refs outside the release flow
+
+Two kinds of branch here are kept rather than cleaned up, and neither is covered
+by the tag rules above, so the convention is written down instead:
+
+- `checkpoint/**` — a work-in-progress snapshot attached to an open issue. It is
+  not merge-ready by construction and its pull request says so.
+- `archive/**` — a frozen pre-rewrite state, kept so a rewritten branch's history
+  stays reachable.
+
+Two archive refs currently resolve to the same object, `0215cf26`:
+`archive/2026-08-13-ci-workflows-sdk-pre-python-split` is **canonical** and
+`archive/2026-08-13-ci-workflows-129-pre-python-split` is a documented alias of
+it. Neither is deleted. Cite the canonical name; expect to meet the alias in
+older issue comments.
+
 ## Migrating from classic branch protection
 
 1. Read the existing protection (`GET /repos/{owner}/{repo}/branches/{branch}/protection`).

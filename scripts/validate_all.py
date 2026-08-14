@@ -46,6 +46,7 @@ from ci_workflows_tools import (
     check_actionlint_contract,
     check_benchmark_contract,
     check_docs_links,
+    check_flutter_pin,
     check_documented_commands,
     check_examples,
     check_gate_contract,
@@ -68,6 +69,7 @@ from ci_workflows_tools import (
     check_runtime_requirements,
     check_scorecard_evidence_contract,
     check_secret_scan_contract,
+    check_sdk_runtime_fixtures,
     check_side_effect_fixture_contract,
     check_skills,
     check_tool_pinning,
@@ -114,6 +116,7 @@ CORE = [
     ("runtime-requirements", check_runtime_requirements.check),
     ("runner-routing", check_runner_routing.check),
     ("secret-scan-contract", check_secret_scan_contract.check),
+    ("sdk-runtime-fixtures", check_sdk_runtime_fixtures.check),
     ("scorecard-evidence-contract", check_scorecard_evidence_contract.check),
     ("evidence-orchestration", compile_evidence_plan.check),
     ("runtime-evidence-summary", render_runtime_evidence.check),
@@ -143,6 +146,7 @@ SCHEDULED = [
     ("runtime-coverage-calendar", validate_runtime_coverage.check),
     ("release-ledger-tags", check_release_ledger.check_tags),
     ("docs-links", check_docs_links.check),
+    ("flutter-pin", check_flutter_pin.check),
 ]
 
 

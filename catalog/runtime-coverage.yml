@@ -66,14 +66,14 @@ entries:
     waiver: null
   - workflow: .github/workflows/dart-flutter-ci.yml
     criticality: supporting
-    status: unverified
-    evidence: "Not fixtured. Needs the Flutter SDK, which is a multi-minute provisioning step for one lane; deferred to its own change rather than added to the estate here. No consumer run observed."
+    status: blocked
+    evidence: "Fixture and observer are wired, but the job is rejected during `Set up job`: subosito/flutter-action refers to nested actions by tag and this repository requires every action to be pinned to a full-length commit SHA. No step runs, so nothing is proven. Not a fixture gap: any consumer with the same control enabled cannot call this workflow either. Observed in https://github.com/NDDev-it-com/ci-workflows/actions/runs/31782942981"
     last_run: null
     runtime_debt:
       risk: medium
-      barrier: heavy-toolchain
-      required_capability: Minimal Flutter project and hosted-runner SDK provisioning fixture.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/129
+      barrier: dependency-policy-conflict
+      required_capability: Self-provisioned toolchain install that pins every action it uses, replacing the vendored setup action.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/150
     waiver: null
   - workflow: .github/workflows/docs-ci.yml
     criticality: supporting
@@ -146,15 +146,13 @@ entries:
     proven_digest: 47c06ab665e7c6e8a1f529c044c386d0e822ad29b340978735602da55e2a0527
     waiver: null
   - workflow: .github/workflows/kotlin-android-ci.yml
+    proven_os:
+      - linux
     criticality: supporting
-    status: unverified
-    evidence: "Not fixtured. Needs the Android SDK and a Gradle project; deferred to its own change. No consumer run observed."
-    last_run: null
-    runtime_debt:
-      risk: medium
-      barrier: heavy-toolchain
-      required_capability: Minimal Gradle Android project using the hosted Android SDK.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/129
+    status: runtime-proven
+    evidence: "Fixture caller ran the default `./gradlew build` against tests/fixtures/android on ubuntu-latest and the observer accepted the receipt: nine sections (android_sdk, artifacts, build, dependency_verification, gradle, jdk, locks, tests, wrapper), an empty untrusted_roots, one test, two APKs, two Gradle 9.5 lockfiles, and the exact default task graph including :app:assembleDebug, :app:testDebugUnitTest, :app:lintDebug and :app:build. Provenance names the callee: callee_path is kotlin-android-ci.yml while the caller is runtime-fixtures-languages.yml. The committed dependency closure of 557 verified artifacts is regenerated from a clean tree and diffed in the same run. Linux only \u2014 the closure was generated on ubuntu-latest and macOS/Windows would each need their own."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31783511309
+    proven_digest: 25229a37bc855db163f6ba58b1b7a6b52187c981a2e34694e6eb194ce27f94a6
     waiver: null
   - workflow: .github/workflows/monorepo-changed-paths.yml
     criticality: required-gate
@@ -254,14 +252,14 @@ entries:
     waiver: null
   - workflow: .github/workflows/qt-ci.yml
     criticality: supporting
-    status: unverified
-    evidence: "Not fixtured. Needs a Qt installation, the heaviest provisioning step in the library; deferred to its own change. No consumer run observed."
+    status: blocked
+    evidence: "Fixture and observer are wired, but the job is rejected during `Set up job`: jurplel/install-qt-action refers to nested actions by tag and this repository requires every action to be pinned to a full-length commit SHA. No step runs, so nothing is proven. Not a fixture gap: any consumer with the same control enabled cannot call this workflow either. Observed in https://github.com/NDDev-it-com/ci-workflows/actions/runs/31782942981"
     last_run: null
     runtime_debt:
       risk: medium
-      barrier: heavy-toolchain
-      required_capability: Minimal CMake Qt project and hosted-runner Qt provisioning.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/129
+      barrier: dependency-policy-conflict
+      required_capability: Self-provisioned toolchain install that pins every action it uses, replacing the vendored setup action.
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/150
     waiver: null
   - workflow: .github/workflows/r-ci.yml
     criticality: supporting

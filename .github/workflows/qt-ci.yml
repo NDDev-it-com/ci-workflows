@@ -6,6 +6,10 @@ name: qt-ci
 
 on:
   workflow_call:
+    outputs:
+      evidence:
+        description: 'Redacted JSON receipt for the Qt/CMake toolchain and successful default lanes.'
+        value: ${{ jobs.qt.outputs.evidence }}
     inputs:
       runner:
         type: string
@@ -68,6 +72,8 @@ jobs:
     timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       contents: read
+    outputs:
+      evidence: ${{ steps.evidence.outputs.evidence }}
     defaults:
       run:
         # Explicit, and not redundant with the workflow-level default above:
@@ -92,6 +98,9 @@ jobs:
           arch: ${{ inputs.qt_arch }}
           modules: ${{ inputs.qt_modules }}
           cache: true
+          cache-key-prefix: qt-ci-v1
+          aqtversion: '==3.3.0'
+          py7zrversion: '==1.0.0'
 
       - name: Set up ccache
         if: ${{ inputs.enable_ccache }}
@@ -115,7 +124,94 @@ jobs:
         if: ${{ inputs.test_command != '' }}
         env:
           TEST_COMMAND: ${{ inputs.test_command }}
-        run: bash -euo pipefail -c "$TEST_COMMAND"
+          TEST_LOG: ${{ runner.temp }}/qt-tests.log
+        run: |
+          set -euo pipefail
+          bash -euo pipefail -c "$TEST_COMMAND" 2>&1 | tee "$TEST_LOG"
+
+      - name: Emit runtime evidence
+        id: evidence
+        env:
+          BUILD_COMMAND: ${{ inputs.build_command }}
+          CALLEE_PATH: ${{ job.workflow_file_path }}
+          CALLEE_REPOSITORY: ${{ job.workflow_repository }}
+          CALLEE_SHA: ${{ job.workflow_sha }}
+          CONFIGURE_COMMAND: ${{ inputs.configure_command }}
+          QT_VERSION_INPUT: ${{ inputs.qt_version }}
+          TEST_COMMAND: ${{ inputs.test_command }}
+          TEST_LOG: ${{ runner.temp }}/qt-tests.log
+        run: |
+          python3 -I <<'PY'
+          import hashlib, json, os, pathlib, re, shutil, subprocess
+
+          def tool(argv, pattern=None):
+              """Report a tool identity, or None when the tool is not installed."""
+              if shutil.which(argv[0]) is None:
+                  return None
+              out = subprocess.check_output(argv, text=True)
+              return out.splitlines()[0].strip() if pattern is None else out.strip()
+
+          # Provenance of the workflow that is running, not of the caller's tree.
+          # `github.*` in a called reusable is bound to the CALLER, so hashing
+          # `${github.workspace}/.github/workflows/qt-ci.yml` digests whichever
+          # file the caller happens to have at that path -- or fails outright.
+          # `job.workflow_*` is bound to the callee and comes from the runner, so
+          # the repository/sha/path triple names these exact bytes and a caller
+          # cannot forge it.
+          receipt = {
+              "callee_path": os.environ["CALLEE_PATH"],
+              "callee_repository": os.environ["CALLEE_REPOSITORY"],
+              "callee_sha": os.environ["CALLEE_SHA"],
+              "caller_repository": os.environ["GITHUB_REPOSITORY"],
+              "caller_sha": os.environ["GITHUB_SHA"],
+              "kind": "qt",
+              "os": os.environ["RUNNER_OS"],
+              "runner_arch": os.environ["RUNNER_ARCH"],
+              "schema_version": 1,
+          }
+          sections = ["toolchain"]
+          receipt["cache_key_prefix"] = "qt-ci-v1"
+          receipt["qt_version_input"] = os.environ["QT_VERSION_INPUT"]
+          aqt = tool(["aqt", "version"])
+          if aqt is not None:
+              receipt["aqt_version"] = aqt
+          cmake = tool(["cmake", "--version"])
+          if cmake is not None:
+              receipt["cmake_version"] = cmake
+          qt_version = tool(["qmake", "-query", "QT_VERSION"], pattern=True)
+          if qt_version is not None:
+              receipt["qt_version"] = qt_version
+
+          # Each block is conditional on the same input that produced the step it
+          # describes. `configure_command`, `build_command` and `test_command` are
+          # each documented "Empty to skip", so a caller that skips one must get a
+          # receipt without that section -- not an unhandled FileNotFoundError on
+          # a log the skipped step never wrote.
+          if os.environ["CONFIGURE_COMMAND"]:
+              sections.append("configure")
+              receipt["configure_command"] = os.environ["CONFIGURE_COMMAND"]
+          if os.environ["BUILD_COMMAND"]:
+              sections.append("build")
+              receipt["build_command"] = os.environ["BUILD_COMMAND"]
+          if os.environ["TEST_COMMAND"]:
+              log = pathlib.Path(os.environ["TEST_LOG"])
+              if log.is_file():
+                  text = log.read_text(encoding="utf-8")
+                  total = re.search(r"tests failed out of (\d+)", text)
+                  sections.append("test")
+                  receipt["test_command"] = os.environ["TEST_COMMAND"]
+                  receipt["test_count"] = (
+                      int(total.group(1)) if "100% tests passed" in text and total else 0
+                  )
+                  receipt["test_log_sha256"] = hashlib.sha256(log.read_bytes()).hexdigest()
+
+          receipt["sections"] = sorted(sections)
+          encoded = json.dumps(receipt, sort_keys=True, separators=(",", ":"))
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"evidence={encoded}\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write(f"\nRuntime evidence: `{encoded}`\n")
+          PY
 
       - name: Summary
         env:

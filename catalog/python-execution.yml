@@ -2,7 +2,7 @@
   "schema_version": 1,
   "python": {
     "major_minor": "3.13",
-    "subject_count": 45,
+    "subject_count": 51,
     "launcher": "scripts/check_python_execution_contract.py",
     "launcher_prefix": [".venv/bin/python", "-I", "-B", "scripts/check_python_execution_contract.py", "--launch"],
     "syntax_gate_prefix": [".venv/bin/python", "-I", "-B", "scripts/check_python_syntax.py"],
@@ -96,6 +96,7 @@
     "requirements-ci.txt", "scripts/__init__.py", "scripts/validate_all.py"
   ],
   "surface_environment": {
+    "check_sdk_runtime_fixtures.py": ["SDK_RUNTIME_EVIDENCE"],
     "negative_gate_probe.py": ["GH_TOKEN", "GITHUB_TOKEN"],
     "render_runtime_evidence.py": ["GUARDS", "PROVES", "RESULTS", "RUN_URL"],
     "verify_scorecard_runtime.py": ["GH_HOST", "GH_TOKEN"]
@@ -111,10 +112,11 @@
     "shell-fixture": {"api": "subprocess", "executable": "path-search", "argv": "sequence", "cwd": "explicit-or-preserve", "environment": "replace-clean"}
   },
   "surface_groups": {
-    "library": ["_json_schema.py", "_runners.py", "_workflow_yaml.py"],
+    "library": ["_gradle_lockfile.py", "_json_schema.py", "_runners.py", "_sdk_environment.py", "_workflow_yaml.py"],
     "read_only_validator": [
       "_strict_yaml.py", "check_actionlint_contract.py",
       "check_benchmark_contract.py", "check_docs_links.py", "check_documented_commands.py",
+      "check_flutter_pin.py",
       "check_examples.py",
       "check_gate_contract.py", "check_harden_runner_contract.py",
       "check_merge_group.py", "check_monorepo_routing.py",
@@ -126,7 +128,7 @@
       "check_release_promotion_gate.py", "check_release_supply_chain.py",
       "check_rulesets.py", "check_runner_routing.py",
       "check_runtime_requirements.py", "check_scorecard_evidence_contract.py",
-      "check_secret_scan_contract.py",
+      "check_secret_scan_contract.py", "check_sdk_runtime_fixtures.py",
       "check_side_effect_fixture_contract.py", "check_skills.py",
       "check_tool_pinning.py", "check_tool_registry.py",
       "check_workflow_contracts.py", "compile_evidence_plan.py",
@@ -135,17 +137,20 @@
       "validate_runtime_coverage.py", "verify_scorecard_runtime.py"
     ],
     "read_only_generator_check": ["generate_docs.py"],
-    "mutating_generator_import_help_only": ["sync_skills.py"],
+    "mutating_generator_import_help_only": ["generate_android_fixture_provenance.py", "generate_sdk_runtime_manifest.py", "sync_skills.py"],
     "aggregate": ["validate_all.py"],
     "fixture_harness": ["negative_gate_probe.py"]
   },
   "sibling_imports": {
     "__init__.py": [],
+    "_gradle_lockfile.py": [],
     "_json_schema.py": [],
+    "_sdk_environment.py": [],
     "_workflow_yaml.py": ["_strict_yaml"],
     "check_actionlint_contract.py": ["_workflow_yaml", "check_python_execution_contract"],
     "check_benchmark_contract.py": ["_workflow_yaml"],
     "check_documented_commands.py": ["_workflow_yaml"],
+    "check_flutter_pin.py": ["_strict_yaml"],
     "check_examples.py": ["_runners", "_workflow_yaml"],
     "check_gate_contract.py": ["_strict_yaml", "_workflow_yaml", "check_python_execution_contract"],
     "check_harden_runner_contract.py": ["_workflow_yaml"],
@@ -164,6 +169,7 @@
     "check_runtime_requirements.py": ["_strict_yaml", "_workflow_yaml"],
     "check_scorecard_evidence_contract.py": ["_strict_yaml", "_workflow_yaml", "check_harden_runner_contract", "check_python_execution_contract"],
     "check_secret_scan_contract.py": ["_strict_yaml", "_workflow_yaml", "check_python_execution_contract"],
+    "check_sdk_runtime_fixtures.py": ["_gradle_lockfile", "_sdk_environment", "_strict_yaml", "_workflow_yaml", "generate_sdk_runtime_manifest"],
     "check_side_effect_fixture_contract.py": ["_strict_yaml", "_workflow_yaml", "check_python_execution_contract"],
     "check_skills.py": ["_strict_yaml"],
     "check_tool_pinning.py": ["_workflow_yaml"],
@@ -171,11 +177,14 @@
     "check_workflow_contracts.py": ["_runners", "_workflow_yaml"],
     "compile_evidence_plan.py": ["_strict_yaml", "_workflow_yaml"],
     "generate_docs.py": ["_strict_yaml", "_workflow_yaml", "resolve_profile"],
+    "generate_android_fixture_provenance.py": ["_gradle_lockfile", "_sdk_environment", "_strict_yaml", "check_python_execution_contract"],
+    "generate_sdk_runtime_manifest.py": ["_strict_yaml"],
     "negative_gate_probe.py": ["_strict_yaml", "check_python_execution_contract"],
     "resolve_profile.py": ["_strict_yaml"],
     "validate_all.py": [
       "_strict_yaml", "check_actionlint_contract", "check_benchmark_contract",
       "check_docs_links", "check_documented_commands", "check_examples",
+      "check_flutter_pin",
       "check_gate_contract",
       "check_harden_runner_contract", "check_merge_group",
       "check_monorepo_routing", "check_permissions", "check_pinned_actions",
@@ -186,7 +195,7 @@
       "check_release_promotion_gate",
       "check_release_supply_chain", "check_rulesets", "check_runner_routing",
       "check_runtime_requirements", "check_scorecard_evidence_contract",
-      "check_secret_scan_contract",
+      "check_secret_scan_contract", "check_sdk_runtime_fixtures",
       "check_side_effect_fixture_contract", "check_skills", "check_tool_pinning",
       "check_tool_registry", "check_workflow_contracts", "compile_evidence_plan",
       "generate_docs", "render_runtime_evidence", "resolve_profile",
@@ -230,6 +239,10 @@
     "check_scorecard_evidence_contract.py": {"_run_guard": {"count": 1, "profile": "isolated-python-fixture"}},
     "check_secret_scan_contract.py": {"_run": {"count": 1, "profile": "isolated-python-fixture"}},
     "check_side_effect_fixture_contract.py": {"_run_with_fake_gh": {"count": 1, "profile": "shell-fixture"}},
+    "generate_android_fixture_provenance.py": {
+      "_java_properties": {"count": 1, "profile": "external-tool-fixture"},
+      "_run": {"count": 1, "profile": "external-tool-fixture"}
+    },
     "negative_gate_probe.py": {"run_in": {"count": 1, "profile": "shell-fixture"}},
     "validate_all.py": {"changed_paths": {"count": 2, "profile": "external-tool"}},
     "verify_scorecard_runtime.py": {

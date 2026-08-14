@@ -222,6 +222,7 @@ tools:
       - .github/workflows/public-scorecard.yml
       - .github/workflows/release-supply-chain-free.yml
       - .github/workflows/release-supply-chain.yml
+      - .github/workflows/runtime-fixtures-languages.yml
       - .github/workflows/secret-scan.yml
     last_verified: "2026-08-04"
 
@@ -274,6 +275,7 @@ tools:
     pin: "android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699"
     used_by:
       - .github/workflows/kotlin-android-ci.yml
+      - .github/workflows/runtime-fixtures-languages.yml
     last_verified: "2026-07-08"
 
   - id: setup-swift
@@ -471,6 +473,7 @@ tools:
       - .github/workflows/private-static.yml
       - .github/workflows/python-ci.yml
       - .github/workflows/release.yml
+      - .github/workflows/runtime-fixtures-languages.yml
       - .github/workflows/semgrep-ci.yml
       - .github/workflows/sql-ci.yml
       - .github/workflows/zizmor-no-sarif.yml
@@ -535,6 +538,7 @@ tools:
     used_by:
       - .github/workflows/java-ci.yml
       - .github/workflows/kotlin-android-ci.yml
+      - .github/workflows/runtime-fixtures-languages.yml
     last_verified: "2026-07-25"
 
   - id: setup-terraform

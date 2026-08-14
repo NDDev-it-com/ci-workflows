@@ -1,0 +1,180 @@
+{
+  "files": [
+    {
+      "kind": "text",
+      "path": "tests/fixtures/android/.gitignore",
+      "sha256": "97e92bb8b99615c3346c62a3def20ced34254a71c51cb6053850101670fbe50d",
+      "size": 21
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/android/app/build.gradle.kts",
+      "sha256": "fd3c3cfde953a61b7c8484eaae2e3edb293b6bcc242f9f0259bbf4cc83c950a2",
+      "size": 574
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/android/app/gradle.lockfile",
+      "sha256": "246e9a0afc17309692d18f2fe7d093c6b80b6aaf3471e45984ce9fcd87d0261f",
+      "size": 37430
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/android/app/src/main/AndroidManifest.xml",
+      "sha256": "4a6eaf027cfe0a1a1f5130247090a74adf4316f913778c3b347cec6fac03341c",
+      "size": 446
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/android/app/src/main/kotlin/com/nddev/ci/fixture/MainActivity.kt",
+      "sha256": "a0963fba9ac2f93f1b1c51e9d3318ae852835c192e54c53082755b0ea4b11462",
+      "size": 385
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/android/app/src/main/res/values/styles.xml",
+      "sha256": "ff396da1ad1d0cbeaf4626c57f95fde9fcf18623795a9be388ba3c155eaef64c",
+      "size": 111
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/android/app/src/test/kotlin/com/nddev/ci/fixture/MainActivityTest.kt",
+      "sha256": "7f0038339f7b46ed5c9970371b6a01f93b9af7f452c18ad8d323a41e96331885",
+      "size": 232
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/android/build.gradle.kts",
+      "sha256": "6d813db4cdfcf8403a1c7f878bad150b9140abd1d6e8ec484b371c124ccc3027",
+      "size": 199
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/android/gradle.properties",
+      "sha256": "a07aad27d265a85cf72fd3367599e091b4c2fe53783670e00eeb3f090474d3f7",
+      "size": 221
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/android/gradle/libs.versions.toml",
+      "sha256": "57b5abdc15acae16069620c3f8ffb56a518a328dbfd30f98e987715d8bb3af35",
+      "size": 262
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/android/gradle/provenance-manifest.json",
+      "sha256": "31d8b69c28dadaf18d6da5bd1ecc88521cb907e019219d384a8927e7a7d74f58",
+      "size": 157126
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/android/gradle/verification-metadata.xml",
+      "sha256": "bf52bc05810cd69a5784218c38f6fe1c6bdd7adbb08b2e666af8e4bd4f569d67",
+      "size": 145767
+    },
+    {
+      "kind": "binary",
+      "path": "tests/fixtures/android/gradle/wrapper/gradle-wrapper.jar",
+      "sha256": "497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7",
+      "size": 48462
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/android/gradle/wrapper/gradle-wrapper.properties",
+      "sha256": "5b244733103959642b3514c72308d0229e64d84f4f0819f370884fa0f1112d0d",
+      "size": 339
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/android/gradlew",
+      "sha256": "45bda8deaef01b732f07bd317f962a736e349c6faa6662829bc0f41293b51212",
+      "size": 8676
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/android/gradlew.bat",
+      "sha256": "9e62ee9a1c6eb7cecc90e55acc3ff09a1631ccfe3edddf180538a1e42b1532dc",
+      "size": 2786
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/android/settings-gradle.lockfile",
+      "sha256": "e58bb2ed80db9f829601a658d7c33b9802eb7d2191c31e79c28e01f14c225926",
+      "size": 198
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/android/settings.gradle.kts",
+      "sha256": "7af014e9bfd45280e1019e620a6f018bafe9574b69018dc64f9d4fd40830741f",
+      "size": 348
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/flutter/.gitignore",
+      "sha256": "0acc32a9f31862579d67598b43b81bd2dc5e078a7d518f075427d51af10580f0",
+      "size": 21
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/flutter/analysis_options.yaml",
+      "sha256": "3ad8c0863ec04cd8732515103b8eeca655432ed2638e18a17d282e1b37efe9b8",
+      "size": 199
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/flutter/lib/main.dart",
+      "sha256": "8d276e4ea7caa8549543052afb7825df422ac4cc8d9fa9ebbc52fac9ea2fe7d9",
+      "size": 329
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/flutter/pubspec.lock",
+      "sha256": "703ac3bbd097e0233b52eef33b7e6b9da4605c3bb5d5b179193cb337d39d0040",
+      "size": 5382
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/flutter/pubspec.yaml",
+      "sha256": "e4bf4ba5dd68bbf66b406876efe5c70aea747456f714340277ea3758ccd81673",
+      "size": 334
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/flutter/test/widget_test.dart",
+      "sha256": "aa2cb05e665fe227cb84ec9c172f9c1413a084c0bc70d796fd050f424ba51d24",
+      "size": 317
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/qt/.gitignore",
+      "sha256": "020c2606e8ed484089c2083e0be438b9d0736bee1558a6b76af0d58bd23f69cf",
+      "size": 8
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/qt/CMakeLists.txt",
+      "sha256": "f5a60a8534ba70650893219ef6333e3fa78dd7d94b9c377c9e402920ba320821",
+      "size": 686
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/qt/src/fixture_identity.cpp",
+      "sha256": "49a23259357ce937a4f11dab4492a9d89fbd04cdd6fa8e89ee9b06a20a3dbe67",
+      "size": 168
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/qt/src/fixture_identity.hpp",
+      "sha256": "e1bb302e4f49e1065fe92a4fc2bf4dc38741b228884ae8e72ea1e13ae091177c",
+      "size": 85
+    },
+    {
+      "kind": "text",
+      "path": "tests/fixtures/qt/tests/fixture_identity_test.cpp",
+      "sha256": "e63eb5adec192ad548557f777f1a45af35248d42dc48a5f8f2ff8c752c95799d",
+      "size": 379
+    }
+  ],
+  "schema_version": 1,
+  "spec_sha256": "23f9b95322290cf14e0308d91d829809da9c30431e79aa8379d9a0d1944a2ce8"
+}
