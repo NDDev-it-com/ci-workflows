@@ -243,7 +243,10 @@
       "_probe_sanitize": {"count": 1, "profile": "launcher-clean"},
       "_run_import": {"count": 1, "profile": "launcher-clean"}
     },
-    "check_release_ledger.py": {"check_tags": {"count": 2, "profile": "external-tool"}},
+    "check_release_ledger.py": {
+      "check_tags": {"count": 1, "profile": "external-tool"},
+      "tag_date": {"count": 1, "profile": "external-tool"}
+    },
     "check_release_promotion_gate.py": {"_run": {"count": 1, "profile": "isolated-python-fixture"}},
     "check_release_supply_chain.py": {
       "_check_gnu_tar_archive": {"count": 3, "profile": "external-tool-fixture"},

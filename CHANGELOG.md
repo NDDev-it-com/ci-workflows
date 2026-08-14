@@ -2,6 +2,31 @@
 
 ## [Unreleased]
 
+- Record 0.14.0 as cut-but-untagged, and prove the mechanism that records it.
+  The advisory sweep was red on a clean tree with a full tag set: `1cf5681`
+  bumped `VERSION` to 0.14.0 and wrote a `## [0.14.0] - 2026-08-14` heading, but
+  no tag exists and none can be made — `release.yml`'s resolve job runs every
+  validator tier in a job with no `GH_TOKEN`, no tags and an egress allow-list
+  omitting both SDK hosts, so it fails on capability grounds long before the
+  missing promotion evidence manifest (#157) is reached. `KNOWN_UNTAGGED` exists
+  for exactly this shape, and now says so, naming the commit to tag once the
+  path runs and noting that everything merged after the cut belongs to the next
+  number.
+
+  The escape hatch itself was untested, which is how a temporary exemption stops
+  being noticed. Reconciliation moved into a pure `_reconcile` taking headings,
+  tags and dates as data, so the rules can be exercised on explicit inputs
+  instead of on whatever is checked out — the same reason a root-owned temporary
+  file made an earlier ownership self-test assert its environment rather than
+  its rule. Eight cases cover the entry that silences a finding, the entry that
+  has outlived its reason, a tag with no heading, a date disagreeing with its
+  tag, and the fail-closed empty tag set. Five deliberate mutations of the
+  reconciler were each caught before the tests were kept.
+
+  The self-test runs in the blocking tier rather than the sweep: whether a tag
+  exists is a property of the refs, but whether the code reconciling them is
+  correct is a property of the tree — and the sweep has never once run.
+
 - Declare what may be cached, and enforce where it must not be. Caching was
   whatever each pinned setup action does by default, so the safe properties were
   true by accident: `release.yml` disables the uv cache for a stated reason — a
