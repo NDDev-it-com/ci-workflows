@@ -414,6 +414,7 @@ jobs:
     with:
       runner: ubuntu-latest
       flutter_version: '3.47.0'
+      enable_cache: false
       working_directory: tests/fixtures/flutter
 
   fixture-kotlin-android-ci:
@@ -433,6 +434,7 @@ jobs:
     with:
       runner: ubuntu-latest
       qt_version: '6.8.4'
+      enable_cache: false
       working_directory: tests/fixtures/qt
 
   observe-dart-flutter-ci:
@@ -454,6 +456,8 @@ jobs:
         with:
           python-version: '3.13'
           update-environment: false
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
       - name: Provision validator
         env:
           PYTHON_PATH: ${{ steps.python.outputs.python-path }}
@@ -487,6 +491,8 @@ jobs:
         with:
           python-version: '3.13'
           update-environment: false
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
       - name: Provision validator
         env:
           PYTHON_PATH: ${{ steps.python.outputs.python-path }}
@@ -520,6 +526,8 @@ jobs:
         with:
           python-version: '3.13'
           update-environment: false
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
       - name: Provision validator
         env:
           PYTHON_PATH: ${{ steps.python.outputs.python-path }}
@@ -566,6 +574,8 @@ jobs:
         with:
           python-version: '3.13'
           update-environment: false
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
       - name: Provision validator
         env:
           PYTHON_PATH: ${{ steps.python.outputs.python-path }}

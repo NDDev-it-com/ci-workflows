@@ -88,7 +88,11 @@ SECTIONS: dict[str, dict[str, tuple[frozenset[str], frozenset[str]]]] = {
 # the observer's validator, and nowhere in the reusable workflows: they are
 # assertions about one repository's fixture, not part of the reusable API.
 CANONICAL_SECTIONS = {
-    "flutter": frozenset({"toolchain", "cache", "resolve", "test"}),
+    # No `cache`: the fixture calls with `enable_cache: false`, because this
+    # repository requires every action to be pinned to a full-length commit SHA
+    # and `subosito/flutter-action`'s caching path calls `actions/cache@v5` by
+    # tag. The section stays in the vocabulary for consumers who can use it.
+    "flutter": frozenset({"toolchain", "resolve", "test"}),
     "android": frozenset({
         "android_sdk", "artifacts", "build", "dependency_verification", "gradle",
         "jdk", "locks", "tests", "wrapper",
@@ -260,8 +264,10 @@ def _canonical_problems(kind: str, receipt: dict[str, Any], spec: dict[str, Any]
         })
         if receipt.get("test_count", 0) < 1:
             problems.append("flutter: canonical run must report at least one test")
-        if any(version not in str(receipt.get(key, "")) for key in ("cache_key", "pub_cache_key")):
-            problems.append("flutter: action cache identities are required")
+        if "cache" in receipt.get("sections", []) and any(
+            version not in str(receipt.get(key, "")) for key in ("cache_key", "pub_cache_key")
+        ):
+            problems.append("flutter: action cache identities must name the pinned version")
     elif kind == "android":
         checks.update({
             "build_command": defaults["build"],
