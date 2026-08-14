@@ -772,29 +772,32 @@ def _ownership_rule_selftests() -> list[str]:
             _sdk_environment.OwnershipFacts(uid, mode), trusted_uid=trusted,
         ) is None:
             problems.append(f"ownership rule accepted untrusted {label!r}")
-    # The documented relaxation moves exactly one bit and nothing else: a
-    # group-writable root becomes acceptable, a world-writable one never does,
-    # and an unowned uid is still refused however the mode reads.
-    relaxed_accept = (("group-writable", 1000, 0o775), ("root-owned-group-writable", 0, 0o775))
-    relaxed_reject = (
-        ("world-writable", 1000, 0o757),
-        ("root-owned-world-writable", 0, 0o777),
-        ("unowned-uid", 1001, 0o755),
-        ("unowned-and-group-writable", 1001, 0o775),
-    )
-    for label, uid, mode in relaxed_accept:
+    # The ephemeral model stops reading mode bits and changes nothing else:
+    # ownership is still enforced, and an unrecognised model fails closed rather
+    # than falling through to the permissive branch.
+    ephemeral = _sdk_environment.EPHEMERAL_SINGLE_TENANT
+    for label, uid, mode in (
+        ("group-writable", 1000, 0o775), ("world-writable", 1000, 0o777),
+        ("root-owned-world-writable", 0, 0o777), ("current-user-0700", 1000, 0o700),
+    ):
         problem = _sdk_environment.ownership_problem(
             _sdk_environment.OwnershipFacts(uid, mode), trusted_uid=trusted,
-            allow_group_write=True,
+            trust_model=ephemeral,
         )
         if problem is not None:
-            problems.append(f"relaxed ownership rule rejected {label!r}: {problem}")
-    for label, uid, mode in relaxed_reject:
+            problems.append(f"ephemeral ownership rule rejected {label!r}: {problem}")
+    for label, uid, mode in (("unowned-uid", 1001, 0o755), ("unowned-and-writable", 4242, 0o777)):
         if _sdk_environment.ownership_problem(
             _sdk_environment.OwnershipFacts(uid, mode), trusted_uid=trusted,
-            allow_group_write=True,
+            trust_model=ephemeral,
         ) is None:
-            problems.append(f"relaxed ownership rule accepted {label!r}")
+            problems.append(f"ephemeral ownership rule accepted {label!r}")
+    for bogus in ("", "exclusive", "ephemeral", "EXCLUSIVE-FILESYSTEM", "trusted"):
+        if _sdk_environment.ownership_problem(
+            _sdk_environment.OwnershipFacts(1000, 0o777), trusted_uid=trusted,
+            trust_model=bogus,
+        ) is None:
+            problems.append(f"unknown root trust model {bogus!r} was accepted")
     return problems
 
 

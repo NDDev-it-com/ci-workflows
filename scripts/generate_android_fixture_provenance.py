@@ -24,6 +24,7 @@ from pathlib import Path
 
 from ci_workflows_tools._gradle_lockfile import GradleLockfileError, parse_gradle_95_lockfile
 from ci_workflows_tools._sdk_environment import (
+    EPHEMERAL_SINGLE_TENANT,
     EVIDENCE_NAME,
     JvmIdentity,
     derive_android_environment,
@@ -67,13 +68,13 @@ STRICT_ARGS = [
 ]
 IGNORED = {".gradle", "build", ".DS_Store"}
 
-# GitHub-hosted runners install the JDK into a group-writable tool cache, so the
-# strict root rule refuses every hosted runner -- which is where this generator
-# is meant to run, because the committed closure should come from the same
-# environment as the fixture lane rather than from a maintainer's laptop. The
-# runner VM is single-tenant and destroyed after the job, so the group that can
-# write is the job itself. World-writable is still refused.
-ALLOW_GROUP_WRITABLE_ROOTS = True
+# GitHub-hosted runners install the JDK into the hosted tool cache at mode 0777,
+# so the strict root rule refuses every hosted runner -- and a hosted runner is
+# exactly where this closure should be produced, since it is where the fixture
+# lane runs. Ownership is still enforced; only the mode bits are read as
+# uninformative, because the VM is single-tenant and destroyed with the job, so
+# there is no other principal for them to name.
+ROOT_TRUST_MODEL = EPHEMERAL_SINGLE_TENANT
 NS = {"v": "https://schema.gradle.org/dependency-verification"}
 
 
@@ -103,7 +104,7 @@ def _environment(home: Path) -> dict[str, str]:
         clean, os.environ, java_executable=Path(java), java_properties=properties,
         sdkmanager_executable=Path(sdkmanager), java_major=JAVA_MAJOR,
         compile_sdk=COMPILE_SDK, build_tools=BUILD_TOOLS,
-        allow_group_write=ALLOW_GROUP_WRITABLE_ROOTS,
+        trust_model=ROOT_TRUST_MODEL,
     )
 
 
