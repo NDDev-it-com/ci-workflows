@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-08-14
+
 - Declare a verification command that runs. `.gds/repository.yaml` named a bare
   invocation of the aggregate validator as this repository's only test lane, and
   that form has aborted with `ModuleNotFoundError` since the hermetic launcher
@@ -1384,6 +1386,7 @@
   `runner:` input on every call and `pull_request`-only triggers. No catalog or
   workflow file changed — the capability set is identical to private-free; only
   the runner and trigger differ.
+
 
 ## [0.13.3] - 2026-08-03
 
