@@ -33,7 +33,8 @@ ENVELOPE = frozenset({
 KIND_ENVELOPE = {
     "flutter": frozenset(),
     "android": frozenset({
-        "cache_provider", "java_version_input", "setup_android", "untrusted_roots",
+        "cache_provider", "java_version_input", "root_trust_model", "setup_android",
+        "untrusted_roots",
     }),
     "qt": frozenset(),
 }
@@ -530,6 +531,7 @@ def _negative_selftests(fixtures: dict[str, Any]) -> list[str]:
                 "gradle", "jdk", "locks", "tests", "wrapper",
             ],
             "cache_provider": "basic", "java_version_input": "21",
+            "root_trust_model": "ephemeral-single-tenant-runner",
             "setup_android": "false", "untrusted_roots": [],
             "build_command": "./gradlew build", "build_log_sha256": "1" * 64,
             "task_graph": sorted(CANONICAL_TASKS),

@@ -123,6 +123,12 @@ jobs:
           import xml.etree.ElementTree as ET
 
           untrusted = []
+          # GitHub-hosted runners ship a world-writable tool cache, so mode bits
+          # there name no other principal: the VM is single-tenant and destroyed
+          # with the job. On any other runner the bits mean what they say, and a
+          # writable toolchain root is refused. `RUNNER_ENVIRONMENT` is set by
+          # the runner itself, so the caller cannot assert the weaker model.
+          EPHEMERAL = os.environ.get("RUNNER_ENVIRONMENT") == "github-hosted"
 
           def digest(path):
               return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -171,8 +177,9 @@ jobs:
               if opened.st_uid not in {0, os.getuid()}:
                   untrusted.append(f"{label}: unowned uid {opened.st_uid}")
                   return None
-              if opened.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
-                  untrusted.append(f"{label}: group/world writable")
+              if not EPHEMERAL and opened.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+                  untrusted.append(
+                      f"{label}: group/world writable (mode {opened.st_mode & 0o7777:04o})")
                   return None
               return resolved
 
@@ -204,6 +211,9 @@ jobs:
               "os": os.environ["RUNNER_OS"],
               "runner_arch": os.environ["RUNNER_ARCH"],
               "java_version_input": os.environ["JAVA_VERSION_INPUT"],
+              "root_trust_model": (
+                  "ephemeral-single-tenant-runner" if EPHEMERAL else "exclusive-filesystem"
+              ),
               "schema_version": 1,
               "setup_android": os.environ["SETUP_ANDROID"],
           }
@@ -214,8 +224,10 @@ jobs:
               sections.append("build")
               receipt["build_command"] = os.environ["BUILD_COMMAND"]
               receipt["build_log_sha256"] = digest(build_log)
+              # `[^ ]` matches a newline, so the previous pattern ran past the
+              # end of each line and produced entries like ":app:build\n>".
               receipt["task_graph"] = list(dict.fromkeys(re.findall(
-                  r"^> Task (:[^ ]+)", build_log.read_text(encoding="utf-8"), re.MULTILINE)))
+                  r"^> Task (:\S+)", build_log.read_text(encoding="utf-8"), re.MULTILINE)))
 
           prop = java_identity("java")
           if prop is None:

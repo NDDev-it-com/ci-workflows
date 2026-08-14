@@ -96,6 +96,7 @@
     "requirements-ci.txt", "scripts/__init__.py", "scripts/validate_all.py"
   ],
   "surface_environment": {
+    "check_sdk_runtime_fixtures.py": ["SDK_RUNTIME_EVIDENCE"],
     "negative_gate_probe.py": ["GH_TOKEN", "GITHUB_TOKEN"],
     "render_runtime_evidence.py": ["GUARDS", "PROVES", "RESULTS", "RUN_URL"],
     "verify_scorecard_runtime.py": ["GH_HOST", "GH_TOKEN"]
