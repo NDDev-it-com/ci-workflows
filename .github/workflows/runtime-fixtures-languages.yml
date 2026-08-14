@@ -593,8 +593,15 @@ jobs:
             tests/fixtures/android/gradle/provenance-manifest.json
             tests/fixtures/android/**/*.lockfile
           if-no-files-found: error
-      - name: Report drift against the committed closure
-        run: git --no-pager diff --stat -- tests/fixtures/android
+      - name: Reject drift from the committed closure
+        run: |
+          set -euo pipefail
+          if ! git --no-pager diff --exit-code -- tests/fixtures/android; then
+            echo "::error::the committed Android closure no longer reproduces" >&2
+            exit 1
+          fi
+          echo "Android exact-build closure reproduced byte for byte." \
+            >> "$GITHUB_STEP_SUMMARY"
 
   # One place to read the outcome, and the digests to paste into the ledger when
   evidence:
