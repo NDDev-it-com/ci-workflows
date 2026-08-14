@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+- Fix a Qt version that does not exist, and add the check that would have caught
+  it. `tests/fixtures/sdk-runtime-spec.yml` and the consumer-facing
+  `examples/languages/qt.yml` both pinned Qt **6.8.4**. The open-source
+  repository does not publish it: `aqt list-qt linux desktop` stops at 6.8.3, and
+  there is no `qt6_684` directory under the host index. Qt 6.8 is an LTS series
+  and LTS patches past a point are commercial-only, so a consumer copying that
+  example named a release they could never obtain.
+
+  Nothing noticed because `qt-ci.yml` cannot start in this repository at all
+  (#150), so the pin was never exercised — a pin that is only checked when the
+  lane runs is not checked. `check_flutter_pin.py` exists for exactly this class
+  and Qt had no equivalent; `check_qt_pin.py` now resolves the pinned version
+  against Qt's published index, matching an exact generated directory name so a
+  neighbouring release cannot satisfy it. Advisory tier, and the sweep's egress
+  allowlist gains the one host it needs.
+
+  Proven by mutation: 6.8.4 fails naming everything that *is* published in the
+  series, an unpublished 6.8.9 and 7.0.0 fail, and a wildcard `6.8.*` is rejected
+  as not an exact version.
+
+
 - Provision the Flutter SDK instead of delegating it to an action that cannot be
   pinned. `subosito/flutter-action` names `actions/cache` by tag inside its own
   definition, and GitHub resolves the whole nested action graph at job setup, so

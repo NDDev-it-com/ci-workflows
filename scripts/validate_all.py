@@ -61,6 +61,7 @@ from ci_workflows_tools import (
     check_public_docs,
     check_python_execution_contract,
     check_python_syntax,
+    check_qt_pin,
     check_release_graph,
     check_release_ledger,
     check_release_promotion_gate,
@@ -150,6 +151,7 @@ SCHEDULED = [
     ("release-ledger-tags", check_release_ledger.check_tags),
     ("docs-links", check_docs_links.check),
     ("flutter-pin", check_flutter_pin.check),
+    ("qt-pin", check_qt_pin.check),
     ("transitive-action-pins", check_transitive_action_pins.check),
 ]
 

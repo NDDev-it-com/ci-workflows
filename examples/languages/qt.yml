@@ -19,4 +19,4 @@ jobs:
     with:
       runner: ubuntu-latest
       # Use an exact Qt release for reproducible provisioning.
-      qt_version: '6.8.4'
+      qt_version: '6.8.3'

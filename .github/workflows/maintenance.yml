@@ -57,6 +57,10 @@ jobs:
             # advisory sweep reaches beyond GitHub and the Python index, and
             # without it the check reports the pin as unverified every week.
             storage.googleapis.com:443
+            # check_qt_pin resolves the fixture's pinned Qt release against the
+            # published repository index; the pin it caught named a version the
+            # open-source repository does not carry at all.
+            download.qt.io:443
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
