@@ -534,6 +534,60 @@ jobs:
           test "$CALLER_RESULT" = success
           .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch check_sdk_runtime_fixtures.py -- --receipt qt
 
+  # Proves the committed Android closure still reproduces from a clean tree. The
+  # generator resolves the exact default `./gradlew build` twice -- once writing
+  # locks and verification metadata, once replaying them strictly from a fresh
+  # Gradle home -- and compares the result against what is committed. Only facts
+  # any conforming toolchain reproduces are compared; host JDK and SDK identity
+  # belong to the per-run receipt, not to a file in git.
+  generate-android-provenance:
+    name: reproduce / android provenance
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up JDK
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961  # v5.7.0
+        with:
+          java-version: '21'
+          distribution: temurin
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699  # v4.0.1
+        with:
+          packages: 'platforms;android-37.0 build-tools;36.0.0'
+      - name: Set up isolated Python contract runtime
+        id: python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.13'
+          update-environment: false
+      - name: Provision validator
+        env:
+          PYTHON_PATH: ${{ steps.python.outputs.python-path }}
+        run: |
+          "$PYTHON_PATH" -I -B -m venv --copies .venv
+          uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
+      - name: Regenerate the exact-build closure
+        run: |
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py \
+            --launch generate_android_fixture_provenance.py --
+      - name: Publish the generated closure
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: android-fixture-closure
+          path: |
+            tests/fixtures/android/gradle/verification-metadata.xml
+            tests/fixtures/android/gradle/provenance-manifest.json
+            tests/fixtures/android/**/*.lockfile
+          if-no-files-found: error
+      - name: Report drift against the committed closure
+        run: git --no-pager diff --stat -- tests/fixtures/android
+
   # One place to read the outcome, and the digests to paste into the ledger when
   evidence:
     name: evidence summary (languages)
