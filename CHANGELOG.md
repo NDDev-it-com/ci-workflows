@@ -2,6 +2,38 @@
 
 ## [Unreleased]
 
+- Declare what may be cached, and enforce where it must not be. Caching was
+  whatever each pinned setup action does by default, so the safe properties were
+  true by accident: `release.yml` disables the uv cache for a stated reason — a
+  cache entry written from a lower-trust ref would become an input to a release
+  build — and nothing but a comment stopped a later edit from dropping it.
+
+  `catalog/cache-contract.yml` names all eight cache-capable actions in the tree
+  and, for each, the input that decides whether it caches and what it does with
+  no input at all. Three of the eight cache **without being asked**:
+  `actions/setup-go`, `gradle/actions/setup-gradle` and
+  `hendrikmuhs/ccache-action`. Six refusals are declared job-exactly — the
+  release resolve job, the CodeQL analysis whose coverage a restored build cache
+  would quietly narrow, and all four `ci-gate` jobs.
+
+  The two gate jobs that relied on setup-uv's default now state it. That changes
+  nothing today, which is the point: the blocking gate must not begin taking an
+  unreviewed input because an upstream default moved.
+
+  `check_cache_contract.py` enforces it in the blocking tier and is fail-closed
+  in both directions — a step taking a cache-shaped input, or using an action
+  whose name says it caches, must be declared; a declared producer nobody uses
+  and a refusal whose job no longer exists are findings too. What it cannot see
+  is stated rather than implied: an action that caches by default and exposes no
+  input is invisible to static analysis, which is exactly why `default_caches`
+  is recorded per producer.
+
+  This covers the inventory and contract halves of the request. The adversarial
+  runtime work — pull-request merge-ref scope, default-branch fallback, a hostile
+  branch writing a key a trusted job restores — needs experiments across a trust
+  boundary and stays open.
+
+
 - Make the estate anchor state, and keep stating, what the branch enforces.
   `.gds/repository.yaml` described how this module is proven through
   `verification.commands` and said nothing about the status checks a merge here
