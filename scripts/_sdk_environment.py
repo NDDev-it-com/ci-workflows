@@ -26,7 +26,9 @@ class OwnershipFacts:
     mode: int
 
 
-def ownership_problem(facts: OwnershipFacts, *, trusted_uid: int) -> str | None:
+def ownership_problem(
+    facts: OwnershipFacts, *, trusted_uid: int, allow_group_write: bool = False,
+) -> str | None:
     """Return why a root is untrusted, or None when it is trusted.
 
     Kept pure — a function of two integers rather than of a live directory —
@@ -38,14 +40,21 @@ def ownership_problem(facts: OwnershipFacts, *, trusted_uid: int) -> str | None:
     the *unowned* case could not be constructed at all and the negative test
     inverted. Both are ambient state leaking into a blocking gate.
 
-    The rule itself is unchanged and deliberately strict: root and the current
-    user are trusted owners, and any group or world write bit disqualifies a
-    root regardless of who owns it.
+    The rule is strict by default: root and the current user are trusted owners,
+    and any group or world write bit disqualifies a root regardless of who owns
+    it. `allow_group_write` is the one documented relaxation, and it exists
+    because running this on a GitHub-hosted runner is what discovered that the
+    hosted tool cache -- where `actions/setup-java` installs the JDK -- is group
+    writable, so the strict rule refuses every hosted runner. A caller that
+    relaxes it must say why, in the same spirit as a ruleset that deliberately
+    runs below `active`. World-writable is never allowed, under any flag.
     """
     if facts.uid not in {0, trusted_uid}:
-        return f"has an unowned uid {facts.uid}"
-    if facts.mode & (stat.S_IWGRP | stat.S_IWOTH):
-        return "is group/world writable"
+        return f"has an unowned uid {facts.uid} (mode {facts.mode & 0o7777:04o})"
+    if facts.mode & stat.S_IWOTH:
+        return f"is world writable (mode {facts.mode & 0o7777:04o})"
+    if facts.mode & stat.S_IWGRP and not allow_group_write:
+        return f"is group writable (mode {facts.mode & 0o7777:04o})"
     return None
 
 
@@ -109,7 +118,7 @@ def _canonical_root_path(path: Path) -> Path:
     return path
 
 
-def _trusted_root(path: Path, *, label: str, uid: int) -> Path:
+def _trusted_root(path: Path, *, label: str, uid: int, allow_group_write: bool = False) -> Path:
     if not path.is_absolute() or not path.is_dir():
         raise SdkEnvironmentError(f"{label} must be an absolute regular directory")
     if path.is_symlink():
@@ -131,7 +140,10 @@ def _trusted_root(path: Path, *, label: str, uid: int) -> Path:
             raise SdkEnvironmentError(f"{label} identity changed during validation")
     finally:
         os.close(descriptor)
-    problem = ownership_problem(OwnershipFacts(info.st_uid, info.st_mode), trusted_uid=uid)
+    problem = ownership_problem(
+        OwnershipFacts(info.st_uid, info.st_mode), trusted_uid=uid,
+        allow_group_write=allow_group_write,
+    )
     if problem is not None:
         raise SdkEnvironmentError(f"{label} {problem}")
     return resolved
@@ -142,12 +154,14 @@ def derive_android_environment(
     java_executable: Path, java_properties: Mapping[str, str],
     sdkmanager_executable: Path, java_major: str,
     compile_sdk: str, build_tools: str, uid: int | None = None,
+    allow_group_write: bool = False,
 ) -> dict[str, str]:
     """Derive owned roots from verified executables; never inherit SDK text."""
     owner = os.getuid() if uid is None else uid
     java_real = java_executable.resolve(strict=True)
     java_home = _trusted_root(
         Path(str(java_properties.get("java.home", ""))), label="JAVA_HOME", uid=owner,
+        allow_group_write=allow_group_write,
     )
     if java_real != (java_home / "bin/java").resolve(strict=True):
         raise SdkEnvironmentError("java executable and observed java.home diverge")
@@ -164,7 +178,10 @@ def derive_android_environment(
     )]
     if len(candidates) != 1:
         raise SdkEnvironmentError("sdkmanager does not identify exactly one Android SDK root")
-    android = _trusted_root(candidates[0], label="Android SDK root", uid=owner)
+    android = _trusted_root(
+        candidates[0], label="Android SDK root", uid=owner,
+        allow_group_write=allow_group_write,
+    )
     platform_names = {f"android-{compile_sdk}", f"android-{compile_sdk}.0"}
     if not any((android / "platforms" / name).is_dir() for name in platform_names):
         raise SdkEnvironmentError(f"Android platform {compile_sdk} is missing")
@@ -184,6 +201,7 @@ def derive_android_environment(
             "java_home": str(java_home),
             "java_runtime_version": runtime,
             "java_version": version,
+            "group_writable_roots_allowed": allow_group_write,
             "stripped_ambient": stripped,
         }, sort_keys=True, separators=(",", ":")),
     })

@@ -414,7 +414,6 @@ jobs:
     with:
       runner: ubuntu-latest
       flutter_version: '3.47.0'
-      enable_cache: false
       working_directory: tests/fixtures/flutter
 
   fixture-kotlin-android-ci:
@@ -434,7 +433,6 @@ jobs:
     with:
       runner: ubuntu-latest
       qt_version: '6.8.4'
-      enable_cache: false
       working_directory: tests/fixtures/qt
 
   observe-dart-flutter-ci:

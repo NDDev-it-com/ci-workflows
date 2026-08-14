@@ -66,6 +66,14 @@ STRICT_ARGS = [
     "--console", "plain",
 ]
 IGNORED = {".gradle", "build", ".DS_Store"}
+
+# GitHub-hosted runners install the JDK into a group-writable tool cache, so the
+# strict root rule refuses every hosted runner -- which is where this generator
+# is meant to run, because the committed closure should come from the same
+# environment as the fixture lane rather than from a maintainer's laptop. The
+# runner VM is single-tenant and destroyed after the job, so the group that can
+# write is the job itself. World-writable is still refused.
+ALLOW_GROUP_WRITABLE_ROOTS = True
 NS = {"v": "https://schema.gradle.org/dependency-verification"}
 
 
@@ -95,6 +103,7 @@ def _environment(home: Path) -> dict[str, str]:
         clean, os.environ, java_executable=Path(java), java_properties=properties,
         sdkmanager_executable=Path(sdkmanager), java_major=JAVA_MAJOR,
         compile_sdk=COMPILE_SDK, build_tools=BUILD_TOOLS,
+        allow_group_write=ALLOW_GROUP_WRITABLE_ROOTS,
     )
 
 

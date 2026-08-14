@@ -37,15 +37,6 @@ on:
       working_directory:
         type: string
         default: '.'
-      enable_cache:
-        description: >-
-          Let the vendored setup action manage its own toolchain cache. Set
-          false where the repository or organisation requires every action to
-          be pinned to a full-length commit SHA: the caching path inside this
-          third-party action calls `actions/cache@v5` by tag, which such a
-          policy rejects before the job starts.
-        type: boolean
-        default: true
       enable_ccache:
         type: boolean
         default: false
@@ -106,7 +97,7 @@ jobs:
           target: ${{ inputs.qt_target }}
           arch: ${{ inputs.qt_arch }}
           modules: ${{ inputs.qt_modules }}
-          cache: ${{ inputs.enable_cache }}
+          cache: true
           cache-key-prefix: qt-ci-v1
           aqtversion: '==3.3.0'
           py7zrversion: '==1.0.0'

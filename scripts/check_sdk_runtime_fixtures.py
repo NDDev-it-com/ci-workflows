@@ -88,11 +88,7 @@ SECTIONS: dict[str, dict[str, tuple[frozenset[str], frozenset[str]]]] = {
 # the observer's validator, and nowhere in the reusable workflows: they are
 # assertions about one repository's fixture, not part of the reusable API.
 CANONICAL_SECTIONS = {
-    # No `cache`: the fixture calls with `enable_cache: false`, because this
-    # repository requires every action to be pinned to a full-length commit SHA
-    # and `subosito/flutter-action`'s caching path calls `actions/cache@v5` by
-    # tag. The section stays in the vocabulary for consumers who can use it.
-    "flutter": frozenset({"toolchain", "resolve", "test"}),
+    "flutter": frozenset({"toolchain", "cache", "resolve", "test"}),
     "android": frozenset({
         "android_sdk", "artifacts", "build", "dependency_verification", "gradle",
         "jdk", "locks", "tests", "wrapper",
@@ -776,6 +772,29 @@ def _ownership_rule_selftests() -> list[str]:
             _sdk_environment.OwnershipFacts(uid, mode), trusted_uid=trusted,
         ) is None:
             problems.append(f"ownership rule accepted untrusted {label!r}")
+    # The documented relaxation moves exactly one bit and nothing else: a
+    # group-writable root becomes acceptable, a world-writable one never does,
+    # and an unowned uid is still refused however the mode reads.
+    relaxed_accept = (("group-writable", 1000, 0o775), ("root-owned-group-writable", 0, 0o775))
+    relaxed_reject = (
+        ("world-writable", 1000, 0o757),
+        ("root-owned-world-writable", 0, 0o777),
+        ("unowned-uid", 1001, 0o755),
+        ("unowned-and-group-writable", 1001, 0o775),
+    )
+    for label, uid, mode in relaxed_accept:
+        problem = _sdk_environment.ownership_problem(
+            _sdk_environment.OwnershipFacts(uid, mode), trusted_uid=trusted,
+            allow_group_write=True,
+        )
+        if problem is not None:
+            problems.append(f"relaxed ownership rule rejected {label!r}: {problem}")
+    for label, uid, mode in relaxed_reject:
+        if _sdk_environment.ownership_problem(
+            _sdk_environment.OwnershipFacts(uid, mode), trusted_uid=trusted,
+            allow_group_write=True,
+        ) is None:
+            problems.append(f"relaxed ownership rule accepted {label!r}")
     return problems
 
 
