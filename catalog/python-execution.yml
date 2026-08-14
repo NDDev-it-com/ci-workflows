@@ -2,7 +2,7 @@
   "schema_version": 1,
   "python": {
     "major_minor": "3.13",
-    "subject_count": 54,
+    "subject_count": 55,
     "launcher": "scripts/check_python_execution_contract.py",
     "launcher_prefix": [".venv/bin/python", "-I", "-B", "scripts/check_python_execution_contract.py", "--launch"],
     "syntax_gate_prefix": [".venv/bin/python", "-I", "-B", "scripts/check_python_syntax.py"],
@@ -97,6 +97,7 @@
   ],
   "surface_environment": {
     "check_sdk_runtime_fixtures.py": ["SDK_RUNTIME_EVIDENCE"],
+    "check_anchor_contexts.py": ["GH_TOKEN", "GITHUB_TOKEN"],
     "check_transitive_action_pins.py": ["GH_TOKEN", "GITHUB_TOKEN"],
     "negative_gate_probe.py": ["GH_TOKEN", "GITHUB_TOKEN"],
     "render_runtime_evidence.py": ["GUARDS", "PROVES", "RESULTS", "RUN_URL"],
@@ -117,7 +118,8 @@
     "library": ["_gradle_lockfile.py", "_json_schema.py", "_runners.py", "_sdk_environment.py", "_workflow_yaml.py"],
     "read_only_validator": [
       "_strict_yaml.py", "check_actionlint_contract.py",
-      "check_actionlint_config.py", "check_benchmark_contract.py",
+      "check_actionlint_config.py", "check_anchor_contexts.py",
+      "check_benchmark_contract.py",
       "check_docs_links.py", "check_documented_commands.py",
       "check_flutter_pin.py", "check_qt_pin.py",
       "check_examples.py",
@@ -152,6 +154,7 @@
     "_sdk_environment.py": [],
     "_workflow_yaml.py": ["_strict_yaml"],
     "check_actionlint_config.py": ["_strict_yaml", "_workflow_yaml"],
+    "check_anchor_contexts.py": ["_strict_yaml"],
     "check_actionlint_contract.py": ["_workflow_yaml", "check_python_execution_contract"],
     "check_benchmark_contract.py": ["_workflow_yaml"],
     "check_documented_commands.py": ["_workflow_yaml"],
@@ -190,6 +193,7 @@
     "resolve_profile.py": ["_strict_yaml"],
     "validate_all.py": [
       "_strict_yaml", "check_actionlint_config", "check_actionlint_contract",
+      "check_anchor_contexts",
       "check_benchmark_contract",
       "check_docs_links", "check_documented_commands", "check_examples",
       "check_flutter_pin", "check_qt_pin",

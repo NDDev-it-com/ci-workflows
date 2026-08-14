@@ -45,6 +45,7 @@ from ci_workflows_tools import (
     _strict_yaml,
     check_actionlint_config,
     check_actionlint_contract,
+    check_anchor_contexts,
     check_benchmark_contract,
     check_docs_links,
     check_flutter_pin,
@@ -153,6 +154,7 @@ SCHEDULED = [
     ("flutter-pin", check_flutter_pin.check),
     ("qt-pin", check_qt_pin.check),
     ("transitive-action-pins", check_transitive_action_pins.check),
+    ("anchor-contexts", check_anchor_contexts.check),
 ]
 
 
