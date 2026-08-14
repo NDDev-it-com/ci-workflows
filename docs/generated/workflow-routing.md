@@ -15,7 +15,7 @@ of a value is not proof that a workflow runs on that platform.
 | `.github/workflows/coverage-gate.yml` | `linux-shell` | linux | shell only | — |
 | `.github/workflows/cpp-ci.yml` | `linux-shell` | linux | shell only | — |
 | `.github/workflows/cross-platform-smoke.yml` | `portable-shell` | linux, macos, windows | shell only | linux, macos, windows |
-| `.github/workflows/dart-flutter-ci.yml` | `linux-shell` | linux | shell only | — |
+| `.github/workflows/dart-flutter-ci.yml` | `linux-shell` | linux | shell only | linux |
 | `.github/workflows/docs-ci.yml` | `linux-shell` | linux | shell only | — |
 | `.github/workflows/docs-quality.yml` | `linux-shell` | linux | shell only | — |
 | `.github/workflows/dotnet-ci.yml` | `portable-shell` | linux, macos, windows | shell only | linux, macos, windows |

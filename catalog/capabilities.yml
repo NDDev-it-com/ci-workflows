@@ -1153,7 +1153,7 @@ capabilities:
       - "contents: read"
     required_settings: []
     risks:
-      - "Cannot start where the caller enforces full-SHA action pinning: subosito/flutter-action names actions/cache by tag inside its own definition, and GitHub resolves the nested graph at job setup. See issue 150"
+      - "The SDK is downloaded from Google's published release manifest and verified against the SHA-256 that manifest publishes; a channel without an exact flutter_version resolves to whatever that channel points at on the day"
       - "Runtime evidence pins Flutter and validates the resolved Dart/Flutter identity; mutable channel selectors are not reproducible proof"
       - "Private-repo runner minutes are metered beyond the included free allotment"
       - "iOS/macOS builds require macOS runners billed at a 10x minute multiplier"

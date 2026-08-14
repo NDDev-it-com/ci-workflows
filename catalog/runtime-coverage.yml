@@ -65,15 +65,13 @@ entries:
     proven_digest: 768e143bfe9fa3fe97463b926098ce6ad62ba30bf33751f36ce20af58655ebe3
     waiver: null
   - workflow: .github/workflows/dart-flutter-ci.yml
+    proven_os:
+      - linux
     criticality: supporting
-    status: blocked
-    evidence: "Fixture and observer are wired, but the job is rejected during `Set up job`: subosito/flutter-action refers to nested actions by tag and this repository requires every action to be pinned to a full-length commit SHA. No step runs, so nothing is proven. Not a fixture gap: any consumer with the same control enabled cannot call this workflow either. Observed in https://github.com/NDDev-it-com/ci-workflows/actions/runs/31782942981"
-    last_run: null
-    runtime_debt:
-      risk: medium
-      barrier: dependency-policy-conflict
-      required_capability: Self-provisioned toolchain install that pins every action it uses, replacing the vendored setup action.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/150
+    status: runtime-proven
+    evidence: "Fixture caller ran the default resolve/format/analyze/test lanes against tests/fixtures/flutter on ubuntu-latest and the observer accepted the receipt: four sections (cache, resolve, test, toolchain), one test, and a toolchain identity matching the pinned release exactly \u2014 3.47.0 stable, Dart 3.13.0, revision 4cf24164269a5ebf0c16a028a00727d0e77bbb05. The SDK is provisioned from Google's published manifest and verified against the SHA-256 that manifest publishes, so the workflow reaches no action it does not pin and starts where full-SHA pinning is enforced; check_transitive_action_pins reports it clean. Provenance names the callee. Linux only: the resolve step selects the host manifest and architecture, but only ubuntu-latest has been run."
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31823739241
+    proven_digest: a62f0ba22c60d0e8425f5206628750579c670bcb3a5c5de7d5a7738394bfe32a
     waiver: null
   - workflow: .github/workflows/docs-ci.yml
     criticality: supporting
