@@ -181,15 +181,26 @@ jobs:
           esac
           rm -f "$archive"
 
+      # The key is composed in a step we own rather than read back from the
+      # cache action: `actions/cache` exposes only `cache-hit`, and
+      # `cache-primary-key` belongs to `actions/cache/restore`. Reading the
+      # output that does not exist is what left the receipt with no cache
+      # section on the first run that ever got this far.
+      - name: Compose the pub cache key
+        id: pub-key
+        working-directory: ${{ github.workspace }}
+        env:
+          SDK_CACHE_KEY: ${{ steps.release.outputs.cache_key }}
+          DEPENDENCY_HASH: ${{ hashFiles(format('{0}/**/pubspec.lock', inputs.working_directory), format('{0}/**/pubspec.yaml', inputs.working_directory)) }}
+        run: |
+          set -euo pipefail
+          printf 'key=pub-%s-%s\n' "$SDK_CACHE_KEY" "$DEPENDENCY_HASH" >> "$GITHUB_OUTPUT"
+
       - name: Restore the pub cache
-        id: pub-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: ${{ runner.temp }}/pub-cache
-          key: >-
-            pub-${{ steps.release.outputs.cache_key }}-${{
-            hashFiles(format('{0}/**/pubspec.lock', inputs.working_directory),
-                      format('{0}/**/pubspec.yaml', inputs.working_directory)) }}
+          key: ${{ steps.pub-key.outputs.key }}
 
       - name: Put Flutter on PATH
         working-directory: ${{ github.workspace }}
@@ -240,7 +251,7 @@ jobs:
           FLUTTER_ARCH: ${{ steps.release.outputs.arch }}
           FLUTTER_CHANNEL: ${{ inputs.flutter_channel }}
           FLUTTER_VERSION: ${{ steps.release.outputs.version }}
-          PUB_CACHE_KEY: ${{ steps.pub-cache.outputs.cache-primary-key }}
+          PUB_CACHE_KEY: ${{ steps.pub-key.outputs.key }}
           PUB_GET_COMMAND: ${{ inputs.pub_get_command }}
           TEST_COMMAND: ${{ inputs.test_command }}
           TEST_LOG: ${{ runner.temp }}/dart-flutter-tests.log
@@ -290,8 +301,17 @@ jobs:
 
           log = pathlib.Path(os.environ["TEST_LOG"])
           if os.environ["TEST_COMMAND"] and log.is_file():
+              text = log.read_text(encoding="utf-8")
+              # Flutter 3.47 reports "🎉 N tests passed."; older releases used the
+              # expanding "00:01 +N: ..." line. Only the second was ever handled,
+              # and nothing noticed because this lane could not start until the
+              # SDK stopped being provisioned by an action with unpinned nested
+              # references -- so the first real run reported zero tests from a
+              # suite that passed.
               counts = [int(value) for value in re.findall(
-                  r"\+(\d+)", log.read_text(encoding="utf-8"))]
+                  r"(\d+)\s+tests?\s+passed", text)]
+              if not counts:
+                  counts = [int(value) for value in re.findall(r"\+(\d+)", text)]
               sections.append("test")
               receipt["test_command"] = os.environ["TEST_COMMAND"]
               receipt["test_count"] = max(counts, default=0)
