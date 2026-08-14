@@ -52,7 +52,7 @@ fixtures:
       build: cmake --build build --parallel
       test: ctest --test-dir build --output-on-failure
     toolchain:
-      qt_version: '6.8.4'
+      qt_version: '6.8.3'
       aqtinstall_version: '3.3.0'
       py7zr_version: '1.0.0'
       cmake_minimum: '3.21'

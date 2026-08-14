@@ -251,7 +251,7 @@ entries:
   - workflow: .github/workflows/qt-ci.yml
     criticality: supporting
     status: blocked
-    evidence: "Fixture and observer are wired, but the job is rejected during `Set up job`: jurplel/install-qt-action refers to nested actions by tag and this repository requires every action to be pinned to a full-length commit SHA. No step runs, so nothing is proven. Not a fixture gap: any consumer with the same control enabled cannot call this workflow either. Observed in https://github.com/NDDev-it-com/ci-workflows/actions/runs/31782942981"
+    evidence: "Fixture and observer are wired, but the job is rejected during `Set up job`: jurplel/install-qt-action refers to nested actions by tag and this repository requires every action to be pinned to a full-length commit SHA. No step runs, so nothing is proven. Not a fixture gap: any consumer with the same control enabled cannot call this workflow either. Observed in https://github.com/NDDev-it-com/ci-workflows/actions/runs/31782942981. A second defect sat behind it: the fixture pinned Qt 6.8.4, which the open-source repository does not publish at all -- 6.8.3 is the highest 6.8.x -- so the lane could not have installed a toolchain even once the action problem is solved. Corrected, and check_qt_pin.py now resolves the pin against the published index."
     last_run: null
     runtime_debt:
       risk: medium
