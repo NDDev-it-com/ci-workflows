@@ -1,0 +1,99 @@
+# What may be cached, by whom, and where caching must be refused.
+#
+# Caching in this library used to be whatever each pinned setup action does by
+# default. That made the safe properties true by accident: `release.yml` disables
+# the uv cache for a good reason written in a comment, and nothing stopped a
+# later edit from dropping it. GitHub's Actions cache is ref-scoped with
+# default-branch fallback and a pull request reads the merge ref, so a cache
+# entry is an unreviewed input, not signed provenance -- which is exactly why the
+# refusals below have to be enforced rather than remembered.
+#
+# `check_cache_contract.py` compiles this fail-closed: an action that can cache
+# and is not listed here fails the gate, so a new caching dependency has to be
+# classified rather than inherited.
+schema_version: 1
+
+# Every action in the tree that can write to a cache, and the input that decides
+# whether it does. `default_caches` is the behaviour with no input at all -- the
+# three `true` entries are the ones that cache without being asked.
+producers:
+  - action: actions/cache
+    control: null
+    default_caches: true
+    note: Explicit cache; the key is written by the calling workflow.
+  - action: astral-sh/setup-uv
+    control: enable-cache
+    default_caches: false
+  - action: actions/setup-go
+    control: cache
+    default_caches: true
+    note: Caches the module and build cache unless asked not to.
+  - action: actions/setup-java
+    control: cache
+    default_caches: false
+  - action: actions/setup-node
+    control: cache
+    default_caches: false
+  - action: actions/setup-python
+    control: cache
+    default_caches: false
+  - action: gradle/actions/setup-gradle
+    control: cache-provider
+    default_caches: true
+  - action: hendrikmuhs/ccache-action
+    control: null
+    default_caches: true
+    note: A cache action by construction; callers opt in by adding the step.
+
+# Where a cache must be refused, and why. Each rule names the exact input and
+# value the workflow has to carry; the check fails if the step is missing it.
+refusals:
+  - workflow: .github/workflows/release.yml
+    job: resolve
+    action: astral-sh/setup-uv
+    input: enable-cache
+    value: false
+    reason: >-
+      A publishing workflow must not take an unreviewed input. A cache entry
+      written from a lower-trust ref would be restored into a release build
+      (zizmor cache-poisoning, high). The preflight installs one hash-pinned
+      wheel, so the cache saves nothing worth that exposure.
+  - workflow: .github/workflows/public-codeql.yml
+    job: codeql
+    action: actions/setup-go
+    input: cache
+    value: false
+    reason: >-
+      setup-go caches by default. CodeQL analyses the build it observes, and a
+      restored build cache lets compilation be skipped, so the analysis would
+      cover less than it appears to.
+  - workflow: .github/workflows/ci.yml
+    job: validate
+    action: astral-sh/setup-uv
+    input: enable-cache
+    value: false
+    reason: The blocking gate must not depend on an unreviewed input.
+  - workflow: .github/workflows/ci.yml
+    job: validate-touched
+    action: astral-sh/setup-uv
+    input: enable-cache
+    value: false
+    reason: The blocking gate must not depend on an unreviewed input.
+  - workflow: .github/workflows/ci.yml
+    job: shell-gates
+    action: astral-sh/setup-uv
+    input: enable-cache
+    value: false
+    reason: The blocking gate must not depend on an unreviewed input.
+  - workflow: .github/workflows/ci.yml
+    job: dockerfile-gate
+    action: astral-sh/setup-uv
+    input: enable-cache
+    value: false
+    reason: The blocking gate must not depend on an unreviewed input.
+
+# Everything else is left to the producer's default on purpose. Those workflows
+# are reusable surfaces whose caching a consumer chooses, or advisory lanes where
+# a poisoned entry cannot reach a release or a required check. Narrowing them
+# would change behaviour consumers already depend on without buying a trust
+# boundary that matters.
