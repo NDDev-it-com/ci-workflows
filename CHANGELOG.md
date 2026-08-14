@@ -2,6 +2,35 @@
 
 ## [Unreleased]
 
+- Provision the Flutter SDK instead of delegating it to an action that cannot be
+  pinned. `subosito/flutter-action` names `actions/cache` by tag inside its own
+  definition, and GitHub resolves the whole nested action graph at job setup, so
+  `dart-flutter-ci.yml` could not start in any repository enforcing the full-SHA
+  pinning control this library recommends. No input could reach that: the
+  decision is made before a step runs.
+
+  The SDK now comes from Google's published release manifest. The resolve step
+  selects exactly one row for the requested channel, version and host
+  architecture — refusing to guess when it matches none or several — and the
+  archive is verified against the SHA-256 that same manifest publishes, before
+  extraction. That is stronger provenance than the action gave: the digest is
+  known ahead of the download rather than trusted after it. `actions/cache`,
+  pinned by us and carrying no nested `uses:` of its own, replaces the vendored
+  caching; consumers keep both the SDK cache and the pub cache.
+
+  **`dart-flutter-ci.yml` is `runtime-proven`** — 40 of 47 entries now are. Two
+  defects surfaced on the first run that had ever reached its evidence step,
+  because until this change the workflow could not start here at all:
+  `actions/cache` exposes only `cache-hit`, so reading `cache-primary-key` — an
+  output belonging to `actions/cache/restore` — silently produced no cache
+  section from a run where both caches were created; and `test_count` was parsed
+  with `\+(\d+)`, the old expanding reporter line, while Flutter 3.47 reports
+  `🎉 1 test passed.`, so a passing suite reported zero tests.
+
+  Qt remains blocked on the same class and the same issue (#150); its fix is the
+  same shape, through `aqtinstall` at the pinned version.
+
+
 - Put the SLSA Build L3 claim in the fact ledger it belongs to.
   `release-supply-chain.yml` writes `"slsa_build_level": 3` into the release
   manifest of every release — a machine-readable security claim that ships to
