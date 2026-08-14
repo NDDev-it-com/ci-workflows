@@ -45,7 +45,7 @@ validation and skipped jobs are not runtime evidence.
 | `.github/workflows/r-ci.yml` | `supporting` | `runtime-proven` | `—` | `—` | — | — |
 | `.github/workflows/release-promotion-gate.yml` | `release` | `blocked` | `critical` | `external-authority` | GitHub-verified maintainer signing identity, private control-plane read authority, exact promotion record, numeric tag and protected release environment. | [issue](https://github.com/NDDev-it-com/ci-workflows/issues/134) |
 | `.github/workflows/release-supply-chain-free.yml` | `release` | `blocked` | `critical` | `destructive-release` | Dedicated disposable repository where publishing and deleting a unique release/tag cannot affect consumers or protected project history. | [issue](https://github.com/NDDev-it-com/ci-workflows/issues/135) |
-| `.github/workflows/release-supply-chain.yml` | `release` | `blocked` | `critical` | `destructive-release` | Dedicated disposable public repository authorized for release publication and irreversible Sigstore transparency-log attestations. | [issue](https://github.com/NDDev-it-com/ci-workflows/issues/135) |
+| `.github/workflows/release-supply-chain.yml` | `release` | `blocked` | `critical` | `destructive-release` | Dedicated disposable public repository authorized for release publication and irreversible Sigstore transparency-log attestations. | [issue](https://github.com/NDDev-it-com/ci-workflows/issues/157) |
 | `.github/workflows/rust-ci.yml` | `supporting` | `runtime-proven` | `—` | `—` | — | — |
 | `.github/workflows/rust-supply-chain.yml` | `security-blocking` | `runtime-proven` | `—` | `—` | — | — |
 | `.github/workflows/secret-scan.yml` | `security-blocking` | `runtime-proven` | `—` | `—` | — | — |
