@@ -46,6 +46,7 @@ from ci_workflows_tools import (
     check_actionlint_contract,
     check_benchmark_contract,
     check_docs_links,
+    check_flutter_pin,
     check_documented_commands,
     check_examples,
     check_gate_contract,
@@ -145,6 +146,7 @@ SCHEDULED = [
     ("runtime-coverage-calendar", validate_runtime_coverage.check),
     ("release-ledger-tags", check_release_ledger.check_tags),
     ("docs-links", check_docs_links.check),
+    ("flutter-pin", check_flutter_pin.check),
 ]
 
 

@@ -17,10 +17,10 @@ fixtures:
       test: flutter test
     toolchain:
       channel: stable
-      flutter_version: 3.47.0
-      dart_version: 3.13.0
-      framework_revision: 4cf24164269a5ebf0c16a028a00727d0e77bbb05
-      linux_x64_archive_sha256: 26cd99d3d94b1367e6b50535a18aeef0282c10a535bbe3ec493534dcdab75296
+      flutter_version: '3.47.0'
+      dart_version: '3.13.0'
+      framework_revision: '4cf24164269a5ebf0c16a028a00727d0e77bbb05'
+      linux_x64_archive_sha256: '26cd99d3d94b1367e6b50535a18aeef0282c10a535bbe3ec493534dcdab75296'
   android:
     workflow: .github/workflows/kotlin-android-ci.yml
     runner: ubuntu-latest
@@ -28,14 +28,14 @@ fixtures:
     default_commands:
       build: ./gradlew build
     toolchain:
-      agp_version: 9.3.1
-      kotlin_version: 2.2.10
-      gradle_version: 9.5.0
-      gradle_distribution_sha256: 553c78f50dafcd54d65b9a444649057857469edf836431389695608536d6b746
-      gradle_wrapper_jar_sha256: 497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7
-      java_version_input: 21
-      compile_sdk: 37
-      build_tools: 36.0.0
+      agp_version: '9.3.1'
+      kotlin_version: '2.2.10'
+      gradle_version: '9.5.0'
+      gradle_distribution_sha256: '553c78f50dafcd54d65b9a444649057857469edf836431389695608536d6b746'
+      gradle_wrapper_jar_sha256: '497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7'
+      java_version_input: '21'
+      compile_sdk: '37'
+      build_tools: '36.0.0'
     lockfile_contract: gradle-9.5-canonical-terminal-empty
     environment_contract:
       discovery: clean-path-verified-executables
@@ -52,8 +52,8 @@ fixtures:
       build: cmake --build build --parallel
       test: ctest --test-dir build --output-on-failure
     toolchain:
-      qt_version: 6.8.4
-      aqtinstall_version: 3.3.0
-      py7zr_version: 1.0.0
-      cmake_minimum: 3.21
-      cxx_standard: 17
+      qt_version: '6.8.4'
+      aqtinstall_version: '3.3.0'
+      py7zr_version: '1.0.0'
+      cmake_minimum: '3.21'
+      cxx_standard: '17'

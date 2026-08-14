@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""Regenerate Android fixture locks and verification closure from exact build."""
+"""Regenerate Android fixture locks and verification closure from exact build.
+
+Emits only facts a conforming toolchain reproduces: the dependency locks, the
+Gradle dependency-verification closure, the task graph the exact default command
+produced, and the pins the generator enforced. Observed host identity -- JDK and
+SDK paths, patch versions, vendors -- is validated and then deliberately
+discarded, because a committed artifact that records it stops being reproducible
+the moment any of it moves.
+"""
 from __future__ import annotations
 
 import argparse
@@ -21,14 +29,26 @@ from ci_workflows_tools._sdk_environment import (
     derive_android_environment,
     validate_jvm_identity,
 )
+from ci_workflows_tools._strict_yaml import strict_load
 from ci_workflows_tools.check_python_execution_contract import clean_environment
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SOURCE = REPO_ROOT / "tests" / "fixtures" / "android"
+SPEC = REPO_ROOT / "tests" / "fixtures" / "sdk-runtime-spec.yml"
 METADATA = Path("gradle/verification-metadata.xml")
 RECEIPT = Path("gradle/provenance-manifest.json")
-WRAPPER_SHA256 = "497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7"
-DIST_SHA256 = "553c78f50dafcd54d65b9a444649057857469edf836431389695608536d6b746"
+
+# Read from the spec rather than repeated here. These two digests were written
+# out a second time in this file, so the wrapper contract the generator enforced
+# and the one `check_sdk_runtime_fixtures.py` enforces were free to disagree --
+# and a bump would have had to be remembered in both.
+_TOOLCHAIN = strict_load(SPEC)["fixtures"]["android"]["toolchain"]
+WRAPPER_SHA256 = str(_TOOLCHAIN["gradle_wrapper_jar_sha256"])
+DIST_SHA256 = str(_TOOLCHAIN["gradle_distribution_sha256"])
+GRADLE_VERSION = str(_TOOLCHAIN["gradle_version"])
+JAVA_MAJOR = str(_TOOLCHAIN["java_version_input"])
+COMPILE_SDK = str(_TOOLCHAIN["compile_sdk"])
+BUILD_TOOLS = str(_TOOLCHAIN["build_tools"])
 GENERATION_ARGS = [
     "./gradlew", "build",
     "--write-verification-metadata", "sha256",
@@ -73,8 +93,8 @@ def _environment(home: Path) -> dict[str, str]:
     properties = _java_properties(Path(java), clean)
     return derive_android_environment(
         clean, os.environ, java_executable=Path(java), java_properties=properties,
-        sdkmanager_executable=Path(sdkmanager), java_major="21",
-        compile_sdk="37", build_tools="36.0.0",
+        sdkmanager_executable=Path(sdkmanager), java_major=JAVA_MAJOR,
+        compile_sdk=COMPILE_SDK, build_tools=BUILD_TOOLS,
     )
 
 
@@ -108,8 +128,9 @@ def _wrapper_contract(root: Path) -> None:
     )
     if sha256(jar) != WRAPPER_SHA256:
         raise RuntimeError("Gradle wrapper JAR checksum mismatch")
-    if "gradle-9.5.0-bin.zip" not in properties:
-        raise RuntimeError("Gradle wrapper does not select exact 9.5.0 binary distribution")
+    if f"gradle-{GRADLE_VERSION}-bin.zip" not in properties:
+        raise RuntimeError(
+            f"Gradle wrapper does not select exact {GRADLE_VERSION} binary distribution")
     if f"distributionSha256Sum={DIST_SHA256}" not in properties:
         raise RuntimeError("Gradle distribution checksum mismatch")
 
@@ -218,14 +239,14 @@ def _versions(root: Path, home: Path) -> dict[str, str]:
     if not launcher_identity:
         raise RuntimeError("Gradle launcher JVM identity is unparseable")
     launcher_version, launcher_details = launcher_identity.groups()
-    if gradle_version != "9.5.0" or not java["java.version"].startswith("21."):
+    if gradle_version != GRADLE_VERSION or not java["java.version"].startswith(JAVA_MAJOR + "."):
         raise RuntimeError(
-            f"generator requires Gradle 9.5.0 and JDK 21, got "
+            f"generator requires Gradle {GRADLE_VERSION} and JDK {JAVA_MAJOR}, got "
             f"{gradle_version}/{java['java.version']}"
         )
     launcher_vendor = launcher_details.removesuffix(" " + java["java.runtime.version"])
     validate_jvm_identity(JvmIdentity(
-        requested_major="21", java_home=java["java.home"],
+        requested_major=JAVA_MAJOR, java_home=java["java.home"],
         java_version=java["java.version"], java_runtime_version=java["java.runtime.version"],
         java_vendor=java["java.vendor"], java_vm_name=java["java.vm.name"],
         launcher_version=launcher_version,
@@ -235,26 +256,19 @@ def _versions(root: Path, home: Path) -> dict[str, str]:
         daemon_runtime_version=daemon["java.runtime.version"],
         daemon_vendor=daemon["java.vendor"], daemon_vm_name=daemon["java.vm.name"],
     ))
+    # Enforced here, recorded nowhere. Everything above is an *observation of
+    # this machine*: absolute JDK and Android SDK paths, a JDK patch version, a
+    # vendor string. Writing those into a committed file would make the fixture's
+    # provenance a claim about whichever host generated it, and would make
+    # `--check` fail every time a runner image bumps its JDK patch -- a
+    # calendar-driven external fact wearing the costume of a tree property.
+    # Environment identity belongs in the per-run receipt the reusable emits,
+    # where it describes the run that actually happened. What is committed is
+    # only what any conforming toolchain reproduces byte for byte.
+    json.loads(_environment(home)[EVIDENCE_NAME])
     return {
-        "gradle_daemon_jvm_resolved": daemon_raw,
-        "gradle_daemon_jvm_home_resolved": daemon["java.home"],
-        "gradle_daemon_jvm_runtime_version_resolved": daemon["java.runtime.version"],
-        "gradle_daemon_jvm_vendor_resolved": daemon["java.vendor"],
-        "gradle_daemon_jvm_version_resolved": daemon["java.version"],
-        "gradle_daemon_jvm_vm_name_resolved": daemon["java.vm.name"],
-        "gradle_launcher_jvm_resolved": launcher_raw,
-        "gradle_launcher_jvm_runtime_version_resolved": java["java.runtime.version"],
-        "gradle_launcher_jvm_vendor_resolved": launcher_vendor,
-        "gradle_launcher_jvm_version_resolved": launcher_version,
-        "gradle_launcher_jvm_vm_name_resolved": java["java.vm.name"],
         "gradle_version": gradle_version,
-        "java_runtime_version_resolved": java["java.runtime.version"],
-        "java_home_resolved": java["java.home"],
-        "java_vendor_resolved": java["java.vendor"],
-        "java_version_input": "21",
-        "java_version_resolved": java["java.version"],
-        "java_vm_name_resolved": java["java.vm.name"],
-        "sdk_environment": json.loads(_environment(home)[EVIDENCE_NAME]),
+        "java_version_input": JAVA_MAJOR,
     }
 
 
