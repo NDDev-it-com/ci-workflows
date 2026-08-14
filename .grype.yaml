@@ -1,0 +1,17 @@
+# Grype configuration for this repository's own scans.
+#
+# `tests/fixtures/android` vendors the Android Gradle Plugin's transitive
+# dependency closure -- 187 locked packages, 319 pinned in verification
+# metadata. It exists only so the Android fixture can build under
+# `LockMode.STRICT`. This repository does not ship it, import it, or choose its
+# versions, and scanning it reported 159 known vulnerabilities that nobody here
+# can act on, which turned three estate lanes permanently red and would have
+# buried any finding that did matter.
+#
+# Two patterns because the exclude is matched relative to the scan root, and
+# this closure is reached from both: the estate lane scans `tests/fixtures`,
+# while a repository-root scan sees the longer path. Everything else under
+# `tests/fixtures` is still scanned.
+exclude:
+  - "./android/**"
+  - "./tests/fixtures/android/**"

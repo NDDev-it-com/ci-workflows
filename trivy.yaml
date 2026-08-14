@@ -1,0 +1,7 @@
+# Trivy configuration for this repository's own scans.
+# See .grype.yaml for why the Android fixture closure is out of scope: it is a
+# pinned third-party dependency tree this repository does not ship or control,
+# vendored only so the Gradle fixture can build under strict dependency locking.
+scan:
+  skip-dirs:
+    - tests/fixtures/android
