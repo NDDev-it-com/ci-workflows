@@ -1,4 +1,9 @@
 # Dart/Flutter CI caller (any tier). Replace @<sha> with a pinned full commit SHA.
+# NOTE: `subosito/flutter-action` resolves nested actions by tag inside its
+# own definition, so this workflow is refused during `Set up job` in a
+# repository that *enforces* "require actions to be pinned to a full-length
+# commit SHA". Pinning the line below does not help — GitHub resolves the whole
+# nested graph before any step runs. See ci-workflows issue #150.
 name: dart-flutter
 on:
   push: { branches: [main] }

@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+- Warn at the point of copy, not only in the ledger. The Dart/Flutter and Qt
+  examples begin "Replace @<sha> with a pinned full commit SHA" — the exact
+  control that makes those two workflows refuse to start — and said nothing
+  about it. A consumer copies the file, follows the first line, and gets a
+  `Set up job` failure naming an action they never wrote. Both examples now
+  carry the caveat inline, and the `docs/15` pack table marks the two rows
+  rather than leaving the explanation forty lines below where a reader scanning
+  a table never reaches it.
+
+
 - Stop the release skill telling an agent to run a command it cannot complete.
   `nddev-repo-flow` step 2 said the promotion-record builder "already exists" and
   to use it. The builder does exist; its required `--evidence-manifest` input has
