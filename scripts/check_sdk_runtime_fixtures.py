@@ -17,6 +17,7 @@ from ci_workflows_tools._workflow_yaml import get_on, load_yaml
 ROOT = Path(__file__).resolve().parent.parent
 SPEC_PATH = ROOT / "tests/fixtures/sdk-runtime-spec.yml"
 MANIFEST = ROOT / "tests/fixtures/sdk-runtime-manifest.json"
+LEDGER_PATH = ROOT / "catalog/runtime-coverage.yml"
 WORKFLOWS = ROOT / ".github/workflows"
 
 # The receipt is a discriminated record: `kind` selects the vocabulary and
@@ -353,6 +354,10 @@ def _contract_problems(*, require_generated: bool = True) -> list[str]:
         problems.append("SDK byte manifest is missing or stale")
     estate = load_yaml(WORKFLOWS / "runtime-fixtures-languages.yml")
     jobs = estate.get("jobs", {})
+    ledger = {
+        entry["workflow"]: entry.get("status")
+        for entry in strict_load(LEDGER_PATH)["entries"]
+    }
     for kind, data in fixtures.items():
         workflow = ROOT / data["workflow"]
         call = _workflow_call(workflow)
@@ -370,6 +375,23 @@ def _contract_problems(*, require_generated: bool = True) -> list[str]:
         observer_name = f"observe-{caller_name.removeprefix('fixture-')}"
         caller = jobs.get(caller_name, {})
         observer = jobs.get(observer_name, {})
+        status = ledger.get(data["workflow"])
+        # The estate and the ledger have to agree about what can run. A lane
+        # whose reusable is `blocked` must not be wired in: the evidence
+        # renderer is fail-closed by design, so a lane that cannot start turns
+        # the whole summary red for as long as the block lasts, and an estate
+        # that is always red reports nothing about the next real regression.
+        # Where the workflow *is* proven, the wiring must be exact.
+        if status == "blocked":
+            for name, job in ((caller_name, caller), (observer_name, observer)):
+                if job:
+                    problems.append(
+                        f"{kind}: ledger says blocked, so estate job {name!r} must not exist")
+            continue
+        if status != "runtime-proven":
+            problems.append(
+                f"{kind}: ledger status {status!r} is neither runtime-proven nor blocked")
+            continue
         if caller.get("uses") != data["workflow"].replace(".github", "./.github"):
             problems.append(f"{kind}: live caller is missing or points at wrong reusable")
         passed = caller.get("with", {})
