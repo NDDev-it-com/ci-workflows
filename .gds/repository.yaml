@@ -52,6 +52,14 @@ verification:
   required:
     - "lint"
     - "test"
+  # The status checks this repository's protected branch actually requires, as
+  # opposed to the commands that prove it locally. A required context is a check
+  # run name, not a command, and nothing derives one from the other -- so the
+  # consuming control plane could otherwise read a weaker gate than a merge here
+  # really enforces. `check_anchor_contexts.py` compares this list against the
+  # live ruleset in the advisory sweep, so it cannot drift in either direction.
+  required_contexts:
+    - "ci-gate"
 
 agent:
   context_profile: "public-module"

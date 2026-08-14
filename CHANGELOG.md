@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+- Make the estate anchor state, and keep stating, what the branch enforces.
+  `.gds/repository.yaml` described how this module is proven through
+  `verification.commands` and said nothing about the status checks a merge here
+  actually requires. `github-device-sync` reads that file across the submodule
+  boundary to reason about this module without executing it, so it was reading a
+  weaker gate than the branch enforces. `verification.required_contexts` now
+  names `ci-gate`.
+
+  Recording it once would rot. `check_rulesets.py` asserts the *tracked*
+  `branch-main.json` requires `ci-gate`, but nothing compared the tracked
+  ruleset to the live one, so a change made through the API left every file here
+  unchanged and green. `check_anchor_contexts.py` compares the anchor against
+  the live ruleset in the advisory sweep and refuses both drifts: a branch that
+  gains a required check nobody records, and an anchor that advertises assurance
+  the branch no longer provides. The first is not hypothetical — a sibling
+  module shipped for months with two required checks absent from its anchor.
+
+  Proven by mutation: removing the anchor entry reports the check the branch
+  requires, and inventing one reports that the branch does not enforce it.
+
+
 - Install Qt with a pinned `aqtinstall` instead of an action that cannot be
   pinned, and prove it. `jurplel/install-qt-action` names `actions/setup-python`
   and its own sub-action by tag, so `qt-ci.yml` was refused during `Set up job`
