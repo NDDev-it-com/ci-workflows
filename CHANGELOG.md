@@ -2,6 +2,48 @@
 
 ## [Unreleased]
 
+- Make the one actionlint suppression carry its own gate. `.github/actionlint.yaml`
+  claimed `check_actionlint_contract.py` proved it was still narrow and still
+  needed. No validator did anything of the kind — the same shape as a catalog
+  README calling a schema "the enforcing validator" while nothing executed it.
+  `check_actionlint_config.py` now runs the ignore pattern against the real
+  diagnostic text for each suppressed property and against several unknown ones,
+  requires the glob to cover exactly the files that reference them in both
+  directions, and rejects any `job.<property>` in an expression that is neither
+  modelled by actionlint nor one of the three known-real ones — the case
+  actionlint can no longer report here. Proven by mutation: widening the pattern,
+  widening the glob, a typo'd property and deleting the file each fail.
+
+- Check what a pinned action pins. `check_pinned_actions.py` proves every `uses:`
+  written here is a full commit SHA, and that is one level deep: a composite
+  action may name further actions by tag in its own definition, and GitHub
+  resolves the whole nested graph at job setup. That is why `dart-flutter-ci.yml`
+  and `qt-ci.yml` are refused before a step runs in any organisation enforcing
+  the SHA-pinning control this library recommends, and nothing static could see
+  it. `check_transitive_action_pins.py` resolves all 44 pinned third-party
+  actions at their pinned SHAs and reports every nested reference that is not a
+  commit SHA. It finds exactly the four that issue #150 was raised for, from
+  reading rather than from a fixture failing on a runner. Advisory tier: what a
+  third party writes in its own `action.yml` is not a property of this tree.
+
+- Say the pinning claim accurately. `docs/00` and the README both stated that
+  every third-party action is pinned to a full commit SHA. True of the
+  references here, and misleading about the graph a consumer actually resolves.
+  Both now say how deep the guarantee goes, and the two affected capabilities
+  carry the constraint in `risks` where an adopter reads it rather than only in
+  the runtime ledger.
+
+- Let the advisory sweep reach the host it needs. `check_flutter_pin` resolves
+  the fixture pin against Google's release manifest, and `maintenance.yml` runs
+  under `egress-policy: block` with an allowlist that did not include it — so
+  the check would have reported the pin unverified every week and filed an issue
+  for a network denial of our own making. The sweep also passes `GH_TOKEN` now,
+  because resolving 44 actions exhausts the unauthenticated rate limit.
+
+- Correct `docs/15`, which still described observer jobs for all three SDK packs
+  after two of them were removed for being unable to start.
+
+
 ## [0.14.0] - 2026-08-14
 
 - Declare a verification command that runs. `.gds/repository.yaml` named a bare

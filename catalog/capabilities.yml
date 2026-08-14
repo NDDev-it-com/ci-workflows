@@ -1152,6 +1152,7 @@ capabilities:
       - "contents: read"
     required_settings: []
     risks:
+      - "Cannot start where the caller enforces full-SHA action pinning: subosito/flutter-action names actions/cache by tag inside its own definition, and GitHub resolves the nested graph at job setup. See issue 150"
       - "Runtime evidence pins Flutter and validates the resolved Dart/Flutter identity; mutable channel selectors are not reproducible proof"
       - "Private-repo runner minutes are metered beyond the included free allotment"
       - "iOS/macOS builds require macOS runners billed at a 10x minute multiplier"
@@ -1237,6 +1238,7 @@ capabilities:
       - "contents: read"
     required_settings: []
     risks:
+      - "Cannot start where the caller enforces full-SHA action pinning: jurplel/install-qt-action names actions/setup-python and its own sub-action by tag, and GitHub resolves the nested graph at job setup. See issue 150"
       - "Runtime evidence needs an exact qt_version plus pinned aqtinstall/py7zr identities; a wildcard selector is not reproducible proof"
       - "aqtinstall downloads Qt at runtime; pin qt_version for reproducible builds"
       - "Private-repo runner minutes are metered beyond the included free allotment"

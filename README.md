@@ -358,7 +358,10 @@ examples/   copy-paste callers: per-tier + languages/ quality/ security/ testing
 
 ## Conventions
 
-- Third-party actions pinned to full commit SHAs with version comments.
+- Third-party actions pinned to full commit SHAs with version comments — one
+  level deep. Two vendored setup actions resolve nested references by tag, so
+  `dart-flutter-ci.yml` and `qt-ci.yml` are refused where SHA pinning is
+  enforced; see issue #150 and `catalog/runtime-coverage.yml`.
 - Least-privilege `permissions`, `concurrency`, and `timeout-minutes` everywhere.
 - No `${{ inputs.* }}` inline in `run:` (passed via `env:` — zizmor
   template-injection hardening).
