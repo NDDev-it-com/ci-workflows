@@ -1,8 +1,16 @@
 name: qt-ci
 
-# Reusable Qt (C++) CI for BOTH tiers: pinned install-qt-action
-# (aqtinstall) with cache, optional ccache, and caller-provided
+# Reusable Qt (C++) CI for BOTH tiers: Qt is installed with a pinned aqtinstall
+# invoked directly, with cache, optional ccache, and caller-provided
 # configure/build/test commands passed via env. Defaults target a CMake project.
+#
+# aqtinstall is driven here rather than through `jurplel/install-qt-action`
+# because that action names `actions/setup-python` and its own sub-action by tag
+# inside its definition, and GitHub resolves the whole nested action graph at job
+# setup. Any repository enforcing "require actions to be pinned to a full-length
+# commit SHA" -- the control this library recommends to its own consumers --
+# therefore could not start this workflow at all. Every action reachable from
+# here is pinned by us.
 
 on:
   workflow_call:
@@ -89,18 +97,135 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install Qt
-        uses: jurplel/install-qt-action@48d3ad6db93f3627c8ee7a0454bc6f3744f7e730  # v4.3.1
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+
+      - name: Resolve the Qt release
+        id: release
+        working-directory: ${{ github.workspace }}
+        env:
+          QT_ARCH: ${{ inputs.qt_arch }}
+          QT_HOST: ${{ inputs.qt_host }}
+          QT_MODULES: ${{ inputs.qt_modules }}
+          QT_TARGET: ${{ inputs.qt_target }}
+          QT_VERSION: ${{ inputs.qt_version }}
+        run: |
+          set -euo pipefail
+          # aqt and py7zr are pinned exactly. They are this workflow's own tool
+          # versions, and `check_sdk_runtime_fixtures` compares the aqt identity
+          # in the receipt against the fixture spec, so the two cannot drift
+          # apart unnoticed.
+          aqt() { uvx --from 'aqtinstall@3.3.0' --with 'py7zr==1.0.0' aqt "$@"; }
+
+          host="$QT_HOST"
+          if [ -z "$host" ]; then
+            case "$RUNNER_OS" in
+              Linux)   host=linux ;;
+              macOS)   host=mac ;;
+              Windows) host=windows ;;
+              *) echo "unsupported runner OS: $RUNNER_OS" >&2; exit 1 ;;
+            esac
+          fi
+
+          # A wildcard is resolved to the exact release before anything is
+          # installed, so the cache key and the receipt name one version rather
+          # than whatever the spec happened to match that day.
+          spec="${QT_VERSION%.\*}"
+          version="$(aqt list-qt "$host" "$QT_TARGET" --latest-version --spec "$spec")"
+          if [ -z "$version" ]; then
+            echo "no Qt release matches ${QT_VERSION} for ${host}/${QT_TARGET}" >&2
+            exit 1
+          fi
+
+          arch="$QT_ARCH"
+          # One architecture per line, so every later test is a quoted stream
+          # rather than an unquoted expansion relying on word splitting.
+          available="$(aqt list-qt "$host" "$QT_TARGET" --arch "$version" \
+            | tr '[:space:]' '\n' | grep -v '^$' || true)"
+          if [ -z "$arch" ]; then
+            # Exactly one published architecture is an unambiguous default; more
+            # than one is the caller's choice to make, not ours to guess.
+            count="$(printf '%s\n' "$available" | grep -c . || true)"
+            if [ "$count" != "1" ]; then
+              echo "Qt ${version} publishes ${count} architectures for ${host}/${QT_TARGET}:" >&2
+              printf '%s\n' "$available" >&2
+              echo "pass qt_arch to choose one" >&2
+              exit 1
+            fi
+            arch="$available"
+          elif ! printf '%s\n' "$available" | grep -qx "$arch"; then
+            echo "Qt ${version} does not publish architecture ${arch} for ${host}/${QT_TARGET}" >&2
+            exit 1
+          fi
+
+          modules_key="$(printf '%s' "$QT_MODULES" | tr ' ' '-')"
+          # `aqt version` writes to stderr and leaves stdout empty, so the
+          # identity is captured here, on the stream it actually uses, rather
+          # than by a later `check_output` that would record an empty string.
+          aqt_version="$(aqt version 2>&1 1>/dev/null | sed -n 's/.*\(aqtinstall(aqt) v[0-9][^ ]*\).*/\1/p' | head -n 1)"
+          if [ -z "$aqt_version" ]; then
+            echo "could not read the aqtinstall identity" >&2
+            exit 1
+          fi
+
+          {
+            printf 'aqt_version=%s\n' "$aqt_version"
+            printf 'arch=%s\n' "$arch"
+            printf 'host=%s\n' "$host"
+            printf 'version=%s\n' "$version"
+            printf 'cache_key=qt-ci-v1-%s-%s-%s-%s\n' "$host" "$arch" "$version" "${modules_key:-none}"
+          } >> "$GITHUB_OUTPUT"
+          echo "resolved Qt ${version} ${arch} on ${host}/${QT_TARGET}"
+
+      - name: Restore the Qt installation
+        id: qt-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
-          version: ${{ inputs.qt_version }}
-          host: ${{ inputs.qt_host }}
-          target: ${{ inputs.qt_target }}
-          arch: ${{ inputs.qt_arch }}
-          modules: ${{ inputs.qt_modules }}
-          cache: true
-          cache-key-prefix: qt-ci-v1
-          aqtversion: '==3.3.0'
-          py7zrversion: '==1.0.0'
+          path: ${{ runner.temp }}/qt
+          key: ${{ steps.release.outputs.cache_key }}
+
+      - name: Install Qt
+        if: ${{ steps.qt-cache.outputs.cache-hit != 'true' }}
+        working-directory: ${{ github.workspace }}
+        env:
+          QT_ARCH: ${{ steps.release.outputs.arch }}
+          QT_HOST: ${{ steps.release.outputs.host }}
+          QT_MODULES: ${{ inputs.qt_modules }}
+          QT_TARGET: ${{ inputs.qt_target }}
+          QT_VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -euo pipefail
+          # `qt_modules` is documented as space-separated, so it is read into an
+          # array rather than left to word splitting at the call site.
+          modules=()
+          if [ -n "$QT_MODULES" ]; then
+            read -r -a modules <<< "$QT_MODULES"
+            modules=(-m "${modules[@]}")
+          fi
+          uvx --from 'aqtinstall@3.3.0' --with 'py7zr==1.0.0' aqt install-qt \
+            "$QT_HOST" "$QT_TARGET" "$QT_VERSION" "$QT_ARCH" \
+            "${modules[@]}" \
+            --outputdir "${RUNNER_TEMP}/qt"
+
+      - name: Put Qt on PATH
+        working-directory: ${{ github.workspace }}
+        env:
+          QT_ARCH: ${{ steps.release.outputs.arch }}
+          QT_VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -euo pipefail
+          root="${RUNNER_TEMP}/qt/${QT_VERSION}/${QT_ARCH}"
+          if [ ! -x "$root/bin/qmake" ] && [ ! -x "$root/bin/qmake.exe" ]; then
+            echo "Qt install did not produce ${root}/bin/qmake" >&2
+            ls -la "${RUNNER_TEMP}/qt" >&2 || true
+            exit 1
+          fi
+          echo "$root/bin" >> "$GITHUB_PATH"
+          {
+            echo "QT_ROOT_DIR=$root"
+            echo "CMAKE_PREFIX_PATH=$root"
+          } >> "$GITHUB_ENV"
+          "$root/bin/qmake" -query QT_VERSION
 
       - name: Set up ccache
         if: ${{ inputs.enable_ccache }}
@@ -136,6 +261,7 @@ jobs:
           CALLEE_PATH: ${{ job.workflow_file_path }}
           CALLEE_REPOSITORY: ${{ job.workflow_repository }}
           CALLEE_SHA: ${{ job.workflow_sha }}
+          AQT_VERSION: ${{ steps.release.outputs.aqt_version }}
           CONFIGURE_COMMAND: ${{ inputs.configure_command }}
           QT_VERSION_INPUT: ${{ inputs.qt_version }}
           TEST_COMMAND: ${{ inputs.test_command }}
@@ -172,9 +298,10 @@ jobs:
           sections = ["toolchain"]
           receipt["cache_key_prefix"] = "qt-ci-v1"
           receipt["qt_version_input"] = os.environ["QT_VERSION_INPUT"]
-          aqt = tool(["aqt", "version"])
-          if aqt is not None:
-              receipt["aqt_version"] = aqt
+          # Resolved in the install step: `aqt` is invoked through `uvx` and is
+          # not on PATH here, and it reports its identity on stderr.
+          if os.environ.get("AQT_VERSION"):
+              receipt["aqt_version"] = os.environ["AQT_VERSION"]
           cmake = tool(["cmake", "--version"])
           if cmake is not None:
               receipt["cmake_version"] = cmake
