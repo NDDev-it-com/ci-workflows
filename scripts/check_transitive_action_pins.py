@@ -27,11 +27,11 @@ party writes in its own `action.yml` is not a property of this tree.
 """
 from __future__ import annotations
 
-import json
 import os
 import re
 import urllib.error
 import urllib.request
+
 from ci_workflows_tools._workflow_yaml import WORKFLOWS_DIR, workflow_files
 
 USES = re.compile(r"^\s*(?:-\s*)?uses:\s*(?P<ref>[^\s#]+)", re.MULTILINE)
