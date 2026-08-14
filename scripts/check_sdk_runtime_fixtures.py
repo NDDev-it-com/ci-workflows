@@ -388,9 +388,16 @@ def _contract_problems(*, require_generated: bool = True) -> list[str]:
                     problems.append(
                         f"{kind}: ledger says blocked, so estate job {name!r} must not exist")
             continue
-        if status != "runtime-proven":
+        if status == "unverified" and not caller and not observer:
+            # Wired nowhere and claiming nothing. `unverified` is also the state
+            # a lane passes through while it is being built, so a caller that
+            # does exist still has to be wired exactly -- it just has not earned
+            # `runtime-proven` yet.
+            continue
+        if status not in ("runtime-proven", "unverified"):
             problems.append(
-                f"{kind}: ledger status {status!r} is neither runtime-proven nor blocked")
+                f"{kind}: ledger status {status!r} is not one of "
+                "runtime-proven, unverified, blocked")
             continue
         if caller.get("uses") != data["workflow"].replace(".github", "./.github"):
             problems.append(f"{kind}: live caller is missing or points at wrong reusable")

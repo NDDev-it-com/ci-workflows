@@ -1,8 +1,16 @@
 name: dart-flutter-ci
 
-# Reusable Dart/Flutter CI for BOTH tiers: pinned flutter-action
-# with build cache, format + analyze gates, and a caller-provided test command
+# Reusable Dart/Flutter CI for BOTH tiers: the SDK is provisioned from Google's
+# published release manifest and verified against the SHA-256 that manifest
+# publishes, with format + analyze gates and a caller-provided test command
 # passed via env (no `${{ inputs.* }}` inline in run:).
+#
+# The SDK is installed here rather than by `subosito/flutter-action` because that
+# action names `actions/cache` by tag inside its own definition, and GitHub
+# resolves the whole nested action graph at job setup. Any repository enforcing
+# "require actions to be pinned to a full-length commit SHA" -- the control this
+# library recommends to its own consumers -- therefore could not start this
+# workflow at all. Every action reachable from here is pinned by us.
 
 on:
   workflow_call:
@@ -75,13 +83,128 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Flutter
-        id: flutter
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2  # v2.23.0
+      - name: Resolve the Flutter release
+        id: release
+        working-directory: ${{ github.workspace }}
+        env:
+          FLUTTER_CHANNEL: ${{ inputs.flutter_channel }}
+          FLUTTER_VERSION: ${{ inputs.flutter_version }}
+        run: |
+          python3 -I <<'PY'
+          import json, os, platform, urllib.request
+
+          # Google publishes one manifest per host, each listing every release
+          # with the archive path and its SHA-256. Resolution happens before
+          # anything is downloaded, so the digest is known in advance rather
+          # than computed from whatever arrived.
+          HOSTS = {"Linux": "linux", "macOS": "macos", "Windows": "windows"}
+          host = HOSTS[os.environ["RUNNER_OS"]]
+          url = ("https://storage.googleapis.com/flutter_infra_release/releases/"
+                 f"releases_{host}.json")
+          with urllib.request.urlopen(url, timeout=60) as response:
+              manifest = json.loads(response.read().decode("utf-8"))
+
+          channel = os.environ["FLUTTER_CHANNEL"]
+          wanted = os.environ["FLUTTER_VERSION"].strip()
+          if channel not in manifest["current_release"]:
+              raise SystemExit(f"unknown Flutter channel {channel!r}")
+
+          # macOS ships separate arm64 and x64 archives; the other hosts do not
+          # carry the key at all, so absence means "the only architecture".
+          arch = {"ARM64": "arm64", "X64": "x64"}.get(os.environ["RUNNER_ARCH"])
+          candidates = [
+              release for release in manifest["releases"]
+              if release["channel"] == channel
+              and release.get("dart_sdk_arch", arch) == arch
+          ]
+          if wanted:
+              candidates = [r for r in candidates if r["version"] == wanted]
+          else:
+              current = manifest["current_release"][channel]
+              candidates = [r for r in candidates if r["hash"] == current]
+          if len(candidates) != 1:
+              raise SystemExit(
+                  f"Flutter {channel}/{wanted or 'current'} on {host}/{arch} "
+                  f"resolved to {len(candidates)} releases, expected exactly one")
+          release = candidates[0]
+
+          values = {
+              "archive_url": f"{manifest['base_url']}/{release['archive']}",
+              "archive_sha256": release["sha256"],
+              "dart_version": release["dart_sdk_version"].split(" ")[0],
+              "revision": release["hash"],
+              "version": release["version"],
+              # The cache key names every input that changes the bytes. The
+              # revision is the release's own content identity, so a channel
+              # that moves cannot silently reuse an older SDK.
+              "arch": arch,
+              "cache_key": f"flutter-{host}-{arch}-{channel}-{release['version']}-{release['hash']}",
+          }
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              for key, value in values.items():
+                  output.write(f"{key}={value}\n")
+          print(f"resolved Flutter {values['version']} ({channel}) on {host}/{arch}")
+          PY
+
+      - name: Restore the Flutter SDK
+        id: sdk-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
-          channel: ${{ inputs.flutter_channel }}
-          flutter-version: ${{ inputs.flutter_version }}
-          cache: true
+          path: ${{ runner.temp }}/flutter-sdk
+          key: ${{ steps.release.outputs.cache_key }}
+
+      - name: Install the Flutter SDK
+        if: ${{ steps.sdk-cache.outputs.cache-hit != 'true' }}
+        working-directory: ${{ runner.temp }}
+        env:
+          ARCHIVE_SHA256: ${{ steps.release.outputs.archive_sha256 }}
+          ARCHIVE_URL: ${{ steps.release.outputs.archive_url }}
+        run: |
+          set -euo pipefail
+          archive="${RUNNER_TEMP}/flutter-archive"
+          # --retry covers the transient case only; a 404 or a digest mismatch
+          # must fail rather than be retried into success.
+          curl --fail --silent --show-error --location \
+            --retry 3 --retry-connrefused --max-time 900 \
+            --output "$archive" "$ARCHIVE_URL"
+          printf '%s  %s\n' "$ARCHIVE_SHA256" "$archive" > "${RUNNER_TEMP}/flutter.sha256"
+          shasum -a 256 -c "${RUNNER_TEMP}/flutter.sha256"
+          rm -rf "${RUNNER_TEMP}/flutter-sdk"
+          mkdir -p "${RUNNER_TEMP}/flutter-sdk"
+          case "$ARCHIVE_URL" in
+            *.tar.xz) tar -xJf "$archive" -C "${RUNNER_TEMP}/flutter-sdk" --strip-components=1 ;;
+            *.zip)    unzip -q "$archive" -d "${RUNNER_TEMP}/flutter-unpack"
+                      mv "${RUNNER_TEMP}/flutter-unpack/flutter" "${RUNNER_TEMP}/flutter-sdk-inner"
+                      rm -rf "${RUNNER_TEMP}/flutter-sdk"
+                      mv "${RUNNER_TEMP}/flutter-sdk-inner" "${RUNNER_TEMP}/flutter-sdk" ;;
+            *) echo "unsupported Flutter archive format: $ARCHIVE_URL" >&2; exit 1 ;;
+          esac
+          rm -f "$archive"
+
+      - name: Restore the pub cache
+        id: pub-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: ${{ runner.temp }}/pub-cache
+          key: >-
+            pub-${{ steps.release.outputs.cache_key }}-${{
+            hashFiles(format('{0}/**/pubspec.lock', inputs.working_directory),
+                      format('{0}/**/pubspec.yaml', inputs.working_directory)) }}
+
+      - name: Put Flutter on PATH
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          {
+            echo "${RUNNER_TEMP}/flutter-sdk/bin"
+            echo "${RUNNER_TEMP}/flutter-sdk/bin/cache/dart-sdk/bin"
+          } >> "$GITHUB_PATH"
+          # `flutter pub` writes here; the action used to own this directory, so
+          # a consumer keeps the same caching behaviour it had before.
+          echo "PUB_CACHE=${RUNNER_TEMP}/pub-cache" >> "$GITHUB_ENV"
+          # A repository owned by another uid makes Flutter refuse to run; the
+          # SDK lives in the runner temp dir, which the job owns.
+          "${RUNNER_TEMP}/flutter-sdk/bin/flutter" --version --machine
 
       - name: Resolve dependencies
         if: ${{ inputs.pub_get_command != '' }}
@@ -110,14 +233,14 @@ jobs:
       - name: Emit runtime evidence
         id: evidence
         env:
-          CACHE_KEY: ${{ steps.flutter.outputs.CACHE-KEY }}
+          CACHE_KEY: ${{ steps.release.outputs.cache_key }}
           CALLEE_PATH: ${{ job.workflow_file_path }}
           CALLEE_REPOSITORY: ${{ job.workflow_repository }}
           CALLEE_SHA: ${{ job.workflow_sha }}
-          FLUTTER_ARCH: ${{ steps.flutter.outputs.ARCHITECTURE }}
-          FLUTTER_CHANNEL: ${{ steps.flutter.outputs.CHANNEL }}
-          FLUTTER_VERSION: ${{ steps.flutter.outputs.VERSION }}
-          PUB_CACHE_KEY: ${{ steps.flutter.outputs.PUB-CACHE-KEY }}
+          FLUTTER_ARCH: ${{ steps.release.outputs.arch }}
+          FLUTTER_CHANNEL: ${{ inputs.flutter_channel }}
+          FLUTTER_VERSION: ${{ steps.release.outputs.version }}
+          PUB_CACHE_KEY: ${{ steps.pub-cache.outputs.cache-primary-key }}
           PUB_GET_COMMAND: ${{ inputs.pub_get_command }}
           TEST_COMMAND: ${{ inputs.test_command }}
           TEST_LOG: ${{ runner.temp }}/dart-flutter-tests.log

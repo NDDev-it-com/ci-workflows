@@ -226,16 +226,6 @@ tools:
       - .github/workflows/secret-scan.yml
     last_verified: "2026-08-04"
 
-  - id: flutter-action
-    name: subosito/flutter-action
-    homepage: "https://github.com/subosito/flutter-action"
-    kind: action
-    current_version: "v2.23.0"
-    pin: "subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2"
-    used_by:
-      - .github/workflows/dart-flutter-ci.yml
-    last_verified: "2026-07-08"
-
   - id: install-qt-action
     name: jurplel/install-qt-action
     homepage: "https://github.com/jurplel/install-qt-action"
@@ -460,6 +450,16 @@ tools:
       - .github/workflows/benchmark-compare.yml
       - .github/workflows/mutation-testing.yml
     last_verified: "2026-07-25"
+
+  - id: cache
+    name: actions/cache
+    homepage: "https://github.com/actions/cache"
+    kind: action
+    current_version: "v4.3.0"
+    pin: "actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830"
+    used_by:
+      - .github/workflows/dart-flutter-ci.yml
+    last_verified: "2026-08-14"
 
   - id: setup-uv
     name: astral-sh/setup-uv

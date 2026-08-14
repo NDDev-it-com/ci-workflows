@@ -66,13 +66,13 @@ entries:
     waiver: null
   - workflow: .github/workflows/dart-flutter-ci.yml
     criticality: supporting
-    status: blocked
-    evidence: "Fixture and observer are wired, but the job is rejected during `Set up job`: subosito/flutter-action refers to nested actions by tag and this repository requires every action to be pinned to a full-length commit SHA. No step runs, so nothing is proven. Not a fixture gap: any consumer with the same control enabled cannot call this workflow either. Observed in https://github.com/NDDev-it-com/ci-workflows/actions/runs/31782942981"
+    status: unverified
+    evidence: "The SDK is now provisioned from Google's published release manifest and verified against the SHA-256 that manifest publishes, so the workflow no longer reaches any action it does not pin and can start where full-SHA pinning is enforced. check_transitive_action_pins reports it clean. The lane is wired and awaiting its first successful run; nothing is claimed until one lands."
     last_run: null
     runtime_debt:
       risk: medium
-      barrier: dependency-policy-conflict
-      required_capability: Self-provisioned toolchain install that pins every action it uses, replacing the vendored setup action.
+      barrier: heavy-toolchain
+      required_capability: A successful fixture run of the self-provisioned SDK on the standard hosted runner.
       handoff: https://github.com/NDDev-it-com/ci-workflows/issues/150
     waiver: null
   - workflow: .github/workflows/docs-ci.yml

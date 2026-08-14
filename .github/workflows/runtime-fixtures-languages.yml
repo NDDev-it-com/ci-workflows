@@ -406,6 +406,16 @@ jobs:
       install_command: "cargo install cargo-mutants --locked"
       mutation_command: "cargo mutants --no-shuffle --test-tool=cargo -j 2"
 
+  fixture-dart-flutter-ci:
+    name: fixture / dart-flutter-ci
+    permissions:
+      contents: read
+    uses: ./.github/workflows/dart-flutter-ci.yml
+    with:
+      runner: ubuntu-latest
+      flutter_version: '3.47.0'
+      working_directory: tests/fixtures/flutter
+
   fixture-kotlin-android-ci:
     name: fixture / kotlin-android-ci
     permissions:
@@ -414,6 +424,41 @@ jobs:
     with:
       runner: ubuntu-latest
       working_directory: tests/fixtures/android
+
+  observe-dart-flutter-ci:
+    name: observe / dart-flutter-ci
+    needs: fixture-dart-flutter-ci
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up isolated Python contract runtime
+        id: python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.13'
+          update-environment: false
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+      - name: Provision validator
+        env:
+          PYTHON_PATH: ${{ steps.python.outputs.python-path }}
+        run: |
+          "$PYTHON_PATH" -I -B -m venv --copies .venv
+          uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
+      - name: Reject missing, skipped, or partial Flutter evidence
+        env:
+          CALLER_RESULT: ${{ needs.fixture-dart-flutter-ci.result }}
+          SDK_RUNTIME_EVIDENCE: ${{ needs.fixture-dart-flutter-ci.outputs.evidence }}
+        run: |
+          test "$CALLER_RESULT" = success
+          .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch check_sdk_runtime_fixtures.py -- --receipt flutter
 
   observe-kotlin-android-ci:
     name: observe / kotlin-android-ci
@@ -529,7 +574,9 @@ jobs:
       - fixture-mutation-testing
       - fixture-r-ci
       - fixture-benchmark-compare
+      - fixture-dart-flutter-ci
       - fixture-kotlin-android-ci
+      - observe-dart-flutter-ci
       - observe-kotlin-android-ci
       - fixture-go-ci
       - fixture-python-ci
@@ -586,7 +633,7 @@ jobs:
           PROVES: >-
             {"fixture-go-ci":"go-ci.yml","fixture-python-ci":"python-ci.yml","fixture-node-ci":"node-ci.yml","fixture-rust-ci":"rust-ci.yml","fixture-cpp-ci":"cpp-ci.yml","fixture-terraform-ci":"terraform-ci.yml","fixture-sql-ci":"sql-ci.yml","fixture-docs-quality":"docs-quality.yml","fixture-hadolint":"hadolint-ci.yml","fixture-web-ci":"web-ci.yml","fixture-container-ci":"container-ci.yml","fixture-cross-platform-smoke":"cross-platform-smoke.yml","fixture-java-ci":"java-ci.yml","fixture-dotnet-ci":"dotnet-ci.yml","fixture-swift-ci":"swift-ci.yml","fixture-mutation-testing":"mutation-testing.yml","fixture-r-ci":"r-ci.yml","fixture-benchmark-compare":"benchmark-compare.yml","fixture-kotlin-android-ci":"kotlin-android-ci.yml","fixture-go-ci-os":"go-ci.yml","fixture-python-ci-os":"python-ci.yml","fixture-rust-ci-os":"rust-ci.yml","fixture-dotnet-ci-os":"dotnet-ci.yml","fixture-java-ci-os":"java-ci.yml","fixture-node-ci-os":"node-ci.yml","fixture-terraform-ci-os":"terraform-ci.yml","fixture-sql-ci-os":"sql-ci.yml","fixture-web-ci-os":"web-ci.yml"}
           GUARDS: >-
-            {"fixture-kotlin-android-ci":["observe-kotlin-android-ci"]}
+            {"fixture-dart-flutter-ci":["observe-dart-flutter-ci"],"fixture-kotlin-android-ci":["observe-kotlin-android-ci"]}
         run: |
           set -euo pipefail
           .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch render_runtime_evidence.py --
