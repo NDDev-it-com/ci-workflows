@@ -21,14 +21,18 @@ Dual-tier, caller-command-driven with sensible defaults.
 
 | Pack | Workflow | Example |
 | --- | --- | --- |
-| Dart/Flutter | `dart-flutter-ci.yml` | [dart-flutter](../examples/languages/dart-flutter.yml) |
+| Dart/Flutter † | `dart-flutter-ci.yml` | [dart-flutter](../examples/languages/dart-flutter.yml) |
 | C/C++ | `cpp-ci.yml` | [cpp](../examples/languages/cpp.yml) |
-| Qt | `qt-ci.yml` | [qt](../examples/languages/qt.yml) |
+| Qt † | `qt-ci.yml` | [qt](../examples/languages/qt.yml) |
 | Kotlin/Android | `kotlin-android-ci.yml` | [kotlin-android](../examples/languages/kotlin-android.yml) |
 | Swift | `swift-ci.yml` | [swift](../examples/languages/swift.yml) |
 | R | `r-ci.yml` | [r](../examples/languages/r.yml) |
 | HTML/CSS/web | `web-ci.yml` | [web](../examples/languages/web.yml) |
 | SQL | `sql-ci.yml` | [sql](../examples/languages/sql.yml) |
+
+† Refused during `Set up job` in a repository that enforces full-SHA action
+pinning — their vendored setup actions name nested actions by tag, and GitHub
+resolves that graph before any step runs. See issue #150.
 
 The Dart/Flutter, Kotlin/Android, and Qt callers above deliberately retain each
 reusable workflow's default resolve/build/test commands, so the fixture estate
