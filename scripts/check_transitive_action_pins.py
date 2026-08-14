@@ -41,6 +41,40 @@ TIMEOUT_SECONDS = 30
 API = "https://api.github.com/repos/{repo}/contents/{path}?ref={ref}"
 
 
+def _candidate_paths(subdirectory: str) -> tuple[str, ...]:
+    """Where the definition of a pinned reference lives, by kind.
+
+    A pinned reference is either an action, whose definition is `action.yml` or
+    `action.yaml` in its directory, or a reusable workflow, which *is* the file.
+    Treating the second as the first asks for `.github/workflows/x.yml/action.yml`,
+    gets a 404, and reports a missing definition for a perfectly good pin.
+    Reusable workflows carry `uses:` of their own, so they belong in this audit
+    rather than being skipped: a third party's workflow can name unpinned
+    actions exactly as a third party's composite action can.
+    """
+    if subdirectory.endswith((".yml", ".yaml")):
+        return (subdirectory,)
+    if subdirectory:
+        return (f"{subdirectory}/action.yml", f"{subdirectory}/action.yaml")
+    return ("action.yml", "action.yaml")
+
+
+def _selftest() -> list[str]:
+    problems: list[str] = []
+    for subdirectory, expected in (
+        ("", ("action.yml", "action.yaml")),
+        ("setup", ("setup/action.yml", "setup/action.yaml")),
+        (".github/workflows/release.yml", (".github/workflows/release.yml",)),
+        (".github/workflows/release.yaml", (".github/workflows/release.yaml",)),
+    ):
+        actual = _candidate_paths(subdirectory)
+        if actual != expected:
+            problems.append(
+                f"reference-kind selftest: {subdirectory!r} resolved to {actual}, "
+                f"expected {expected}")
+    return problems
+
+
 def _third_party_pins() -> dict[str, set[str]]:
     """Every distinct `owner/repo[/path]@sha` this repository calls, and where."""
     pins: dict[str, set[str]] = {}
@@ -89,20 +123,21 @@ def _token() -> str | None:
 
 
 def check() -> list[str]:
-    problems: list[str] = []
+    problems: list[str] = _selftest()
     token = _token()
     if token is None:
-        return ["nested action pins unverified: set GH_TOKEN; the unauthenticated "
-                "API rate limit cannot cover every pinned action"]
+        return problems + [
+            "nested action pins unverified: set GH_TOKEN; the unauthenticated "
+            "API rate limit cannot cover every pinned action"]
     for pin, callers in sorted(_third_party_pins().items()):
         location, _, revision = pin.partition("@")
         parts = location.split("/")
         repo = "/".join(parts[:2])
         subdirectory = "/".join(parts[2:])
+        candidates = _candidate_paths(subdirectory)
         definition = None
         try:
-            for name in ("action.yml", "action.yaml"):
-                candidate = f"{subdirectory}/{name}" if subdirectory else name
+            for candidate in candidates:
                 definition = _fetch(repo, candidate, revision, token)
                 if definition is not None:
                     break
@@ -110,7 +145,7 @@ def check() -> list[str]:
             problems.append(f"{pin}: nested pins unverified, {repo} unreachable: {exc}")
             continue
         if definition is None:
-            problems.append(f"{pin}: no action.yml or action.yaml at that ref")
+            problems.append(f"{pin}: no definition at that ref (looked for {', '.join(candidates)})")
             continue
         # An action may call the same thing from several steps; the finding is
         # about the reference, not about how often it appears.
