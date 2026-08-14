@@ -2,6 +2,34 @@
 
 ## [Unreleased]
 
+- Pick the validation tier from the tree, not from how the run was triggered.
+  The changed-path job resolved a base from the event and, when it could not,
+  fell through to `validate_all.py --tier scheduled` under a message announcing
+  "the full sweep". It was neither: `scheduled` does not contain the blocking
+  changed-path checks, so all of them were skipped, and it does contain calendar
+  and network checks needing a token and two external hosts the job deliberately
+  does not grant — so a required gate could go red because a third party's tariff
+  expired. Both halves fired on `workflow_dispatch`, on branch creation, and on
+  any force-push beyond reachable history.
+
+  `--tier touched --all-paths` would not have fixed it. `facts_reached_by`
+  returns "all facts" as soon as the ledger or the capability catalog is in
+  scope, and the whole-tree fallback puts them there, so a whole-tree touched run
+  *is* the calendar sweep — the exact thing the tier split moved off the
+  pull-request path. The base is resolved instead of abandoned: everything the
+  ref adds on top of the default branch, with the remote-tracking ref fetched
+  explicitly rather than allowed to become an empty scope that reports success.
+  There is now one command and no branch.
+
+  `check_ci_tier_selection.py` extracts the resolver `ci.yml` actually runs and
+  executes it against real temporary repositories for every event shape GitHub
+  delivers, and separately reads `ci-gate`'s own `needs` graph to assert no
+  required job invokes the advisory tier. Six deliberate mutations were each
+  caught — two of them only after the first pass let them through: the
+  pull-request case had used a base the fallback would have produced anyway, and
+  the unresolvable case failed at the fetch in front of the merge base rather
+  than at the merge base itself.
+
 - Record 0.14.0 as cut-but-untagged, and prove the mechanism that records it.
   The advisory sweep was red on a clean tree with a full tag set: `1cf5681`
   bumped `VERSION` to 0.14.0 and wrote a `## [0.14.0] - 2026-08-14` heading, but
