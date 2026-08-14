@@ -2,6 +2,28 @@
 
 ## [Unreleased]
 
+- Say that the release path has never been walked. `docs/09` described a
+  tag-driven flow as though following it were routine, and the ledger said the
+  supply-chain proof would be restored by "the next real release". Both read as
+  a procedure with a known outcome. The facts: `0.13.3` shipped on 2026-08-02
+  from a graph that was `resolve → publish`, the promotion gate and the `release`
+  environment landed two days later in `1fecb00`, and no release has run since —
+  so the gate has never executed once, and the `0.13.3` tag annotation is plain
+  text plus a signature rather than a promotion record.
+
+  The blocker is narrower than "a release needs authority". It is that the gate's
+  input has no producer: `promotion_record.py` validates a
+  `nddev-promotion-evidence-manifest/v1` and signs a record from it, and nothing
+  in the estate emits that manifest — the schema string appears in exactly one
+  file, its own validator. Writing one by hand would assert nine lane
+  verifications, two of them on macOS architectures, that nobody performed.
+
+  `check_release_graph.py` exists because the gate "was documented, was exercised
+  by its own validator" while nothing read the graph. It now proves the graph is
+  correctly gated; nothing proves it is *traversable*. Recorded as issue #157
+  rather than papered over, and the ledger's handoff points there.
+
+
 - Teach the transitive pin audit the difference between an action and a reusable
   workflow. A pinned `owner/repo/.github/workflows/x.yml@<sha>` would have sent
   it looking for `.github/workflows/x.yml/action.yml`, produced a 404, and

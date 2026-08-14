@@ -298,10 +298,12 @@ entries:
     criticality: release
     status: blocked
     validator: scripts/check_release_supply_chain.py
-    evidence: 'Executable contract validator exercises the embedded program(s). The
-      runtime proof lapsed when actions/attest and actions/checkout were bumped: this
-      repository CI never calls this workflow, so nothing has run the new bytes. The
-      next real release re-proves it.'
+    evidence: 'Executable contract validator exercises the embedded program(s). It
+      was genuinely proven once, by the 0.13.3 release run 30772172945, and that proof
+      lapsed when actions/attest and actions/checkout were bumped. Cutting a release
+      does not re-prove it: release-promotion-gate.yml landed two days after 0.13.3
+      and requires a control-plane promotion record whose evidence manifest has no
+      producer anywhere in the estate, so no release has run since. See issue 157.'
     last_run: null
     runtime_debt:
       risk: critical

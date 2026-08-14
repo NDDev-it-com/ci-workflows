@@ -4,6 +4,14 @@ This doc covers the release flow — from a SemVer tag to an immutable, attested
 GitHub Release — and package publication to GHCR, npm, and PyPI using OIDC
 trusted publishing (no long-lived tokens).
 
+> **Nothing has shipped through this flow yet.** `0.13.3` (2026-08-02) was the
+> last release, and it predates the gate: at that tag `release.yml` was
+> `resolve → publish`, and its run shows exactly those two jobs. The promotion
+> gate and the `release` environment landed two days later, in `1fecb00`. No
+> release has run since, so the sequence below is the design, not a path anyone
+> has walked. What blocks it is a producer for the evidence manifest — see the
+> caveat under *Producing the promotion record* and issue #157.
+
 ## Tag-driven release flow
 
 Releases are **tag-driven**. Pushing a numeric SemVer tag (`X.Y.Z`) triggers the
@@ -45,6 +53,15 @@ control plane owns it: `scripts/promotion_record.py` in
 `NDDev-it-com/nddev-harnesses` builds and verifies it against the same
 `nddev-release-promotion/v1` schema the gate enforces, including the nine
 required evidence roles.
+
+**The input to that command does not have a producer yet.** `promotion_record.py`
+*validates* a `nddev-promotion-evidence-manifest/v1` manifest and signs a record
+from it; nothing in the estate emits one. The manifest has to carry nine lane
+records — including `platform-macos-arm64` and `platform-macos-x64` — each with
+a real run identity and log digest, observed within 168 hours. Hand-authoring it
+would assert nine verifications nobody performed, which is the failure mode this
+whole gate exists to prevent. Until that producer exists, the commands below
+cannot be completed. Tracked as issue #157.
 
 ```bash
 # in the control plane, against the exact candidate commit
