@@ -50,6 +50,7 @@ from ci_workflows_tools import (
     check_cache_contract,
     check_ci_tier_selection,
     check_maintenance_report_contract,
+    check_validation_tier_contract,
     check_docs_links,
     check_flutter_pin,
     check_documented_commands,
@@ -119,6 +120,7 @@ CORE = [
     ("cache-contract", check_cache_contract.check),
     ("ci-tier-selection", check_ci_tier_selection.check),
     ("maintenance-report", check_maintenance_report_contract.check),
+    ("validation-tiers", check_validation_tier_contract.check),
     ("actionlint-contract", check_actionlint_contract.check),
     ("actionlint-config", check_actionlint_config.check),
     ("documented-commands", check_documented_commands.check),
@@ -151,17 +153,35 @@ TOUCHED = [
     ("runtime-coverage-touched", validate_runtime_coverage.check_for_paths),
 ]
 
-# Advisory. Real work, but maintenance debt rather than a defect in a change.
-SCHEDULED = [
+# Advisory, and reaching no further than the checkout. A release runs these:
+# an immutable artifact must not ship carrying an expired external fact, and
+# nothing here needs a credential or a third party to say so. `release-ledger-tags`
+# needs the tag refs, which a release has by construction.
+CALENDAR = [
     ("product-facts-calendar", validate_product_facts.check),
     ("runtime-coverage-calendar", validate_runtime_coverage.check),
     ("release-ledger-tags", check_release_ledger.check_tags),
     ("docs-links", check_docs_links.check),
+]
+
+# Advisory, and needing a GitHub token or a named external host. This is the
+# split that matters: these fail closed when their capability is absent, so a
+# caller that cannot grant them gets a report about its own environment rather
+# than about the tree. `catalog/validation-tiers.yml` records what each needs and
+# `check_validation_tier_contract.py` holds every caller to it.
+EXTERNAL = [
     ("flutter-pin", check_flutter_pin.check),
     ("qt-pin", check_qt_pin.check),
     ("transitive-action-pins", check_transitive_action_pins.check),
     ("anchor-contexts", check_anchor_contexts.check),
 ]
+
+SCHEDULED = CALENDAR + EXTERNAL
+
+# What a release preflight runs. Deterministic properties of the tree, plus the
+# freshness the release itself is answerable for -- and nothing that reaches the
+# network from a publishing graph.
+RELEASE = CORE + CALENDAR
 
 
 def changed_paths(base: str | None, explicit: list[str]) -> set[str]:
@@ -211,7 +231,7 @@ def run(label: str, problems: list[str]) -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     parser.add_argument(
-        "--tier", choices=["all", "core", "touched", "scheduled"], default="all",
+        "--tier", choices=["all", "core", "touched", "scheduled", "release"], default="all",
         help="which group to run (default: all)",
     )
     parser.add_argument(
@@ -225,6 +245,15 @@ def main() -> int:
     args = parser.parse_args()
 
     ok = True
+    if args.tier == "release":
+        for label, fn in RELEASE:
+            ok &= run(label, fn())
+        if not ok:
+            print(f"\nvalidate_all ({args.tier}): FAIL", file=sys.stderr)
+            return 1
+        print(f"validate_all ({args.tier}): OK")
+        return 0
+
     if args.tier in ("all", "core"):
         for label, fn in CORE:
             ok &= run(label, fn())

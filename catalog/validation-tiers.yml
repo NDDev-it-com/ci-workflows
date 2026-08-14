@@ -1,0 +1,84 @@
+# What each validator needs beyond the tree, and which job may invoke which tier.
+#
+# The tier split was written down in prose and enforced nowhere. `--tier
+# scheduled` needs a GitHub token, two external hosts and the tag refs, and that
+# requirement lived only in comments beside `maintenance.yml`'s egress
+# allow-list. Three jobs invoked the tier; one of them granted what it needs.
+#
+# `release.yml` ran every tier with none of the four, so a release stopped in
+# preflight on capability failures before its promotion gate -- and before the
+# missing evidence manifest that is the known blocker. `ci.yml` fell back to the
+# advisory tier when it could not resolve a change base, putting calendar and
+# network work inside a required gate while skipping the blocking checks it was
+# supposed to run. Both were invisible because neither path had ever executed.
+#
+# So the requirement becomes data, and `check_validation_tier_contract.py`
+# holds every caller to it. Discovery is fail-closed: a job invoking
+# `validate_all.py` that is not declared below is a finding, because a closed
+# allowlist that only checks what it was told is exactly how the first version
+# of this problem stayed invisible.
+schema_version: 1
+
+capabilities:
+  git_tags: >-
+    The repository's SemVer tag refs. `actions/checkout` fetches no tags by
+    default, and `fetch-depth: 0` alone still fetches none -- `fetch-tags: true`
+    is a separate input. A check that reconciles against tags fails closed
+    without them, because it cannot tell "no tags" from "no tags fetched".
+  github_token: >-
+    A GitHub API token in `GH_TOKEN` or `GITHUB_TOKEN`. Unauthenticated the API
+    allows 60 requests an hour, which these checks exhaust, so they report
+    themselves unverified rather than silently pass on a partial answer.
+  network:api.github.com: >-
+    The GitHub REST API, for resolving what a pinned third-party action itself
+    calls and for reading the live branch ruleset.
+  network:storage.googleapis.com: >-
+    Google's published Flutter release manifest, which the SDK pin is resolved
+    against.
+  network:download.qt.io: >-
+    The published Qt repository index, which the Qt pin is resolved against.
+
+# Checks needing something the checkout alone does not provide. A check absent
+# from this map needs nothing. Every name here must be a registered check.
+requirements:
+  release-ledger-tags:
+    - git_tags
+  flutter-pin:
+    - network:storage.googleapis.com
+  qt-pin:
+    - network:download.qt.io
+  transitive-action-pins:
+    - github_token
+    - network:api.github.com
+  anchor-contexts:
+    - github_token
+    - network:api.github.com
+
+# Every job that runs `validate_all.py`, and the tier it runs. An invocation not
+# listed here fails the contract rather than inheriting whatever the job happens
+# to grant.
+invocations:
+  - workflow: .github/workflows/ci.yml
+    job: validate
+    tier: core
+    note: The blocking gate. Properties of the tree in hand, and nothing else.
+  - workflow: .github/workflows/ci.yml
+    job: validate-touched
+    tier: touched
+    note: >-
+      Blocking and scoped to the change. Must never invoke the advisory tier:
+      it does not contain these checks, and it does contain checks this job
+      grants nothing for.
+  - workflow: .github/workflows/maintenance.yml
+    job: sweep
+    tier: scheduled
+    note: >-
+      The only caller that grants the full advisory set, and the only one that
+      should. Failures here are maintenance debt, filed as one tracking issue.
+  - workflow: .github/workflows/release.yml
+    job: resolve
+    tier: release
+    note: >-
+      Core plus the calendar checks. An immutable artifact must not ship
+      carrying an expired external fact, but a publishing graph must not be
+      reaching the network to find out.
