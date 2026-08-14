@@ -1152,6 +1152,7 @@ capabilities:
       - "contents: read"
     required_settings: []
     risks:
+      - "Runtime evidence pins Flutter and validates the resolved Dart/Flutter identity; mutable channel selectors are not reproducible proof"
       - "Private-repo runner minutes are metered beyond the included free allotment"
       - "iOS/macOS builds require macOS runners billed at a 10x minute multiplier"
     deprecations: null
@@ -1236,6 +1237,7 @@ capabilities:
       - "contents: read"
     required_settings: []
     risks:
+      - "Runtime evidence uses exact Qt 6.8.4 and pinned aqtinstall/py7zr identities; wildcard versions are not reproducible proof"
       - "aqtinstall downloads Qt at runtime; pin qt_version for reproducible builds"
       - "Private-repo runner minutes are metered beyond the included free allotment"
     deprecations: null
@@ -1257,6 +1259,7 @@ capabilities:
       - "contents: read"
     required_settings: []
     risks:
+      - "Android evidence requires a checksum-pinned wrapper plus strict dependency locks and verification metadata for the full default build graph"
       - "ktlint/detekt run as project-defined Gradle tasks supplied via lint_command"
       - "Private-repo runner minutes are metered beyond the included free allotment"
     deprecations: null

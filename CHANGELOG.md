@@ -113,6 +113,8 @@
   plane's `promotion_record.py`) are correctly out of scope. `.claude/CLAUDE.md`
   is corrected and registered; `.gds/repository.yaml` and
   `catalog/scorecard-evidence.yml` carry reasoned exemptions.
+- Add bounded real Flutter, Android, and Qt runtime fixtures with fail-closed
+  toolchain, dependency, task-graph, cache, result, and reusable-digest evidence.
 
 - Add one hermetic Python execution boundary for every repository validator and
   generator. A machine-readable policy now pins the interpreter and PyYAML,
