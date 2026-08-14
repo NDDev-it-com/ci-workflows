@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+- Declare a verification command that runs. `.gds/repository.yaml` named a bare
+  invocation of the aggregate validator as this repository's only test lane, and
+  that form has aborted with `ModuleNotFoundError` since the hermetic launcher
+  landed — the bootstrap that registers the tool package is exactly what running
+  the script directly skips. `verification.commands` is not prose: the
+  control plane reads it across the submodule boundary to answer "how is this
+  module verified", so an operator following it saw a broken repository rather
+  than a stale field. The lanes are now the forms CI actually runs, and the
+  syntax gate is named separately because it is the one that still works when a
+  validator cannot be imported.
+
+  The reason it stayed broken is worth recording. `AGENTS.md` and
+  `.claude/CLAUDE.md` both said `.gds/**` is a generated projection that must
+  never be hand-edited, which made this look like somebody else's file.
+  `.gds/bundle.lock.yaml` says otherwise and is the authority: the projection
+  writes exactly one file, `compiled-policy.json`. `repository.yaml` is a
+  projection *input*, carries no generated header, and cannot be written by a
+  superproject into a submodule's tree. Both instruction files now state the
+  rule per file instead of per directory.
+
+
 - Stop restating volatile inventory counts in durable prose. `AGENTS.md` claimed
   46 reusables and nine self workflows against a tree holding 47 and 10, said the
   fixture estate calls twenty-seven reusables when it calls 35 across three files

@@ -45,9 +45,12 @@ git:
 
 verification:
   commands:
+    lint:
+      - "python3 -I -B scripts/check_python_syntax.py"
     test:
-      - "python3 scripts/validate_all.py"
+      - "python3 -I -B scripts/check_python_execution_contract.py --launch validate_all.py --"
   required:
+    - "lint"
     - "test"
 
 agent:
