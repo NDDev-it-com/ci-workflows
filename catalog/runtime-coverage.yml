@@ -309,7 +309,7 @@ entries:
       risk: critical
       barrier: destructive-release
       required_capability: Dedicated disposable public repository authorized for release publication and irreversible Sigstore transparency-log attestations.
-      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/135
+      handoff: https://github.com/NDDev-it-com/ci-workflows/issues/157
     waiver: null
   - workflow: .github/workflows/rust-ci.yml
     proven_os: [linux, macos, windows]
