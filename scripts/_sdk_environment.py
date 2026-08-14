@@ -19,6 +19,37 @@ class SdkEnvironmentError(ValueError):
 
 
 @dataclass(frozen=True)
+class OwnershipFacts:
+    """The two `stat` fields the root trust rule is a function of."""
+
+    uid: int
+    mode: int
+
+
+def ownership_problem(facts: OwnershipFacts, *, trusted_uid: int) -> str | None:
+    """Return why a root is untrusted, or None when it is trusted.
+
+    Kept pure — a function of two integers rather than of a live directory —
+    because the rule it encodes cannot otherwise be tested honestly. Building
+    the cases out of real temporary directories makes the outcome a function of
+    the ambient environment instead of the rule: under `umask 002` a freshly
+    created directory is `0o775`, so the *valid* case failed on developer
+    machines while passing on runners, and under `root` every file is uid 0, so
+    the *unowned* case could not be constructed at all and the negative test
+    inverted. Both are ambient state leaking into a blocking gate.
+
+    The rule itself is unchanged and deliberately strict: root and the current
+    user are trusted owners, and any group or world write bit disqualifies a
+    root regardless of who owns it.
+    """
+    if facts.uid not in {0, trusted_uid}:
+        return f"has an unowned uid {facts.uid}"
+    if facts.mode & (stat.S_IWGRP | stat.S_IWOTH):
+        return "is group/world writable"
+    return None
+
+
+@dataclass(frozen=True)
 class JvmIdentity:
     requested_major: str
     java_home: str
@@ -100,10 +131,9 @@ def _trusted_root(path: Path, *, label: str, uid: int) -> Path:
             raise SdkEnvironmentError(f"{label} identity changed during validation")
     finally:
         os.close(descriptor)
-    if info.st_uid not in {0, uid}:
-        raise SdkEnvironmentError(f"{label} has an unowned uid {info.st_uid}")
-    if info.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
-        raise SdkEnvironmentError(f"{label} is group/world writable")
+    problem = ownership_problem(OwnershipFacts(info.st_uid, info.st_mode), trusted_uid=uid)
+    if problem is not None:
+        raise SdkEnvironmentError(f"{label} {problem}")
     return resolved
 
 
