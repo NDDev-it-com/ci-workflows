@@ -166,6 +166,7 @@ CALENDAR = [
     ("product-facts-calendar", validate_product_facts.check),
     ("runtime-coverage-calendar", validate_runtime_coverage.check),
     ("release-ledger-tags", check_release_ledger.check_tags),
+    ("consumer-skill-release", check_consumer_skill_contract.check_release_claim),
     ("docs-links", check_docs_links.check),
 ]
 

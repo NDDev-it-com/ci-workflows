@@ -47,6 +47,8 @@ capabilities:
 # Checks needing something the checkout alone does not provide. A check absent
 # from this map needs nothing. Every name here must be a registered check.
 requirements:
+  consumer-skill-release:
+    - git_tags
   release-ledger-tags:
     - git_tags
   flutter-pin:

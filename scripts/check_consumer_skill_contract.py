@@ -14,12 +14,13 @@ instructions could not both be obeyed. Both copies of the skill carried it
 identically, which is mirror parity working exactly as designed and saying
 nothing about whether the thing being mirrored is true.
 
-Two properties, and the second is the one that will rot:
-
-* Library-local paths in the opening block must be established by that block.
-* What the skill says about the resolver's availability in the newest release
-  must be what the tag actually contains -- in both directions, so the sentence
-  has to be removed once a release carries it.
+Two properties, split by the repository's own tier rule. Whether the opening
+block establishes the paths it uses is a property of the tree, so it blocks.
+Whether the newest release carries the resolver is a property of the refs -- the
+same reason `check_release_ledger` reconciles headings in `core` and tags in the
+advisory sweep -- so it is advisory, and it is the half that will rot: the caveat
+has to be *removed* once a release carries the resolver, which nobody would
+otherwise notice.
 """
 from __future__ import annotations
 
@@ -55,6 +56,7 @@ def _newest_release() -> str | None:
 
 
 def check() -> list[str]:
+    """Blocking: the opening block must establish what it uses."""
     if not SKILL.is_file():
         return [f"{SKILL.relative_to(REPO_ROOT)} is missing"]
     text = SKILL.read_text(encoding="utf-8")
@@ -73,12 +75,19 @@ def check() -> list[str]:
                 f"{', '.join(uses_local)} without checking the library out first; "
                 "a consumer repository does not contain those paths")
 
+    return problems
+
+
+def check_release_claim() -> list[str]:
+    """Advisory: what the skill says about the newest release must be true."""
+    if not SKILL.is_file():
+        return [f"{SKILL.relative_to(REPO_ROOT)} is missing"]
+    text = SKILL.read_text(encoding="utf-8")
+    problems: list[str] = []
     newest = _newest_release()
     if newest is None:
-        problems.append(
-            "cannot list SemVer tags to check what the newest release contains; "
-            "fetch tags")
-        return problems
+        return ["cannot list SemVer tags to check what the newest release contains; "
+                "fetch tags before reconciling the skill against the releases"]
     shipped = _git("cat-file", "-e", f"{newest}:{RESOLVER}").returncode == 0
     # The claim is prose and wraps, sometimes inside a shell comment, so match it
     # against the text with line breaks and comment markers folded away.
@@ -99,7 +108,7 @@ def check() -> list[str]:
 
 
 def main() -> int:
-    problems = check()
+    problems = check() + check_release_claim()
     if problems:
         print("check_consumer_skill_contract: FAIL", file=sys.stderr)
         for problem in problems:
