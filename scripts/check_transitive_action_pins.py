@@ -37,9 +37,10 @@ import re
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 from typing import Any, Callable
 
-from ci_workflows_tools._strict_yaml import strict_loads
+from ci_workflows_tools._strict_yaml import strict_load, strict_loads
 from ci_workflows_tools._workflow_yaml import WORKFLOWS_DIR, workflow_files
 
 USES = re.compile(r"^\s*(?:-\s*)?uses:\s*(?P<ref>[^\s#]+)", re.MULTILINE)
@@ -59,6 +60,7 @@ TIMEOUT_SECONDS = 30
 # is correct for this tree, which pins only public actions, and it is a visible
 # failure rather than a silent pass.
 RAW = "https://raw.githubusercontent.com/{repo}/{ref}/{path}"
+IMAGES = Path(__file__).resolve().parent.parent / "catalog/action-images.yml"
 
 # Bounds, so a hostile or merely circular graph cannot run forever. They are
 # generous: the tree's own graph is two layers and a few dozen nodes.
@@ -112,12 +114,39 @@ def _uses_in(node: Any) -> set[str]:
     return found
 
 
+def _image_in(node: Any) -> set[str]:
+    """A Docker action names what it executes under `runs.image`, not `uses`.
+
+    Collecting only `uses:` missed the entire shape. `ossf/scorecard-action` is
+    pinned here by commit SHA and that commit's `action.yaml` ends
+    `image: "docker://ghcr.io/ossf/scorecard-action:v2.4.4"` -- a tag. Retagging
+    that image changes what every consumer of the reusable executes, while every
+    pin in this tree still looks immutable. Reported from a consuming repository
+    (issue #173) rather than caught here, because the walk could not see it.
+
+    An `image:` naming a Dockerfile is built from the action's own source at the
+    pinned commit, so it introduces nothing new and is left alone.
+    """
+    if not isinstance(node, dict):
+        return set()
+    runs = node.get("runs")
+    if not isinstance(runs, dict):
+        return set()
+    if str(runs.get("using", "")).strip().lower() != "docker":
+        return set()
+    image = runs.get("image")
+    if isinstance(image, str) and image.strip().startswith("docker://"):
+        return {image.strip()}
+    return set()
+
+
 def _references(text: str, origin: str) -> set[str]:
     """The nested references a definition declares."""
     try:
-        return _uses_in(strict_loads(text, origin))
+        document = strict_loads(text, origin)
     except Exception as exc:  # noqa: BLE001 - a third party's YAML, not ours
         raise Unavailable(f"{origin}: definition does not parse as YAML: {exc}") from exc
+    return _uses_in(document) | _image_in(document)
 
 
 def _third_party_pins() -> dict[str, set[str]]:
@@ -181,13 +210,26 @@ def _fetch(repo: str, path: str, ref: str) -> str | None:
 Fetcher = Callable[[str, str, str], str | None]
 
 
-def walk(roots: dict[str, set[str]], fetch: Fetcher) -> list[str]:
+def _declared_images() -> dict[tuple[str, str], dict[str, Any]]:
+    """Tag-addressed images this repository has recorded rather than fixed."""
+    if not IMAGES.is_file():
+        return {}
+    return {
+        (str(entry["action"]), str(entry["image"])): entry
+        for entry in (strict_load(IMAGES).get("images") or [])
+    }
+
+
+def walk(roots: dict[str, set[str]], fetch: Fetcher,
+         declared: dict[tuple[str, str], dict[str, Any]] | None = None) -> list[str]:
     """Every reference reachable from the tree's pins must itself be immutable.
 
     Breadth-first with a visited set, so a cycle terminates instead of recursing
     for ever, and bounded in depth and node count so a hostile graph cannot make
     this run without end.
     """
+    declared = {} if declared is None else declared
+    seen_declared: set[tuple[str, str]] = set()
     problems: list[str] = []
     seen: set[str] = set()
     # (reference, depth, the tree paths that reach it)
@@ -239,10 +281,15 @@ def walk(roots: dict[str, set[str]], fetch: Fetcher) -> list[str]:
                 # walked, at the same revision; it introduces no new mutability.
                 continue
             if nested.startswith("docker://"):
-                if "@sha256:" not in nested:
-                    problems.append(
-                        f"{reference} calls {nested} without a digest "
-                        f"(used by {', '.join(sorted(callers))})")
+                if "@sha256:" in nested:
+                    continue
+                if (location, nested) in declared:
+                    seen_declared.add((location, nested))
+                    continue
+                problems.append(
+                    f"{reference} calls {nested} without a digest "
+                    f"(used by {', '.join(sorted(callers))}); pin it, or record it "
+                    "in catalog/action-images.yml with what a consumer is exposed to")
                 continue
             _, _, nested_revision = nested.partition("@")
             if not SHA.fullmatch(nested_revision):
@@ -252,6 +299,14 @@ def walk(roots: dict[str, set[str]], fetch: Fetcher) -> list[str]:
                     f"{', '.join(sorted(callers))}")
                 continue
             queue.append((nested, depth + 1, callers))
+
+    # Reverse control: a recorded exposure that the tree no longer reaches, or
+    # that upstream has since digest-pinned, must be removed rather than left
+    # describing a graph that has moved on.
+    for key in sorted(set(declared) - seen_declared):
+        problems.append(
+            f"catalog/action-images.yml records {key[0]} calling {key[1]}, which "
+            "this tree no longer reaches unpinned; drop the entry")
     return problems
 
 
@@ -359,6 +414,26 @@ def _selftest() -> list[str]:
     if not any("without a digest" in problem for problem in found):
         problems.append(f"walk selftest: an undigested image was accepted; got {found}")
 
+    # A Docker action's image is what it executes, and it is not under `uses`.
+    docker_action = {
+        f"o/a@{sha}": 'runs:\n  using: "docker"\n  image: "docker://ghcr.io/o/a:v1"\n'}
+    found = walk({f"o/a@{sha}": {"w.yml"}}, graph(docker_action))
+    if not any("without a digest" in problem for problem in found):
+        problems.append(
+            f"walk selftest: a tag-addressed `runs.image` was accepted; got {found}")
+
+    digested = {
+        f"o/a@{sha}":
+            'runs:\n  using: "docker"\n  image: "docker://ghcr.io/o/a@sha256:'
+            + "d" * 64 + '"\n'}
+    if walk({f"o/a@{sha}": {"w.yml"}}, graph(digested)):
+        problems.append("walk selftest: a digest-pinned `runs.image` was reported")
+
+    # A Dockerfile is built from the action's own source at the pinned commit.
+    built = {f"o/a@{sha}": 'runs:\n  using: "docker"\n  image: "Dockerfile"\n'}
+    if walk({f"o/a@{sha}": {"w.yml"}}, graph(built)):
+        problems.append("walk selftest: a Dockerfile-built image was reported")
+
     # A local reference introduces no new mutability and must not be chased.
     local = {f"o/a@{sha}": "runs:\n  steps:\n    - uses: ./nested\n"}
     if walk({f"o/a@{sha}": {"w.yml"}}, graph(local)):
@@ -368,7 +443,7 @@ def _selftest() -> list[str]:
 
 
 def check() -> list[str]:
-    return _selftest() + walk(_third_party_pins(), _fetch)
+    return _selftest() + walk(_third_party_pins(), _fetch, _declared_images())
 
 
 def main() -> int:

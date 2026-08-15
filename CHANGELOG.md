@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+- See what a Docker action executes. The corrected graph walk collected `uses:`
+  references at any nesting, and a Docker action does not have one: it names what
+  it runs under `runs.image`. So `ossf/scorecard-action`, pinned here by commit
+  SHA, ended its `action.yaml` with
+  `image: "docker://ghcr.io/ossf/scorecard-action:v2.4.4"` — a **tag** — and the
+  walk extracted nothing at all from it. Reported from a consuming repository as
+  #173, which named two cases; once the walk could see the shape it found five:
+  Scorecard across three workflows, Checkov, commitlint, and both ClusterFuzzLite
+  actions on a floating `v1`.
+
+  None can be pinned from here without forking the action, so
+  `catalog/action-images.yml` records each with what a consumer is exposed to.
+  Recording is not accepting — it is the shape `KNOWN_UNTAGGED` already uses, and
+  for the same reason: an advisory tier that is permanently red is an advisory
+  nobody reads. The contract runs both ways, so an undeclared tag-addressed image
+  is a finding and a recorded one the tree no longer reaches unpinned is a finding
+  too. An `image:` naming a Dockerfile is built from the action's own source at
+  the pinned commit and is left alone.
+
 - Update py7zr to 1.1.3, closing six advisories the Qt toolchain was already
   carrying. Locking the closure made it visible to dependency review and OSV for
   the first time, and both immediately failed on `py7zr==1.0.0`:

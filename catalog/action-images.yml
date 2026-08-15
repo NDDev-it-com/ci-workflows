@@ -1,0 +1,61 @@
+# Container images a pinned third-party action executes, addressed by tag.
+#
+# Pinning an action by commit SHA fixes its metadata, not the bytes it runs. A
+# Docker action names what it executes under `runs.image`, and every one of these
+# names a tag: retagging the image changes what every consumer of the reusable
+# executes while every pin in this tree still looks immutable.
+#
+# None of them can be pinned from here without forking the action, so they are
+# recorded rather than fixed -- the same shape as `KNOWN_UNTAGGED` in
+# `check_release_ledger.py`, and for the same reason: an advisory tier that is
+# permanently red is an advisory nobody reads. Recording is not accepting. Each
+# entry names what a consumer is exposed to, so the exposure is reviewable
+# instead of invisible.
+#
+# `check_transitive_action_pins.py` enforces this in both directions. An
+# undeclared tag-addressed image is a finding, and a declared image that the tree
+# no longer reaches -- or that has become digest-pinned upstream -- is also a
+# finding, so the list cannot quietly stop describing the graph.
+#
+# Reported from a consuming repository as NDDev-it-com/ci-workflows#173, which
+# named two of the five. The walk found the rest once it could see the shape.
+schema_version: 1
+
+images:
+  - action: ossf/scorecard-action
+    image: docker://ghcr.io/ossf/scorecard-action:v2.4.4
+    used_by:
+      - .github/workflows/public-scorecard.yml
+      - .github/workflows/public-scorecard-analysis.yml
+      - .github/workflows/public-scorecard-json.yml
+    reason: >-
+      The action's own action.yaml addresses its image by tag. Scorecard is the
+      published-evidence path for the public tier, so a substituted image would
+      change what the SARIF and JSON attest to.
+  - action: bridgecrewio/checkov-action
+    image: docker://ghcr.io/bridgecrewio/checkov:3.3.9
+    used_by:
+      - .github/workflows/iac-scan.yml
+    reason: >-
+      Tag-addressed in the action's definition. The tag carries a full version,
+      so a change is at least a republication rather than a floating major.
+  - action: wagoid/commitlint-github-action
+    image: docker://wagoid/commitlint-github-action:6.2.1
+    used_by:
+      - .github/workflows/pr-hygiene.yml
+    reason: >-
+      Tag-addressed in the action's definition. Runs on pull-request metadata
+      only and holds no write scope.
+  - action: google/clusterfuzzlite/actions/build_fuzzers
+    image: docker://gcr.io/oss-fuzz-base/clusterfuzzlite-build-fuzzers:v1
+    used_by:
+      - .github/workflows/clusterfuzzlite.yml
+    reason: >-
+      A floating major tag, which is the weakest of these. The lane is plumbing
+      only and is tracked as unproven in the runtime ledger; see issue #130.
+  - action: google/clusterfuzzlite/actions/run_fuzzers
+    image: docker://gcr.io/oss-fuzz-base/clusterfuzzlite-run-fuzzers:v1
+    used_by:
+      - .github/workflows/clusterfuzzlite.yml
+    reason: >-
+      A floating major tag, as above, and part of the same unproven lane.
