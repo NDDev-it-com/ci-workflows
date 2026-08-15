@@ -2,6 +2,43 @@
 
 ## [Unreleased]
 
+- Make the cache contract true, and derive the surface it has to cover. The
+  catalog recorded `astral-sh/setup-uv` as not caching by default. The pinned
+  action declares `enable-cache: auto`, and its `getEnableCache()` returns true
+  when `RUNNER_ENVIRONMENT` is `github-hosted` — so the entry asserted the
+  opposite of the behaviour, and nothing executed the assertion. Two gate jobs
+  carried a comment saying their explicit `false` "changes nothing today"; it
+  changed something.
+
+  `upstream_default` now records the literal default the pinned `action.yml`
+  declares, and `check_cache_upstream_defaults.py` resolves it from that exact
+  commit each sweep. `default_caches` stops being prose about somebody else's
+  code.
+
+  The refusal list was hand-written, and the contract's own closing paragraph
+  claimed the undeclared remainder could not reach a release or a required check.
+  It could. `check_cache_contract.py` now derives the required surface from
+  `ci-gate`'s own `needs` graph and follows a `uses:` job into the workflow it
+  calls, demanding a declared refusal for every step there that caches with no
+  input. That immediately found **two** leaks, not the one that was known:
+  `zizmor-sarif.yml`, which backs the required `zizmor` job, and `actions/setup-go`
+  in `shell-gates`, which caches its module and build cache by default and had
+  never been named.
+
+  Twelve call sites now state their refusal rather than inheriting a default, each
+  with the reason it applies there. `python-ci.yml` keeps `enable-cache: true`,
+  which is deliberate: it caches the consumer's own dependencies.
+
+  Two of those call sites — `qt-ci.yml` and `runtime-fixtures-languages.yml` —
+  had no `with:` block at all, so they were also not pinning **uv itself**.
+  setup-uv's `version` defaults to the version in `pyproject.toml` or, absent one,
+  latest; there is no `pyproject.toml` here. A SHA-pinned action was installing an
+  unpinned tool, in a product reusable consumers call. Both now pin `0.11.30` like
+  everywhere else.
+
+  All six affected reusables were re-proven by real fixture runs before their
+  `proven_digest` was updated, not after.
+
 - Read action definitions from the raw host, so the check can finish in the job
   that owns it. With the graph walk corrected, the first real sweep still failed
   on two of forty-three pins — `aquasecurity/trivy-action` and

@@ -456,6 +456,15 @@ jobs:
           update-environment: false
       - name: Set up uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        with:
+          # Pinned, not inherited: setup-uv's `version` defaults to the
+          # version in pyproject.toml or, absent one, whatever is latest.
+          # There is no pyproject.toml here, so this resolved to latest --
+          # a SHA-pinned action installing an unpinned tool.
+          version: 0.11.30
+          # Evidence must come from a cold, reviewable run: a restored entry
+          # would make the receipt describe something other than this run.
+          enable-cache: false
       - name: Provision validator
         env:
           PYTHON_PATH: ${{ steps.python.outputs.python-path }}
@@ -491,6 +500,15 @@ jobs:
           update-environment: false
       - name: Set up uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        with:
+          # Pinned, not inherited: setup-uv's `version` defaults to the
+          # version in pyproject.toml or, absent one, whatever is latest.
+          # There is no pyproject.toml here, so this resolved to latest --
+          # a SHA-pinned action installing an unpinned tool.
+          version: 0.11.30
+          # Evidence must come from a cold, reviewable run: a restored entry
+          # would make the receipt describe something other than this run.
+          enable-cache: false
       - name: Provision validator
         env:
           PYTHON_PATH: ${{ steps.python.outputs.python-path }}
@@ -539,6 +557,15 @@ jobs:
           update-environment: false
       - name: Set up uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        with:
+          # Pinned, not inherited: setup-uv's `version` defaults to the
+          # version in pyproject.toml or, absent one, whatever is latest.
+          # There is no pyproject.toml here, so this resolved to latest --
+          # a SHA-pinned action installing an unpinned tool.
+          version: 0.11.30
+          # Evidence must come from a cold, reviewable run: a restored entry
+          # would make the receipt describe something other than this run.
+          enable-cache: false
       - name: Provision validator
         env:
           PYTHON_PATH: ${{ steps.python.outputs.python-path }}
@@ -589,6 +616,15 @@ jobs:
           update-environment: false
       - name: Set up uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        with:
+          # Pinned, not inherited: setup-uv's `version` defaults to the
+          # version in pyproject.toml or, absent one, whatever is latest.
+          # There is no pyproject.toml here, so this resolved to latest --
+          # a SHA-pinned action installing an unpinned tool.
+          version: 0.11.30
+          # Evidence must come from a cold, reviewable run: a restored entry
+          # would make the receipt describe something other than this run.
+          enable-cache: false
       - name: Provision validator
         env:
           PYTHON_PATH: ${{ steps.python.outputs.python-path }}

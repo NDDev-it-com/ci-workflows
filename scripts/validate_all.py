@@ -48,6 +48,7 @@ from ci_workflows_tools import (
     check_anchor_contexts,
     check_benchmark_contract,
     check_cache_contract,
+    check_cache_upstream_defaults,
     check_ci_tier_selection,
     check_maintenance_report_contract,
     check_validation_tier_contract,
@@ -170,6 +171,7 @@ CALENDAR = [
 # than about the tree. `catalog/validation-tiers.yml` records what each needs and
 # `check_validation_tier_contract.py` holds every caller to it.
 EXTERNAL = [
+    ("cache-upstream-defaults", check_cache_upstream_defaults.check),
     ("flutter-pin", check_flutter_pin.check),
     ("qt-pin", check_qt_pin.check),
     ("transitive-action-pins", check_transitive_action_pins.check),

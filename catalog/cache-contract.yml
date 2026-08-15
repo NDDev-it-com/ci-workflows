@@ -13,35 +13,66 @@
 # classified rather than inherited.
 schema_version: 1
 
-# Every action in the tree that can write to a cache, and the input that decides
-# whether it does. `default_caches` is the behaviour with no input at all -- the
-# three `true` entries are the ones that cache without being asked.
+# Every action in the tree that can write to a cache, the input that decides
+# whether it does, and what happens with no input at all.
+#
+# `upstream_default` is the literal default declared by the pinned action's own
+# `action.yml`, and `check_cache_upstream_defaults.py` resolves it from that file
+# every sweep. It used to be prose: `astral-sh/setup-uv` was recorded as not
+# caching by default when the pinned action declares `auto`, and `auto` resolves
+# to true on a GitHub-hosted runner. So the contract asserted the opposite of the
+# behaviour, and nothing executed the assertion.
+#
+# `default_caches` is the effective behaviour on the runners this library targets.
+# Five of the eight cache with no input: two because a cache is what they are
+# (`actions/cache`, `hendrikmuhs/ccache-action`, added deliberately by a caller),
+# and three because their own default says so.
 producers:
   - action: actions/cache
     control: null
+    upstream_default: null
     default_caches: true
     note: Explicit cache; the key is written by the calling workflow.
   - action: astral-sh/setup-uv
     control: enable-cache
-    default_caches: false
+    upstream_default: auto
+    default_caches: true
+    note: >-
+      `auto` in the pinned action.yml, and its `getEnableCache()` returns true
+      when RUNNER_ENVIRONMENT is `github-hosted`. Recorded as caching by default
+      because that is what it does on the runners this library targets. This was
+      recorded as `false` and believed for long enough that two gate jobs carried
+      a comment saying the input changed nothing today.
   - action: actions/setup-go
     control: cache
+    upstream_default: true
     default_caches: true
     note: Caches the module and build cache unless asked not to.
   - action: actions/setup-java
     control: cache
+    upstream_default: null
     default_caches: false
+    note: No default declared, so an absent input caches nothing.
   - action: actions/setup-node
     control: cache
+    upstream_default: null
     default_caches: false
+    note: No default declared, so an absent input caches nothing.
   - action: actions/setup-python
     control: cache
+    upstream_default: null
     default_caches: false
+    note: No default declared, so an absent input caches nothing.
   - action: gradle/actions/setup-gradle
     control: cache-provider
+    upstream_default: enhanced
     default_caches: true
+    note: >-
+      The input selects a provider rather than switching caching off; a provider
+      is always chosen, so caching happens unless disabled by other means.
   - action: hendrikmuhs/ccache-action
     control: null
+    upstream_default: null
     default_caches: true
     note: A cache action by construction; callers opt in by adding the step.
 
@@ -91,9 +122,34 @@ refusals:
     input: enable-cache
     value: false
     reason: The blocking gate must not depend on an unreviewed input.
+  - workflow: .github/workflows/ci.yml
+    job: shell-gates
+    action: actions/setup-go
+    input: cache
+    value: false
+    reason: >-
+      setup-go caches the module and build cache with no input at all, and this
+      job is in `ci-gate.needs`. Found by deriving the required surface from the
+      gate's own graph; the hand-written list had not named it.
+  - workflow: .github/workflows/zizmor-sarif.yml
+    job: zizmor
+    action: astral-sh/setup-uv
+    input: enable-cache
+    value: false
+    reason: >-
+      This workflow backs the `zizmor` job, which is in `ci-gate.needs`. The
+      contract's own closing paragraph used to assert that the undeclared
+      remainder could not reach a required check; this is the counter-example.
 
-# Everything else is left to the producer's default on purpose. Those workflows
-# are reusable surfaces whose caching a consumer chooses, or advisory lanes where
-# a poisoned entry cannot reach a release or a required check. Narrowing them
-# would change behaviour consumers already depend on without buying a trust
-# boundary that matters.
+# Everything else is left to the producer's default on purpose, and there is now
+# exactly one such place: `python-ci.yml`, which sets `enable-cache: true`
+# deliberately -- it caches the consumer's own dependencies, which is the point of
+# the workflow.
+#
+# The previous version of this paragraph said the remainder were "advisory lanes
+# where a poisoned entry cannot reach a release or a required check". That was
+# false: `zizmor-sarif.yml` is called by the `zizmor` job, which is in
+# `ci-gate.needs`, and it took setup-uv's default. The refusals below are no
+# longer a hand-written list -- `check_cache_contract.py` derives the required
+# jobs from `ci-gate`'s own `needs` graph, follows local `uses:` into the called
+# workflow, and demands a refusal for every cache-capable step it finds there.
