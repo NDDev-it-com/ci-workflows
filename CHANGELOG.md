@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+- Default `osv-scan.yml` to osv-scanner 2.5.0. The reusable defaulted to 2.4.0
+  while `macos-ubuntu-bootstrap`'s device contract installs 2.5.0 on every Ubuntu
+  desktop, so a developer's machine and this repository's own merge gate were
+  scanning with two different programs — and 2.5.0 moved scanning, filtering and
+  matching onto the OSV-Scalibr pipeline, which is not a cosmetic gap. Reported
+  from that repository as #174.
+
+  Both digests were checked against the release's own `osv-scanner_SHA256SUMS`,
+  including the 2.4.0 one being replaced, so the pin this workflow has been
+  carrying is confirmed rather than assumed on the way out.
+
 - See what a Docker action executes. The corrected graph walk collected `uses:`
   references at any nesting, and a Docker action does not have one: it names what
   it runs under `runs.image`. So `ossf/scorecard-action`, pinned here by commit

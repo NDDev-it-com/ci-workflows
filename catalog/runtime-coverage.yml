@@ -178,8 +178,8 @@ entries:
     criticality: security-blocking
     status: runtime-proven
     evidence: 'Called by runtime-fixtures.yml; the checksum-verified OSV-Scanner binary downloaded, verified and scanned.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621986220
-    proven_digest: f2c07527220c0f3f2671f4063e71ddfce73251b7d260f0b8a698c0728df968ec
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31857697261
+    proven_digest: 51eb67ce13ef83a4507b620d87136dcc68b1cb80d0e993b35d8409bd31006839
     waiver: null
   - workflow: .github/workflows/pr-hygiene.yml
     criticality: required-gate
