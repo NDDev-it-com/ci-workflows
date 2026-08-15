@@ -54,6 +54,6 @@ fixtures:
     toolchain:
       qt_version: '6.8.3'
       aqtinstall_version: '3.3.0'
-      py7zr_version: '1.0.0'
+      py7zr_version: '1.1.3'
       cmake_minimum: '3.21'
       cxx_standard: '17'

@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+- Update py7zr to 1.1.3, closing six advisories the Qt toolchain was already
+  carrying. Locking the closure made it visible to dependency review and OSV for
+  the first time, and both immediately failed on `py7zr==1.0.0`:
+  GHSA-q6rc-2cgv-63h7 (arbitrary file write), GHSA-gjrg-mpp7-g774 and
+  PYSEC-2026-2972 (decompression bomb), GHSA-h4gh-22qq-72r7 and PYSEC-2026-2973
+  (quadratic complexity denial of service), PYSEC-2026-2974. All fixed in 1.1.3.
+
+  The exposure was not introduced by locking — `uvx --with 'py7zr==1.0.0'`
+  installed exactly that version, and an arbitrary-file-write flaw in the library
+  aqtinstall uses to unpack Qt archives is the one that matters most. What
+  changed is that an uninventoried closure cannot be scanned, and this one now is:
+  twenty-seven packages, zero advisories.
+
 - Close the Qt toolchain's dependency graph. `qt-ci.yml` ran
   `uvx --from 'aqtinstall@3.3.0' --with 'py7zr==1.0.0'`, which pinned two names
   and left everything they pull unbounded: aqtinstall declares `bs4`,
