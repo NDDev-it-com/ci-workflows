@@ -254,8 +254,8 @@ entries:
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran the default configure/build/test lanes against tests/fixtures/qt on ubuntu-latest and the observer accepted the receipt: four sections (build, configure, test, toolchain), one CTest test, Qt 6.8.3 resolved and installed, and aqtinstall(aqt) v3.3.0. Qt is installed by a pinned aqtinstall invoked directly, so the workflow reaches no action it does not pin and starts where full-SHA pinning is enforced; check_transitive_action_pins reports the tree clean. The version resolves to exactly one published release and the architecture to exactly one published architecture, both refusing to guess, and the install root is located by its own qmake rather than derived from the architecture name. Linux only: only ubuntu-latest has been run."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31855694582
-    proven_digest: 86abe2691551ed32d11364856e553460b7dbfd487082951aaa2878ca2da79bfd
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31856452245
+    proven_digest: 4f9bafce81819aa4d7ef2dd315fca4cb22edc469002cf8efcbadfac818bce9ec
     waiver: null
   - workflow: .github/workflows/r-ci.yml
     criticality: supporting
