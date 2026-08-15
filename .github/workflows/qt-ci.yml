@@ -109,6 +109,44 @@ jobs:
           # The Qt install itself is cached separately and by key, below.
           enable-cache: false
 
+      # The toolchain is installed from a hash-locked closure, not resolved at
+      # run time. `uvx --from 'aqtinstall@3.3.0' --with 'py7zr==1.0.0'` pinned two
+      # names and left everything they pull unbounded -- aqtinstall declares
+      # bs4, defusedxml, humanize, patch-ng, semantic-version and texttable with
+      # no upper bound -- so two runs of the same workflow SHA could install
+      # different code without this repository changing. That mattered here more
+      # than most places: driving aqtinstall directly was itself a supply-chain
+      # decision, taken to escape an action whose nested graph could not be pinned.
+      #
+      # This is a reusable workflow, so the checkout above is the *caller's* tree
+      # and the lock is not in it. It is fetched from the exact commit of this
+      # workflow file -- `job.workflow_sha` is the runner's own answer to "what
+      # is executing", which the caller cannot forge -- and its digest is checked
+      # against the value recorded here before anything is installed. Pinning the
+      # workflow therefore pins the closure, and `--require-hashes` means even a
+      # substituted lock cannot introduce a package.
+      - name: Provision the locked Qt toolchain
+        id: toolchain
+        env:
+          CALLEE_REPOSITORY: ${{ job.workflow_repository }}
+          CALLEE_SHA: ${{ job.workflow_sha }}
+          LOCK_SHA256: 56499b7af8bbd983954cf15cf51ee97ff6915332d3716ed53a1102fa60449cd0
+          PYTHON_VERSION: '3.13'
+        run: |
+          set -euo pipefail
+          lock="$RUNNER_TEMP/requirements-qt.txt"
+          curl --fail --silent --show-error --location --retry 3 \
+            --output "$lock" \
+            "https://raw.githubusercontent.com/$CALLEE_REPOSITORY/$CALLEE_SHA/requirements-qt.txt"
+          printf '%s  %s\n' "$LOCK_SHA256" "$lock" | sha256sum --check --status || {
+            echo "::error::the fetched Qt toolchain lock does not match the digest this workflow was published with"
+            exit 1
+          }
+          uv venv --python "$PYTHON_VERSION" "$RUNNER_TEMP/qt-tools"
+          uv pip install --python "$RUNNER_TEMP/qt-tools" --require-hashes -r "$lock"
+          printf 'bin=%s\n' "$RUNNER_TEMP/qt-tools/bin" >> "$GITHUB_OUTPUT"
+          printf 'lock_sha256=%s\n' "$LOCK_SHA256" >> "$GITHUB_OUTPUT"
+
       - name: Resolve the Qt release
         id: release
         working-directory: ${{ github.workspace }}
@@ -118,13 +156,14 @@ jobs:
           QT_MODULES: ${{ inputs.qt_modules }}
           QT_TARGET: ${{ inputs.qt_target }}
           QT_VERSION: ${{ inputs.qt_version }}
+          TOOLCHAIN_BIN: ${{ steps.toolchain.outputs.bin }}
         run: |
           set -euo pipefail
           # aqt and py7zr are pinned exactly. They are this workflow's own tool
           # versions, and `check_sdk_runtime_fixtures` compares the aqt identity
           # in the receipt against the fixture spec, so the two cannot drift
           # apart unnoticed.
-          aqt() { uvx --from 'aqtinstall@3.3.0' --with 'py7zr==1.0.0' aqt "$@"; }
+          aqt() { "$TOOLCHAIN_BIN/aqt" "$@"; }
 
           host="$QT_HOST"
           if [ -z "$host" ]; then
@@ -202,6 +241,7 @@ jobs:
           QT_MODULES: ${{ inputs.qt_modules }}
           QT_TARGET: ${{ inputs.qt_target }}
           QT_VERSION: ${{ steps.release.outputs.version }}
+          TOOLCHAIN_BIN: ${{ steps.toolchain.outputs.bin }}
         run: |
           set -euo pipefail
           # `qt_modules` is documented as space-separated, so it is read into an
@@ -211,7 +251,7 @@ jobs:
             read -r -a modules <<< "$QT_MODULES"
             modules=(-m "${modules[@]}")
           fi
-          uvx --from 'aqtinstall@3.3.0' --with 'py7zr==1.0.0' aqt install-qt \
+          "$TOOLCHAIN_BIN/aqt" install-qt \
             "$QT_HOST" "$QT_TARGET" "$QT_VERSION" "$QT_ARCH" \
             "${modules[@]}" \
             --outputdir "${RUNNER_TEMP}/qt"
@@ -282,6 +322,7 @@ jobs:
           CALLEE_REPOSITORY: ${{ job.workflow_repository }}
           CALLEE_SHA: ${{ job.workflow_sha }}
           AQT_VERSION: ${{ steps.release.outputs.aqt_version }}
+          TOOLCHAIN_LOCK_SHA256: ${{ steps.toolchain.outputs.lock_sha256 }}
           CONFIGURE_COMMAND: ${{ inputs.configure_command }}
           QT_VERSION_INPUT: ${{ inputs.qt_version }}
           TEST_COMMAND: ${{ inputs.test_command }}
@@ -318,10 +359,16 @@ jobs:
           sections = ["toolchain"]
           receipt["cache_key_prefix"] = "qt-ci-v1"
           receipt["qt_version_input"] = os.environ["QT_VERSION_INPUT"]
-          # Resolved in the install step: `aqt` is invoked through `uvx` and is
-          # not on PATH here, and it reports its identity on stderr.
+          # Resolved in the install step: `aqt` lives in the provisioned
+          # toolchain rather than on PATH here, and reports its identity on
+          # stderr. The lock digest goes in beside it, so the receipt records the
+          # whole executable closure rather than one package's version -- which
+          # was the gap: `aqt 3.3.0` said nothing about the twenty-six packages
+          # underneath it.
           if os.environ.get("AQT_VERSION"):
               receipt["aqt_version"] = os.environ["AQT_VERSION"]
+          if os.environ.get("TOOLCHAIN_LOCK_SHA256"):
+              receipt["toolchain_lock_sha256"] = os.environ["TOOLCHAIN_LOCK_SHA256"]
           cmake = tool(["cmake", "--version"])
           if cmake is not None:
               receipt["cmake_version"] = cmake
