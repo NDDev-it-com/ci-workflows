@@ -2,6 +2,37 @@
 
 ## [Unreleased]
 
+- Walk the action graph instead of glancing at it. `check_transitive_action_pins`
+  claimed that every reference reachable from a pinned action is itself immutable,
+  and established none of it. Three gaps, each found by testing the check rather
+  than reading it:
+
+  It read YAML with a regular expression anchored on `uses:` as the first token of
+  a line, so the ordinary composite form `- uses: owner/action@ref` matched
+  nothing — while the sibling expression for this repository's own workflows
+  handled `(?:-\s*)?`, a difference of one group. It did not recurse: a nested
+  reference that was itself a SHA ended the walk, so depth two and beyond were
+  never looked at. And it could not tell throttling from a refusal — about 43
+  sequential API calls with no pacing hit a secondary rate limit, and the 403 was
+  reported as "unreachable", which reads as a broken third party rather than as
+  this check asking too fast. That is what `maintenance.yml` filed on its first
+  successful run.
+
+  References are now read from the parsed document at any nesting, which covers
+  composite actions, reusable workflows, `jobs.<id>.uses`, and both step
+  spellings without encoding any of them. The walk is breadth-first with a
+  visited set, bounded in depth and node count, so a cycle terminates and a
+  hostile graph cannot run without end. Rate limits are retried with backoff and
+  reported as rate limits; a missing definition stays a finding about the pin,
+  and an unreadable one is a finding about the run rather than silence.
+
+  Eleven self-tests run the walk over in-memory graphs — no network — covering
+  both step forms, depth three, a cycle, a reusable workflow, `jobs.<id>.uses`, a
+  missing definition, an unreadable one, an undigested image, and a local
+  reference that must not be chased. Six mutations were each caught, including
+  reverting to the regex and removing recursion. The tree's real closure is clean
+  at every depth.
+
 - Make a tier's requirements data, and hold every caller to them. `--tier
   scheduled` needs a GitHub token, two external hosts and the tag refs. That was
   written down once, as comments beside `maintenance.yml`'s egress allow-list, and
