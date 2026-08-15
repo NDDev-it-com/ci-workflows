@@ -20,7 +20,6 @@ changes only when a pin moves.
 from __future__ import annotations
 
 import re
-import sys
 from pathlib import Path
 
 from ci_workflows_tools._strict_yaml import strict_load, strict_loads
