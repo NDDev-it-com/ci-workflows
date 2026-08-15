@@ -53,6 +53,8 @@ requirements:
     - network:storage.googleapis.com
   qt-pin:
     - network:download.qt.io
+  cache-upstream-defaults:
+    - network:raw.githubusercontent.com
   transitive-action-pins:
     - network:raw.githubusercontent.com
   anchor-contexts:

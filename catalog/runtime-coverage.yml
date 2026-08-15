@@ -202,8 +202,8 @@ entries:
     criticality: required-gate
     status: runtime-proven
     evidence: 'Called by runtime-fixtures.yml; the lane provisioned uv through the new setup_uv input, installed hash-pinned dependencies and ran a real caller command. The first fixture attempt failed here with uv not found, which is how the missing-installer gap was found.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621986220
-    proven_digest: 888618f9891ae14e619e5a1936a03c67cf7d54070e331c01be290c1285e63a5d
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31853478055
+    proven_digest: 776ec08e160439ff107f92f7715c1f1928254245863ac8cb51938079b3d0f877
     waiver: null
   - workflow: .github/workflows/public-codeql.yml
     criticality: security-blocking
@@ -254,8 +254,8 @@ entries:
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran the default configure/build/test lanes against tests/fixtures/qt on ubuntu-latest and the observer accepted the receipt: four sections (build, configure, test, toolchain), one CTest test, Qt 6.8.3 resolved and installed, and aqtinstall(aqt) v3.3.0. Qt is installed by a pinned aqtinstall invoked directly, so the workflow reaches no action it does not pin and starts where full-SHA pinning is enforced; check_transitive_action_pins reports the tree clean. The version resolves to exactly one published release and the architecture to exactly one published architecture, both refusing to guess, and the install root is located by its own qmake rather than derived from the architecture name. Linux only: only ubuntu-latest has been run."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31827607547
-    proven_digest: bdabfaf58640dc13965fe9b00c14325fa961587a16b82e9eae06bada09b5fbf6
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31853477977
+    proven_digest: 1b3fc160002e1960e567599a71ebd2cca677bf54c7abe0359f86a02e74ac1f0c
     waiver: null
   - workflow: .github/workflows/r-ci.yml
     criticality: supporting
@@ -327,16 +327,16 @@ entries:
     criticality: security-blocking
     status: runtime-proven
     evidence: 'Called by runtime-fixtures.yml; the pinned Semgrep ran 33 rules over the tree and the non-SARIF gate path executed. An earlier run of the same fixture exited 1 on ten real findings, so the gate is proven to fire as well as to pass.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621986220
-    proven_digest: 849b5394257034a01a2253e116430e71e7298bcf084ccc4346e6eb1316a1429c
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31853478055
+    proven_digest: 803e2caabac4407b1a7ead52b3324de1e55e481734dd1a8887e3536f831570f1
     waiver: null
   - workflow: .github/workflows/sql-ci.yml
     proven_os: [linux, macos, windows]
     criticality: supporting
     status: runtime-proven
     evidence: "Fixture caller ran sqlfluff on the ansi dialect against tests/fixtures/sql. Proven on ubuntu-latest, macos-latest and windows-latest — the `runner` input is a promise a consumer may pick their operating system, and all three standard hosted runners are unmetered on public repositories. Also proven to FAIL: the negative gates in ci.yml fed it SQL that violates the ansi dialect and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621986015). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621986194
-    proven_digest: 706b484365bf3d17b3b693a11ad5ff57207f388d007f0919e94771ff5864bb43
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31853477977
+    proven_digest: 495cba2172bda93f08241f0c695109522ebc6632020c2fc9cadad55508f05461
     waiver: null
   - workflow: .github/workflows/swift-ci.yml
     proven_os: [macos]
@@ -366,15 +366,15 @@ entries:
     criticality: security-blocking
     status: runtime-proven
     evidence: "'Called by runtime-fixtures.yml; the private-free lane ran to completion on contents:read alone, proving the reduced permission set is sufficient without the SARIF upload. Its online audits fired and found three ref-version-mismatch pins that a tokenless local run had reported clean.' Also proven to FAIL: the negative gates in ci.yml fed it a workflow interpolating a pull-request title into a shell command and the gate refused it (https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621986015). Passing on good input and refusing bad input are different claims, and only the second makes it a gate."
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31621986220
-    proven_digest: 3038950341e4ab95198ad21c0d766195ebf6137d406b6aedd1c6f16a26df89b2
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31853478055
+    proven_digest: c7c77335e5b3ef9d3f2e950ce17512f3e7aa1f7e06e8dcfaa5b3b6a96b5b87fd
     waiver: null
   - workflow: .github/workflows/zizmor-sarif.yml
     criticality: security-blocking
     status: runtime-proven
     evidence: 'Fixture audited a valid workflow with online audits enabled, produced valid SARIF, and uploaded it through the code-scanning permission path.'
-    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31654663838
-    proven_digest: f3a08601a5a6856c0bbf549fbb48df8d73dec61ddeb61d4a161adf0d190e30d3
+    last_run: https://github.com/NDDev-it-com/ci-workflows/actions/runs/31853478055
+    proven_digest: e64c79f5b976bf95f2edc9d0b930a734ae487750c5d63f33f394943d1cf669db
     waiver: null
   - workflow: .github/workflows/gate.yml
     criticality: supporting
