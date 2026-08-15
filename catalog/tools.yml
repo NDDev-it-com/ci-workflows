@@ -4,6 +4,33 @@
 # Last verified: 2026-08-13
 
 tools:
+  - id: aqtinstall
+    name: aqtinstall
+    homepage: https://github.com/miurahr/aqtinstall
+    kind: cli
+    current_version: "3.3.0"
+    pin: "3.3.0"
+    used_by:
+      - .github/workflows/qt-ci.yml
+    last_verified: "2026-08-15"
+    notes: >-
+      Installed from requirements-qt.txt, a hash-locked closure of 28 packages,
+      rather than resolved at run time. Pinning the two top-level names left
+      everything they pull unbounded.
+    lock: requirements-qt.txt
+    lock_sha256: "56499b7af8bbd983954cf15cf51ee97ff6915332d3716ed53a1102fa60449cd0"
+  - id: py7zr
+    name: py7zr
+    homepage: https://github.com/miurahr/py7zr
+    kind: cli
+    current_version: "1.0.0"
+    pin: "1.0.0"
+    used_by:
+      - .github/workflows/qt-ci.yml
+    last_verified: "2026-08-15"
+    notes: aqtinstall's archive backend; locked in the same closure.
+    lock: requirements-qt.txt
+    lock_sha256: "56499b7af8bbd983954cf15cf51ee97ff6915332d3716ed53a1102fa60449cd0"
   - id: actionlint
     name: actionlint
     homepage: "https://github.com/rhysd/actionlint"

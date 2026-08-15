@@ -78,7 +78,8 @@ SECTIONS: dict[str, dict[str, tuple[frozenset[str], frozenset[str]]]] = {
     "qt": {
         "toolchain": (
             frozenset({"cache_key_prefix", "qt_version_input"}),
-            frozenset({"aqt_version", "cmake_version", "qt_version"}),
+            frozenset({"aqt_version", "cmake_version", "qt_version",
+                       "toolchain_lock_sha256"}),
         ),
         "configure": (frozenset({"configure_command"}), frozenset()),
         "build": (frozenset({"build_command"}), frozenset()),

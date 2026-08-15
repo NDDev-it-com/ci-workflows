@@ -1,0 +1,12 @@
+# The Qt toolchain `qt-ci.yml` executes.
+#
+# `uvx --from 'aqtinstall@3.3.0' --with 'py7zr==1.0.0'` pinned two names and left
+# everything they pull unbounded: aqtinstall declares bs4, defusedxml, humanize,
+# patch-ng, semantic-version and texttable with no upper bound, plus
+# requests>=2.31.0. Two runs of the same workflow SHA could install different
+# code without this repository changing. Compile with:
+#
+#   uv pip compile --generate-hashes --universal --python-version 3.13 \
+#       -o requirements-qt.txt requirements-qt.in
+aqtinstall==3.3.0
+py7zr==1.0.0

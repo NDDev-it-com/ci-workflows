@@ -2,6 +2,36 @@
 
 ## [Unreleased]
 
+- Close the Qt toolchain's dependency graph. `qt-ci.yml` ran
+  `uvx --from 'aqtinstall@3.3.0' --with 'py7zr==1.0.0'`, which pinned two names
+  and left everything they pull unbounded: aqtinstall declares `bs4`,
+  `defusedxml`, `humanize`, `patch-ng`, `semantic-version` and `texttable` with no
+  upper bound, plus `requests>=2.31.0`. Two runs of the same workflow SHA could
+  install different code without this repository changing. That mattered here more
+  than most places, because driving aqtinstall directly was itself a supply-chain
+  decision — taken to escape an action whose nested graph could not be pinned.
+  Escaping one unpinned graph into another is not an improvement.
+
+  `requirements-qt.txt` is the closure now: twenty-eight packages, all with
+  hashes, installed with `--require-hashes` into an isolated environment.
+
+  `qt-ci.yml` is a reusable workflow, so the checkout it runs in belongs to the
+  caller and the lock is not there. It is fetched from the exact commit of the
+  workflow file — `job.workflow_sha` is the runner's own answer to what is
+  executing, which a caller cannot forge — and its digest is checked against a
+  value published in that file before anything installs. Pinning the workflow
+  therefore pins the closure, and `--require-hashes` means even a substituted lock
+  cannot introduce a package.
+
+  `catalog/tools.yml` registers both tools and the lock digest;
+  `check_qt_toolchain_lock.py` holds the three statements together — the digest
+  the workflow publishes and the lock in the tree, the versions the lock pins and
+  the versions the catalog records, and that every requirement carries hashes at
+  all. The runtime receipt records `toolchain_lock_sha256` beside `aqt_version`,
+  because `aqt 3.3.0` said nothing about the twenty-six packages underneath it.
+
+  Re-proven by a real fixture run before the ledger was updated.
+
 - Make the consumer skill runnable, execute what `.gds` declares, and stop
   shipping a build log.
 
