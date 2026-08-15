@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+- Read action definitions from the raw host, so the check can finish in the job
+  that owns it. With the graph walk corrected, the first real sweep still failed
+  on two of forty-three pins — `aquasecurity/trivy-action` and
+  `bridgecrewio/checkov-action` — with a plain 403 that was not a rate limit. Both
+  serve normally to a personal token and to no token at all. The difference is the
+  credential: Actions' `GITHUB_TOKEN` is an installation token scoped to this
+  repository, and those two repositories refuse it for cross-repository content
+  while forty-one others do not.
+
+  `raw.githubusercontent.com` serves every one of them at the exact pinned commit
+  with no credential, and the host was already in the sweep's egress allow-list.
+  So the check now needs **no token**, which also removes the 60-requests-an-hour
+  ceiling that made a token necessary in the first place — it can no longer be
+  throttled into reporting a third party as broken. A private action would 404
+  and be reported as having no definition, which is correct for a tree that pins
+  only public actions and is a visible failure rather than a silent pass.
+
+  `catalog/validation-tiers.yml` records the swap: `transitive-action-pins` needs
+  `network:raw.githubusercontent.com` and nothing else. `api.github.com` stays,
+  for `anchor-contexts` reading the live ruleset.
+
 - Walk the action graph instead of glancing at it. `check_transitive_action_pins`
   claimed that every reference reachable from a pinned action is itself immutable,
   and established none of it. Three gaps, each found by testing the check rather

@@ -30,8 +30,14 @@ capabilities:
     allows 60 requests an hour, which these checks exhaust, so they report
     themselves unverified rather than silently pass on a partial answer.
   network:api.github.com: >-
-    The GitHub REST API, for resolving what a pinned third-party action itself
-    calls and for reading the live branch ruleset.
+    The GitHub REST API, for reading the live branch ruleset.
+  network:raw.githubusercontent.com: >-
+    Raw file contents at an exact commit, for reading what a pinned third-party
+    action itself calls. Deliberately not the contents API: the Actions
+    `GITHUB_TOKEN` is an installation token scoped to this repository, and two of
+    the pinned actions answer it with 403 while the rest answer normally, so the
+    check could never complete in the job that owns it. The raw host serves them
+    with no credential and no per-hour ceiling.
   network:storage.googleapis.com: >-
     Google's published Flutter release manifest, which the SDK pin is resolved
     against.
@@ -48,8 +54,7 @@ requirements:
   qt-pin:
     - network:download.qt.io
   transitive-action-pins:
-    - github_token
-    - network:api.github.com
+    - network:raw.githubusercontent.com
   anchor-contexts:
     - github_token
     - network:api.github.com
