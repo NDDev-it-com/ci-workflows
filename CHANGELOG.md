@@ -2,6 +2,37 @@
 
 ## [Unreleased]
 
+- Make the consumer skill runnable, execute what `.gds` declares, and stop
+  shipping a build log.
+
+  `ci-consumer-adoption` says "This is the *caller* side" and then opened with
+  `.venv/bin/python` and `scripts/…` — paths inside *this* repository. An agent
+  following it in a consumer repository got `No such file or directory` before
+  its first decision. It also requires pinning to a released tag, while
+  `scripts/resolve_profile.py` does not exist in 0.13.3 — so the two instructions
+  could not both be obeyed. Both mirrored copies carried it identically, which is
+  parity working exactly as designed and saying nothing about whether the mirrored
+  thing is true. The block now checks the library out first, and
+  `check_consumer_skill_contract.py` holds both halves: library-local paths must be
+  established by the block that uses them, and what the skill says about the newest
+  release must match what that tag contains — in both directions, so the caveat has
+  to be removed once a release carries the resolver.
+
+  `.gds/repository.yaml` is read across the submodule boundary by the control
+  plane, which runs what it finds under `verification.commands`. Nothing checked
+  they worked, and for weeks after the launcher split they did not. The exemption
+  that shielded the file also carried four claims that had all become false,
+  including that it is a generated projection — `.gds/bundle.lock.yaml` lists
+  exactly one projection output and this is not it — and that the issue was still
+  tracked upstream, when it was closed on 2026-08-13. The exemption now states the
+  one true reason (the commands must be the portable form, because the control
+  plane runs them where this repository's `.venv` does not exist), and
+  `check_gds_verification_commands.py` executes what the file declares rather than
+  exempting it from working.
+
+  `aqtinstall.log`, 5.7 KB of debug output from a local Qt run, was tracked. It is
+  removed and named in `.gitignore`.
+
 - Make the cache contract true, and derive the surface it has to cover. The
   catalog recorded `astral-sh/setup-uv` as not caching by default. The pinned
   action declares `enable-cache: auto`, and its `getEnableCache()` returns true

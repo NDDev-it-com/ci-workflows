@@ -2,7 +2,7 @@
   "schema_version": 1,
   "python": {
     "major_minor": "3.13",
-    "subject_count": 60,
+    "subject_count": 62,
     "launcher": "scripts/check_python_execution_contract.py",
     "launcher_prefix": [".venv/bin/python", "-I", "-B", "scripts/check_python_execution_contract.py", "--launch"],
     "syntax_gate_prefix": [".venv/bin/python", "-I", "-B", "scripts/check_python_syntax.py"],
@@ -43,7 +43,7 @@
       "scripts/validate_all.py": {"role": "repository-launcher", "language": "python"}
     },
     "invocation_document_exemptions": {
-      ".gds/repository.yaml": "Generated estate projection owned by the control plane; its verification command is stale after the launcher split and is tracked in NDDev-it-com/github-device-sync#176. A hand edit here is reverted by the next gds run.",
+      ".gds/repository.yaml": "Projection *input* owned here, not a generated output -- .gds/bundle.lock.yaml lists exactly one projection file, .gds/compiled-policy.json, and this carries no generated header. Its commands are deliberately the portable `python3 -I -B` form rather than this repository's launcher prefix, because a consuming control plane runs them across the submodule boundary where .venv does not exist. Exempt from the launcher-form rule for that reason and no other: check_gds_verification_commands.py executes what it declares.",
       "catalog/scorecard-evidence.yml": "Historical evidence record of a command as it was actually run. Rewriting it to the current launcher form would falsify the receipt."
     },
     "source_classes": {
@@ -122,10 +122,12 @@
       "check_benchmark_contract.py", "check_cache_contract.py",
       "check_cache_upstream_defaults.py",
       "check_ci_tier_selection.py",
+      "check_consumer_skill_contract.py",
       "check_maintenance_report_contract.py",
       "check_validation_tier_contract.py",
       "check_docs_links.py", "check_documented_commands.py",
-      "check_flutter_pin.py", "check_qt_pin.py",
+      "check_flutter_pin.py", "check_gds_verification_commands.py",
+      "check_qt_pin.py",
       "check_examples.py",
       "check_gate_contract.py", "check_harden_runner_contract.py",
       "check_merge_group.py", "check_monorepo_routing.py",
@@ -164,10 +166,12 @@
     "check_cache_contract.py": ["_strict_yaml", "_workflow_yaml"],
     "check_cache_upstream_defaults.py": ["_strict_yaml", "_workflow_yaml", "check_transitive_action_pins"],
     "check_ci_tier_selection.py": ["_workflow_yaml", "check_python_execution_contract"],
+    "check_consumer_skill_contract.py": ["check_python_execution_contract"],
     "check_maintenance_report_contract.py": ["_workflow_yaml", "check_python_execution_contract"],
     "check_validation_tier_contract.py": ["_strict_yaml", "_workflow_yaml", "validate_all"],
     "check_documented_commands.py": ["_workflow_yaml"],
     "check_flutter_pin.py": ["_strict_yaml"],
+    "check_gds_verification_commands.py": ["_strict_yaml", "check_python_execution_contract"],
     "check_qt_pin.py": ["_strict_yaml"],
     "check_examples.py": ["_runners", "_workflow_yaml"],
     "check_gate_contract.py": ["_strict_yaml", "_workflow_yaml", "check_python_execution_contract"],
@@ -205,12 +209,12 @@
       "check_anchor_contexts",
       "check_benchmark_contract", "check_cache_contract",
       "check_cache_upstream_defaults",
-      "check_ci_tier_selection",
+      "check_ci_tier_selection", "check_consumer_skill_contract",
       "check_maintenance_report_contract",
       "check_validation_tier_contract",
       "check_docs_links", "check_documented_commands", "check_examples",
       "check_flutter_pin", "check_qt_pin",
-      "check_gate_contract",
+      "check_gate_contract", "check_gds_verification_commands",
       "check_harden_runner_contract", "check_merge_group",
       "check_monorepo_routing", "check_permissions", "check_pinned_actions",
       "check_pr_hygiene_contract", "check_privileged_ref_guard",
@@ -248,6 +252,8 @@
       "_resolve": {"count": 1, "profile": "isolated-python-fixture"}
     },
     "check_gate_contract.py": {"_run": {"count": 1, "profile": "isolated-python-fixture"}},
+    "check_consumer_skill_contract.py": {"_git": {"count": 1, "profile": "external-tool"}},
+    "check_gds_verification_commands.py": {"_run": {"count": 1, "profile": "external-tool"}},
     "check_maintenance_report_contract.py": {
       "_run_sweep": {"count": 1, "profile": "shell-fixture"},
       "_run_with_fake_gh": {"count": 1, "profile": "shell-fixture"}
