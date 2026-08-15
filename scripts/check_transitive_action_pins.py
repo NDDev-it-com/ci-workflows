@@ -33,7 +33,6 @@ party writes in its own `action.yml` is not a property of this tree.
 """
 from __future__ import annotations
 
-import os
 import re
 import time
 import urllib.error
@@ -46,7 +45,20 @@ from ci_workflows_tools._workflow_yaml import WORKFLOWS_DIR, workflow_files
 USES = re.compile(r"^\s*(?:-\s*)?uses:\s*(?P<ref>[^\s#]+)", re.MULTILINE)
 SHA = re.compile(r"^[0-9a-f]{40}$")
 TIMEOUT_SECONDS = 30
-API = "https://api.github.com/repos/{repo}/contents/{path}?ref={ref}"
+# Definitions come from the raw host, not the contents API, and the reason is a
+# finding rather than a preference. The Actions `GITHUB_TOKEN` is an installation
+# token scoped to this repository, and two of the pinned actions
+# (`aquasecurity/trivy-action`, `bridgecrewio/checkov-action`) answer it with 403
+# while 41 others answer normally -- so the check could never complete in the
+# very job that owns it. Both serve fine here with no credential at all. This
+# also removes the 60-requests-an-hour ceiling that made a token necessary in the
+# first place, so the check needs no secret and cannot be throttled into
+# reporting a third party as broken.
+#
+# A private action would 404 here and be reported as having no definition. That
+# is correct for this tree, which pins only public actions, and it is a visible
+# failure rather than a silent pass.
+RAW = "https://raw.githubusercontent.com/{repo}/{ref}/{path}"
 
 # Bounds, so a hostile or merely circular graph cannot run forever. They are
 # generous: the tree's own graph is two layers and a few dozen nodes.
@@ -141,15 +153,12 @@ def _is_rate_limited(exc: urllib.error.HTTPError) -> bool:
     return "rate limit" in str(exc.reason).lower()
 
 
-def _fetch(repo: str, path: str, ref: str, token: str | None) -> str | None:
+def _fetch(repo: str, path: str, ref: str) -> str | None:
     """The definition's bytes, `None` if there is none, `Unavailable` otherwise."""
     request = urllib.request.Request(
-        API.format(repo=repo, path=path, ref=ref),
-        headers={"Accept": "application/vnd.github.raw+json",
-                 "User-Agent": "nddev-ci-workflows-pin-audit"},
+        RAW.format(repo=repo, path=path, ref=ref),
+        headers={"User-Agent": "nddev-ci-workflows-pin-audit"},
     )
-    if token:
-        request.add_header("Authorization", f"Bearer {token}")
     for attempt, delay in enumerate((*RETRY_DELAYS, None)):
         try:
             with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:  # noqa: S310
@@ -358,32 +367,8 @@ def _selftest() -> list[str]:
     return problems
 
 
-def _token() -> str | None:
-    """The token comes from the environment, never from shelling out to `gh`.
-
-    Reading it with `gh auth token` would add a process edge for a value the
-    caller already has, and the same rule the brief states for zizmor applies
-    here: pass it in. Unauthenticated the API allows 60 requests an hour, which
-    this exhausts, so a missing token is reported rather than worked around.
-    """
-    for name in ("GH_TOKEN", "GITHUB_TOKEN"):
-        value = os.environ.get(name)
-        if value:
-            return value
-    return None
-
-
 def check() -> list[str]:
-    problems: list[str] = _selftest()
-    token = _token()
-    if token is None:
-        return problems + [
-            "nested action pins unverified: set GH_TOKEN; the unauthenticated "
-            "API rate limit cannot cover every pinned action"]
-    return problems + walk(
-        _third_party_pins(),
-        lambda repo, path, ref: _fetch(repo, path, ref, token),
-    )
+    return _selftest() + walk(_third_party_pins(), _fetch)
 
 
 def main() -> int:
