@@ -400,11 +400,11 @@ tools:
     name: osv-scanner
     homepage: "https://github.com/google/osv-scanner"
     kind: cli
-    current_version: "v2.4.0"
+    current_version: "v2.5.0"
     pin: null
     used_by:
       - .github/workflows/osv-scan.yml
-    last_verified: "2026-07-08"
+    last_verified: "2026-08-15"
 
   - id: semgrep
     name: semgrep
