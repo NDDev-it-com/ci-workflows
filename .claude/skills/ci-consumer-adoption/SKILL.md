@@ -21,9 +21,27 @@ still bills, and a repository that is routed to hardware its jobs cannot use.
 
 ## Start by resolving the mode
 
-Do not choose a tier by reading prose. Resolve it:
+Do not choose a tier by reading prose. Resolve it.
+
+The resolver lives in the library, not in your repository, so check the library
+out first. Everything below runs in that checkout, not in yours:
 
 ```bash
+# Pin to the ref you intend to consume. `resolve_profile.py` does not exist in
+# 0.13.3, the newest release at the time of writing; until a release after it
+# exists, check out `main` at a full SHA and know that you are ahead of the
+# released surface. See "Pin" below -- what you *consume* must still be a
+# released tag.
+LIBRARY_REF=main
+git clone --depth 1 --branch "$LIBRARY_REF" \
+    https://github.com/NDDev-it-com/ci-workflows.git /tmp/ci-workflows
+cd /tmp/ci-workflows
+
+# The library runs every Python tool through one launcher, which needs its own
+# environment. A bare `python3 scripts/...` aborts with ModuleNotFoundError.
+python3.13 -I -B -m venv --copies .venv
+uv pip install --python .venv/bin/python --require-hashes -r requirements-ci.txt
+
 .venv/bin/python -I -B scripts/check_python_execution_contract.py --launch resolve_profile.py -- --visibility private --plan enterprise-cloud \
     --code-security --secret-protection --code-quality
 ```

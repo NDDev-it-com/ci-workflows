@@ -5,6 +5,11 @@ __pycache__/
 # Release build output
 dist/
 
+# aqtinstall writes this beside the working directory when the Qt fixture
+# is exercised locally. One got committed, so it is named here rather than
+# left to be noticed again.
+aqtinstall.log
+
 # Local virtualenvs
 .venv/
 
